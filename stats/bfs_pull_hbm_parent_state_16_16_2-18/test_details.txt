@@ -1,0 +1,1 @@
+ran bfs one iteration with 25% of vertices active in frontier on 4x4 tile group. also made sure to pass the state of the parent array at that point of execution if one vertex is chosen as the root initially. using the hbm memory simulation.

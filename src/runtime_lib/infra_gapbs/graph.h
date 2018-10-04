@@ -163,7 +163,8 @@ class CSRGraph {
   CSRGraph(CSRGraph&& other) : directed_(other.directed_),
     num_nodes_(other.num_nodes_), num_edges_(other.num_edges_),
     out_index_(other.out_index_), out_neighbors_(other.out_neighbors_),
-    in_index_(other.in_index_), in_neighbors_(other.in_neighbors_), is_transpose_(false) {
+                               in_index_(other.in_index_), in_neighbors_(other.in_neighbors_),
+                               flags_(other.flags_), is_transpose_(false) {
       other.num_edges_ = -1;
       other.num_nodes_ = -1;
       other.out_index_ = nullptr;
@@ -190,6 +191,7 @@ class CSRGraph {
       out_neighbors_ = other.out_neighbors_;
       in_index_ = other.in_index_;
       in_neighbors_ = other.in_neighbors_;
+      flags_ = other.flags_;
       other.num_edges_ = -1;
       other.num_nodes_ = -1;
       other.out_index_ = nullptr;

@@ -5,3 +5,7 @@
 .settings/
 .idea/
 build/
+test/graphs/
+*.txt.*
+test/hammerblade-rt/*
+!test/hammerblade-rt/*.cpp

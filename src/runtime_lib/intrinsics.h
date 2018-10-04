@@ -136,9 +136,15 @@ template<typename APPLY_FUNC> void builtin_vertexset_apply(VertexSubset<int>* ve
            }
        }
    } else {
-       parallel_for (int i = 0; i < vertex_subset->num_vertices_; i++){
-           apply_func(vertex_subset->dense_vertex_set_[i]);
-       }
+       if(vertex_subset->dense_vertex_set_ == nullptr && vertex_subset->tmp.size() > 0) {
+           parallel_for (int i = 0; i < vertex_subset->num_vertices_; i++){
+               apply_func(vertex_subset->tmp[i]);
+           }
+       }else  {
+           parallel_for (int i = 0; i < vertex_subset->num_vertices_; i++){
+               apply_func(vertex_subset->dense_vertex_set_[i]);
+           }
+      }
    }
 }
 

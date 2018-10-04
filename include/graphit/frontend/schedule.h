@@ -11,6 +11,16 @@
 
 namespace graphit {
 
+    /** An enum describing the backend selection chosen by the User */
+    enum BackendT {
+        BACKEND_CPP,
+        BACKEND_GPU,
+        BACKEND_HB,     //NOTE(Emily): hammerblade backend selection
+
+        BACKEND_INVALID
+    };
+
+
     //TODO: move this into the FieldVectorPhysicalDataLayout class definition
     /** An enum describing a type of physical data layout */
     enum class FieldVectorDataLayoutType {
@@ -160,6 +170,17 @@ namespace graphit {
                 Disable
             };
 
+            //determines whether blocking is enabled for HB code gen
+            enum class BlockingType {
+                Enable,
+                Disable
+            };
+
+            enum class AlignmentType {
+                Enable,
+                Disable
+            };
+
             enum class OtherOpt {
                 QUEUE,
                 SLIDING_QUEUE
@@ -180,6 +201,8 @@ namespace graphit {
             ParType parallel_type;
             //FrontierType frontier_type;
             DeduplicationType deduplication_type;
+            BlockingType blocking_type;
+            AlignmentType alignment_type;
             OtherOpt opt;
             PullFrontierType pull_frontier_type;
             PullLoadBalance pull_load_balance_type;
@@ -196,7 +219,7 @@ namespace graphit {
          */
         class Schedule {
         public:
-            Schedule() {
+            Schedule() : backend_selection(BACKEND_CPP) {
                 physical_data_layouts = new std::map<std::string, FieldVectorPhysicalDataLayout>();
                 apply_schedules = new std::map<std::string, ApplySchedule>();
                 vertexset_data_layout = std::map<std::string, VertexsetPhysicalLayout>();
@@ -208,6 +231,8 @@ namespace graphit {
                 delete physical_data_layouts;
                 delete apply_schedules;
             }
+
+            enum BackendT backend_selection;
 
             //TODO: what does it mean??
             std::map<std::string, FieldVectorPhysicalDataLayout> *physical_data_layouts;

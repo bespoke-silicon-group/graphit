@@ -2,7 +2,7 @@
 // Created by Yunming Zhang on 2/14/17.
 //
 
-#include <graphit/backend/codegen_cpp.h>
+#include <graphit/backend/codegen_cpp/codegen_cpp.h>
 
 namespace graphit {
     int CodeGenCPP::genCPP() {
@@ -647,6 +647,35 @@ namespace graphit {
             expr->operands[i + 1]->accept(this);
             oss << ")";
         }
+    }
+
+    void CodeGenCPP::visit(mir::AndExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " && ";
+        expr->rhs->accept(this);
+        oss << ')';
+    };
+
+    void CodeGenCPP::visit(mir::OrExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " || ";
+        expr->rhs->accept(this);
+        oss << ')';
+    };
+
+    void CodeGenCPP::visit(mir::XorExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " + ";
+        expr->rhs->accept(this);
+        oss << ')';
+    };
+
+    void CodeGenCPP::visit(mir::NotExpr::Ptr not_expr) {
+        oss << "!";
+        not_expr->operand->accept(this);
     }
 
     void CodeGenCPP::visit(mir::MulExpr::Ptr expr) {

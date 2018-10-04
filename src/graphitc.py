@@ -40,6 +40,7 @@ if __name__ == '__main__':
         # use the input_file for both the algorithm and schedule
         algo_file_name = 'algo.gt'
 
+
     compile_file_name = 'compile.cpp'
 
 

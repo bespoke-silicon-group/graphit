@@ -866,7 +866,7 @@ protected:
 
         me->emitMIR(mir_context_);
         graphit::Backend *be = new graphit::Backend(mir_context_);
-        return be->emitCPP();
+        return be->emit();
     }
 
 /**
@@ -877,7 +877,7 @@ protected:
         graphit::Midend *me = new graphit::Midend(context_);
         me->emitMIR(mir_context_);
         graphit::Backend *be = new graphit::Backend(mir_context_);
-        return be->emitCPP();
+        return be->emit();
     }
 
 
@@ -891,7 +891,7 @@ protected:
 
         me->emitMIR(mir_context_);
         graphit::Backend *be = new graphit::Backend(mir_context_);
-        return be->emitCPP();
+        return be->emit();
     }
 
     std::vector<ParseError> *errors_;

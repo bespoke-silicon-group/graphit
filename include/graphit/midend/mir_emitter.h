@@ -183,4 +183,3 @@ namespace graphit {
 }
 
 #endif //GRAPHIT_MIR_EMITTER_H
-

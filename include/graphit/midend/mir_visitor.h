@@ -86,6 +86,10 @@ namespace graphit {
         struct NaryExpr;
         struct EqExpr;
 
+        struct AndExpr;
+        struct OrExpr;
+        struct XorExpr;
+        struct NotExpr;
 
         struct StructTypeDecl;
         struct VarDecl;

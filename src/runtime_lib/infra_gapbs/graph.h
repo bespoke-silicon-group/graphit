@@ -240,7 +240,12 @@ class CSRGraph {
   CSRGraph(CSRGraph&& other) : directed_(other.directed_),
     num_nodes_(other.num_nodes_), num_edges_(other.num_edges_),
     out_index_(other.out_index_), out_neighbors_(other.out_neighbors_),
+<<<<<<< HEAD
     in_index_(other.in_index_), in_neighbors_(other.in_neighbors_), is_transpose_(false){
+=======
+                               in_index_(other.in_index_), in_neighbors_(other.in_neighbors_),
+                               flags_(other.flags_), is_transpose_(false) {
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
       other.num_edges_ = -1;
       other.num_nodes_ = -1;
       other.out_index_ = nullptr;
@@ -314,10 +319,14 @@ class CSRGraph {
       out_neighbors_ = other.out_neighbors_;
       in_index_ = other.in_index_;
       in_neighbors_ = other.in_neighbors_;
+<<<<<<< HEAD
         out_index_shared_ = other.out_index_shared_;
         out_neighbors_shared_ = other.out_neighbors_shared_;
         in_index_shared_ = other.in_index_shared_;
         in_neighbors_shared_ = other.in_neighbors_shared_;
+=======
+      flags_ = other.flags_;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
       other.num_edges_ = -1;
       other.num_nodes_ = -1;
       other.out_index_ = nullptr;

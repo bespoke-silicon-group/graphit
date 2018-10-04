@@ -152,6 +152,18 @@ namespace graphit {
             visitBinaryExpr(expr);
         }
 
+        void MIRVisitor::visit(AndExpr::Ptr expr) {
+            visitBinaryExpr(expr);
+        }
+
+        void MIRVisitor::visit(OrExpr::Ptr expr) {
+            visitBinaryExpr(expr);
+        }
+
+        void MIRVisitor::visit(XorExpr::Ptr expr) {
+            visitBinaryExpr(expr);
+        }
+
         void MIRVisitor::visit(std::shared_ptr<VarDecl> var_decl) {
 
             if (var_decl->stmt_label != "") {

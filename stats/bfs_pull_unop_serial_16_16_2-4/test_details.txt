@@ -1,0 +1,2 @@
+bfs pull unoptimized run with kronecker graph of scale 16, ef 16. Used a frontier containing 25% of the vertices. 
+ran one iteration in parallel on a 1x1 tile group. the parent array was unoptimized, so all edges traversed for frontier. 

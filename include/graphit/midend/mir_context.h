@@ -14,6 +14,7 @@
 
 #include <graphit/utils/scopedmap.h>
 #include <graphit/midend/mir.h>
+#include <graphit/frontend/schedule.h>
 
 namespace graphit {
 
@@ -21,9 +22,15 @@ namespace graphit {
     // Data structure that holds the internal representation of the program
     class MIRContext {
 
+<<<<<<< HEAD
     public:
         MIRContext() {
         }
+=======
+        public:
+            MIRContext() : backend_selection(BACKEND_INVALID){
+            }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
 
         ~MIRContext() {
@@ -153,7 +160,33 @@ namespace graphit {
             return const_edge_sets_;
         }
 
+<<<<<<< HEAD
         mir::VarDecl::Ptr getConstEdgeSetByName(std::string var_name) {
+=======
+            mir::EdgeSetType::Ptr getEdgesetType(std::string edgeset_name){
+                return edgeset_element_type_map_[edgeset_name];
+            }
+	    mir::EdgeSetType::Ptr getEdgeSetTypeFromElementType(mir::ElementType::Ptr element_type, bool match_both = false){
+               for(auto edge_set = edgeset_element_type_map_.begin(); edge_set != edgeset_element_type_map_.end(); edge_set++) {
+                   if (match_both == false) {
+                      if ((*edge_set->second->vertex_element_type_list)[0]->ident == element_type->ident || (*edge_set->second->vertex_element_type_list)[1]->ident == element_type->ident)
+                          return edge_set->second;
+                   }else{
+                      if ((*edge_set->second->vertex_element_type_list)[0]->ident == element_type->ident && (*edge_set->second->vertex_element_type_list)[1]->ident == element_type->ident)
+                          return edge_set->second; 
+                   }
+               }
+               return nullptr;
+	    }
+
+            std::string getEdgeSetNameFromEdgeSetType(mir::EdgeSetType::Ptr edge_set_type) {
+                for(auto edge_set = edgeset_element_type_map_.begin(); edge_set != edgeset_element_type_map_.end(); edge_set++) {
+                  if (edge_set->second == edge_set_type)
+		    return edge_set->first;
+                }
+                return "";
+            }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
             for (auto edgeset : const_edge_sets_) {
                 if (edgeset->name == var_name)
@@ -335,6 +368,7 @@ namespace graphit {
 
         //private:
 
+<<<<<<< HEAD
         // maps element type to an input file that reads the set from
         // for example, reading an edge set
         std::map<std::string, mir::Expr::Ptr> input_filename_map_;
@@ -342,6 +376,19 @@ namespace graphit {
         std::map<std::string, mir::Expr::Ptr> num_elements_map_;
         // maps element type to the fields associated with the type
         std::map<std::string, std::vector<mir::VarDecl::Ptr> *> properties_map_;
+=======
+
+    
+	    enum BackendT backend_selection;
+
+            // maps element type to an input file that reads the set from
+            // for example, reading an edge set
+            std::map<std::string, mir::Expr::Ptr> input_filename_map_;
+            // maps element type to the number of elements (initially)
+            std::map<std::string, mir::Expr::Ptr> num_elements_map_;
+            // maps element type to the fields associated with the type
+            std::map<std::string, std::vector<mir::VarDecl::Ptr>*> properties_map_;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
         // const vertex_sets and edge_sets
         // These are global sets that are loaded from outside sources and cannot be modified
@@ -379,7 +426,12 @@ namespace graphit {
         // symbol table
         util::ScopedMap<std::string, mir::Var> symbol_table_;
 
+<<<<<<< HEAD
         int unique_variable_name_counter_ = 0;
+=======
+            // used by cache/numa optimization
+	    std::map<std::string, std::map<std::string, int>> edgeset_to_label_to_num_segment;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
         // these vectors are used in code gen for main functions (there's a condition in func_decl code gen)
         std::vector<mir::Stmt::Ptr> edgeset_alloc_stmts;

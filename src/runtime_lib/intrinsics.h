@@ -533,6 +533,7 @@ template<typename APPLY_FUNC> static void builtin_vertexset_apply(VertexSubset<i
            });
    } else {
        if(vertex_subset->dense_vertex_set_ == nullptr && vertex_subset->tmp.size() > 0) {
+<<<<<<< HEAD
             ligra::parallel_for_lambda((int)0, (int)vertex_subset->num_vertices_, [&] (int i){
                apply_func(vertex_subset->tmp[i]);
            });
@@ -541,6 +542,16 @@ template<typename APPLY_FUNC> static void builtin_vertexset_apply(VertexSubset<i
                apply_func(vertex_subset->dense_vertex_set_[i]);
            });
        }
+=======
+           parallel_for (int i = 0; i < vertex_subset->num_vertices_; i++){
+               apply_func(vertex_subset->tmp[i]);
+           }
+       }else  {
+           parallel_for (int i = 0; i < vertex_subset->num_vertices_; i++){
+               apply_func(vertex_subset->dense_vertex_set_[i]);
+           }
+      }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
    }
 }
 

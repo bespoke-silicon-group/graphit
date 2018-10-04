@@ -590,10 +590,23 @@ namespace graphit {
 
 
         struct FuncDecl : public MIRNode {
+<<<<<<< HEAD
             enum class Type {
                 INTERNAL, EXPORTED, EXTERNAL
             };
 
+=======
+
+            enum function_context {
+		CONTEXT_NONE = 0x0,
+                CONTEXT_HOST = 0x01,
+                CONTEXT_DEVICE = 0x02,
+
+                CONTEXT_BOTH = 0x3
+	    };
+
+	    enum function_context realized_context = CONTEXT_NONE;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
             std::string name;
             std::vector<mir::Var> functorArgs;
             std::vector<mir::Var> args;
@@ -617,6 +630,8 @@ namespace graphit {
 
             virtual MIRNode::Ptr cloneNode();
         };
+	inline enum FuncDecl::function_context operator|(enum FuncDecl::function_context a, enum FuncDecl::function_context b){return static_cast<enum FuncDecl::function_context>( (int)a | (int)b);}
+	inline enum FuncDecl::function_context& operator|=(enum FuncDecl::function_context &a, enum FuncDecl::function_context b){return (enum FuncDecl::function_context&)( ((int&)a) |= (int)b);}
 
 
         struct FuncExpr : public Expr {
@@ -880,6 +895,7 @@ namespace graphit {
             FuncExpr::Ptr input_function = nullptr;
             std::string tracking_field = "";
             typedef std::shared_ptr<ApplyExpr> Ptr;
+	    mir::Var *var = nullptr;
 
         protected:
             virtual void copy(MIRNode::Ptr);
@@ -894,6 +910,8 @@ namespace graphit {
             //default to parallel
             bool is_parallel = true;
 
+
+
             virtual void accept(MIRVisitor *visitor) {
                 visitor->visit(self<VertexSetApplyExpr>());
             }
@@ -907,7 +925,13 @@ namespace graphit {
                 mir::Var target_var = mir::Var(target_name, target_type);
                 target_expr->var = target_var;
                 target = target_expr;
+<<<<<<< HEAD
                 input_function = input_func;}
+=======
+                input_function_name = function_name;
+                var = nullptr;
+            }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
         protected:
             virtual void copy(MIRNode::Ptr);
@@ -933,6 +957,8 @@ namespace graphit {
 
             bool is_parallel = false;
             bool enable_deduplication = false;
+            bool enable_blocking = false;
+            bool enable_alignment = false;
             bool is_weighted = false;
             bool use_sliding_queue = false;
             bool use_pull_frontier_bitvector = false;
@@ -1079,7 +1105,7 @@ namespace graphit {
             bool is_constant_set = false;
             FuncExpr::Ptr input_func = nullptr;
             typedef std::shared_ptr<WhereExpr> Ptr;
-
+	    mir::Var *var = nullptr;
         protected:
             virtual void copy(MIRNode::Ptr);
 
@@ -1126,6 +1152,9 @@ namespace graphit {
                 DENSE
             };
             Layout layout;
+            // GPU code generation (gunrock especially) needs the name of the variable to be allocated. For example frontier.Allocate(...)
+            std::string vertex_set_name;
+
             typedef std::shared_ptr<VertexSetAllocExpr> Ptr;
 
             virtual void accept(MIRVisitor *visitor) {
@@ -1343,6 +1372,59 @@ namespace graphit {
             virtual MIRNode::Ptr cloneNode();
         };
 
+        struct AndExpr : public BinaryExpr {
+            typedef std::shared_ptr<AndExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<AndExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
+
+        struct OrExpr : public BinaryExpr {
+            typedef std::shared_ptr<OrExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<OrExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
+
+        struct XorExpr : public BinaryExpr {
+            typedef std::shared_ptr<XorExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<XorExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
+
+        struct NotExpr : public Expr {
+            Expr::Ptr operand;
+
+            typedef std::shared_ptr<NotExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<NotExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
 
         struct IfStmt : public Stmt {
             Expr::Ptr cond;

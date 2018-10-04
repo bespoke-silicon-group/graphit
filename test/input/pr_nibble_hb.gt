@@ -1,0 +1,67 @@
+element Vertex end
+element Edge end
+const edges : edgeset{Edge}(Vertex,Vertex) = load (argv[1]);
+const vertices : vertexset{Vertex} = edges.getVertices();
+const p : vector{Vertex}(float) = 0;
+const r : vector{Vertex}(float) = 0;
+const r_p : vector{Vertex}(float) = 0;
+const alpha : float = 0.15;
+const epsilon : float = 1e-6;
+const out_degree : vector{Vertex}(int) = edges.getOutDegrees();
+
+func updateNeigh(src : Vertex, dst : Vertex)
+    r_p[dst] += ((1 - alpha) / (1 + alpha)) * r[src] / out_degree[src];
+end
+
+func update(src : Vertex, dst : Vertex)
+    p[src] = p[src] + (2 * alpha) / (1 + alpha) * r[src];
+    r_p[src] = 0.0;
+    r_p[dst] += ((1 - alpha) / (1 + alpha)) * r[src] / out_degree[src];
+end
+
+func updateSelf(v : Vertex)
+    p[v] = p[v] + (2 * alpha) / (1 + alpha) * r[v];
+    r_p[v] = 0.0;
+end
+
+
+func addToFrontier(v : Vertex) -> output : bool
+    output = r[v] >= out_degree[v]*epsilon and out_degree[v] > 0;
+end
+
+func copyRtoRP(v : Vertex)
+    var old_score : float = r[v];
+    r_p[v] = old_score;
+end
+
+func copyRPtoR(v : Vertex)
+    var old_score : float = r_p[v];
+    r[v] = old_score;
+end
+
+func printRank(v : Vertex)
+    print v;
+    print p[v];
+end
+
+
+func main()
+    var frontier : vertexset{Vertex} = new vertexset{Vertex}(0);
+    frontier.addVertex(0);
+    r[0] = 1;
+    while (frontier.getVertexSetSize() != 0)
+        vertices.apply(copyRtoRP);
+        #s1# frontier.apply(updateSelf);
+        #s2# edges.from(frontier).apply(updateNeigh);
+        vertices.apply(copyRPtoR);
+        var output : vertexset{Vertex};
+        output = vertices.where(addToFrontier);
+        delete frontier;
+        frontier = output;
+    end
+    #s4# vertices.apply(printRank);
+    delete frontier;
+end
+
+schedule:
+program->configApplyDirection("s1", "SparsePush")->generateHBCode();

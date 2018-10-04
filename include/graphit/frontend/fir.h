@@ -1581,7 +1581,7 @@ namespace graphit {
         // Allocator expression for VertexSet
         struct VertexSetAllocExpr : public NewExpr {
             typedef std::shared_ptr<VertexSetAllocExpr> Ptr;
-
+            
             virtual void accept(FIRVisitor *visitor) {
                 visitor->visit(self<VertexSetAllocExpr>());
             }

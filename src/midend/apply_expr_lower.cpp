@@ -353,6 +353,20 @@ namespace graphit {
                     mir::to<mir::EdgeSetApplyExpr>(node)->is_parallel = false;
                 }
 
+                if(apply_schedule->second.blocking_type == ApplySchedule::BlockingType::Enable) {
+                  mir::to<mir::EdgeSetApplyExpr>(node)->enable_blocking = true;
+                }
+                else if (apply_schedule->second.blocking_type == ApplySchedule::BlockingType::Disable) {
+                  mir::to<mir::EdgeSetApplyExpr>(node)->enable_blocking = false;
+                }
+
+                if(apply_schedule->second.alignment_type == ApplySchedule::AlignmentType::Enable) {
+                  mir::to<mir::EdgeSetApplyExpr>(node)->enable_alignment = true;
+                }
+                else if (apply_schedule->second.alignment_type == ApplySchedule::AlignmentType::Disable) {
+                  mir::to<mir::EdgeSetApplyExpr>(node)->enable_alignment = false;
+                }
+
                 if (apply_schedule->second.opt == ApplySchedule::OtherOpt::SLIDING_QUEUE) {
                     mir::to<mir::EdgeSetApplyExpr>(node)->use_sliding_queue = true;
                 }

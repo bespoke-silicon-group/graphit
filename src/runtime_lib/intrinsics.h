@@ -359,7 +359,11 @@ template<typename APPLY_FUNC> static void builtin_vertexset_apply(VertexSubset<i
            parallel_for (int i = 0; i < vertex_subset->num_vertices_; i++){
                apply_func(vertex_subset->dense_vertex_set_[i]);
            }
+<<<<<<< HEAD
        }
+=======
+      }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
    }
 }
 

@@ -8,3 +8,7 @@ build/
 autotune/*.json
 *.graphit_bin
 *.graphit_sbin
+test/graphs/
+*.txt.*
+test/hammerblade-rt/*
+!test/hammerblade-rt/*.cpp

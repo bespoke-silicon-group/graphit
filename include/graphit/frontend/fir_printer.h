@@ -16,6 +16,8 @@ namespace graphit {
         struct FIRPrinter : public FIRVisitor {
             FIRPrinter(std::ostream &oss) : oss(oss), indentLevel(0) {}
 
+            void printFIR(Program::Ptr prog){prog->accept(this);};
+
         protected:
             virtual void visit(Program::Ptr);
             virtual void visit(StmtBlock::Ptr);

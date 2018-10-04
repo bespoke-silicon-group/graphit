@@ -2,8 +2,12 @@
 // Created by Yunming Zhang on 2/14/17.
 //
 
+<<<<<<< HEAD:src/backend/codegen_cpp.cpp
 #include <graphit/backend/codegen_cpp.h>
 #include <graphit/midend/mir.h>
+=======
+#include <graphit/backend/codegen_cpp/codegen_cpp.h>
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master:src/backend/codegen_cpp/codegen_cpp.cpp
 
 namespace graphit {
     int CodeGenCPP::genCPP() {

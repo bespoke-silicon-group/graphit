@@ -192,6 +192,8 @@ namespace graphit {
             to_func = expr->to_func;
             is_parallel = expr->is_parallel;
             enable_deduplication = expr->enable_deduplication;
+            enable_blocking = expr->enable_blocking;
+            enable_alignment = expr->enable_alignment;
             is_weighted = expr->is_weighted;
             scope_label_name = expr->scope_label_name;
             frontier_reusable = expr->frontier_reusable;
@@ -829,6 +831,7 @@ namespace graphit {
                 result = mir::Var(decl->result.getName(), decl->result.getType());
             //I am not sure, I think this just copies over everything
             field_vector_properties_map_ = decl->field_vector_properties_map_;
+	    realized_context = decl->realized_context;
         }
 
 

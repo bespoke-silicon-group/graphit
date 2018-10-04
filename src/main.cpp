@@ -8,6 +8,12 @@
 #include <graphit/frontend/error.h>
 #include <fstream>
 #include <graphit/frontend/high_level_schedule.h>
+#include <graphit/frontend/fir_printer.h>
+
+#include <graphit/midend/mir_printer.h>
+#include <string>
+#include <iostream>
+#include <sstream>
 
 using namespace graphit;
 
@@ -27,7 +33,6 @@ int main(int argc, char* argv[]) {
     //parse the arguments
     if (!cli.ParseArgs())
         return -1;
-    
     //read input file into buffer
     std::ifstream file(cli.input_filename());
     std::stringstream buffer;
@@ -39,7 +44,14 @@ int main(int argc, char* argv[]) {
 
     //set up the output file
     std::ofstream output_file;
+		std::ofstream hb_output_device_file;
     output_file.open(cli.output_filename());
+		std::string filen(cli.output_filename());
+		size_t split_index = filen.find_last_of(".");
+		std::string root_filen = filen.substr(0, split_index);
+		std::string file_ext = filen.substr(split_index);
+		std::string device_filen = root_filen + "_device" + file_ext;
+		hb_output_device_file.open(device_filen.c_str());
 
     //compile the input file
     fe->parseStream(buffer, context, errors);
@@ -47,7 +59,9 @@ int main(int argc, char* argv[]) {
     fir::high_level_schedule::ProgramScheduleNode::Ptr program
             = std::make_shared<fir::high_level_schedule::ProgramScheduleNode>(context);
 
-#ifndef USE_DEFAULT_SCHEDULE    
+
+
+#ifndef USE_DEFAULT_SCHEDULE
     //Call the user provided schedule for the algorithm
     user_defined_schedule(program);
 #endif
@@ -55,6 +69,7 @@ int main(int argc, char* argv[]) {
     graphit::Midend* me = new graphit::Midend(context, program->getSchedule());
     me->emitMIR(mir_context);
     graphit::Backend* be = new graphit::Backend(mir_context);
+<<<<<<< HEAD
     std::string python_module_name = cli.python_module_name();
     std::string python_module_path = cli.python_module_path();
     
@@ -63,10 +78,14 @@ int main(int argc, char* argv[]) {
     	be->emitGPU(output_file, python_module_name);
     else
     	be->emitCPP(output_file, python_module_name);
+=======
+    be->emit(output_file, hb_output_device_file);
+
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
     output_file.close();
+		hb_output_device_file.close();
 
     delete be;
     return 0;
 
 }
-

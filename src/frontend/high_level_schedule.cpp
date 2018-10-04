@@ -7,6 +7,24 @@
 namespace graphit {
     namespace fir {
 
+
+	// Use the GPU backend instead of the CPU backend
+	high_level_schedule::ProgramScheduleNode::Ptr
+	high_level_schedule::ProgramScheduleNode::generateGPUCode(void) {
+		if (schedule_ == nullptr)
+			schedule_ = new Schedule();
+		schedule_->backend_selection = BACKEND_GPU;
+		return this->shared_from_this();
+	}
+
+        high_level_schedule::ProgramScheduleNode::Ptr
+        high_level_schedule::ProgramScheduleNode::generateHBCode(void) {
+            if (schedule_ == nullptr)
+                schedule_ = new Schedule();
+            schedule_->backend_selection = BACKEND_HB;
+            return this->shared_from_this();
+        }
+
         high_level_schedule::ProgramScheduleNode::Ptr
         high_level_schedule::ProgramScheduleNode::splitForLoop(std::string original_loop_label,
                                                                std::string split_loop1_label,
@@ -286,7 +304,19 @@ namespace graphit {
             if (schedule_->apply_schedules->find(apply_label) == schedule_->apply_schedules->end()) {
                 //Default schedule pull, serial, -100 for number of segments (we use -1 to -10 for argv)
                 (*schedule_->apply_schedules)[apply_label]
+<<<<<<< HEAD
                         = createDefaultSchedule(apply_label);
+=======
+                        = {apply_label, ApplySchedule::DirectionType::PULL,
+                           ApplySchedule::ParType::Serial,
+                           ApplySchedule::DeduplicationType::Enable,
+                           ApplySchedule::BlockingType::Disable,
+                           ApplySchedule::AlignmentType::Disable,
+                           ApplySchedule::OtherOpt::QUEUE,
+                           ApplySchedule::PullFrontierType::BOOL_MAP,
+                           ApplySchedule::PullLoadBalance::VERTEX_BASED,
+                           0, -100, false};
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
             }
 
             if (apply_schedule_str == "pull_edge_based_load_balance") {
@@ -332,7 +362,20 @@ namespace graphit {
             if (schedule_->apply_schedules->find(apply_label) == schedule_->apply_schedules->end()) {
                 //Default schedule pull, serial, -100 for number of segments (we use -1 to -10 for argv)
                 (*schedule_->apply_schedules)[apply_label]
+<<<<<<< HEAD
                         = createDefaultSchedule(apply_label);
+=======
+                        = (*schedule_->apply_schedules)[apply_label]
+                        = {apply_label, ApplySchedule::DirectionType::PULL,
+                           ApplySchedule::ParType::Serial,
+                           ApplySchedule::DeduplicationType::Enable,
+                           ApplySchedule::BlockingType::Disable,
+                           ApplySchedule::AlignmentType::Disable,
+                           ApplySchedule::OtherOpt::QUEUE,
+                           ApplySchedule::PullFrontierType::BOOL_MAP,
+                           ApplySchedule::PullLoadBalance::VERTEX_BASED,
+                           0, -100, false};
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
             }
 
 
@@ -361,6 +404,7 @@ namespace graphit {
                         = ApplySchedule::PullLoadBalance::EDGE_BASED;
             } else if (apply_schedule_str == "numa_aware") {
                 (*schedule_->apply_schedules)[apply_label].numa_aware = true;
+<<<<<<< HEAD
             } else if (apply_schedule_str == "lazy_priority_update"){
                 (*schedule_->apply_schedules)[apply_label].priority_update_type
                         = ApplySchedule::PriorityUpdateType::REDUCTION_BEFORE_UPDATE;
@@ -373,6 +417,16 @@ namespace graphit {
 	    } else if (apply_schedule_str == "constant_sum_reduce_before_update") {
 	        (*schedule_->apply_schedules)[apply_label].priority_update_type
 		        = ApplySchedule::PriorityUpdateType::CONST_SUM_REDUCTION_BEFORE_UPDATE;
+=======
+            } else if (apply_schedule_str == "enable_blocking") {
+                (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Enable;
+            } else if (apply_schedule_str == "disable_blocking") {
+                (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Disable;
+            } else if (apply_schedule_str == "enable_alignment") {
+                (*schedule_->apply_schedules)[apply_label].alignment_type = ApplySchedule::AlignmentType::Enable;
+            } else if (apply_schedule_str == "disable_alignment") {
+                (*schedule_->apply_schedules)[apply_label].alignment_type = ApplySchedule::AlignmentType::Disable;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
             } else {
                 std::cout << "unrecognized schedule for apply: " << apply_schedule_str << std::endl;
                 exit(0);

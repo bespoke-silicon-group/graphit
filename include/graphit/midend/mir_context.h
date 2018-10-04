@@ -14,12 +14,22 @@
 
 #include <graphit/utils/scopedmap.h>
 #include <graphit/midend/mir.h>
+#include <graphit/frontend/schedule.h>
 
 namespace graphit {
 
 
+<<<<<<< HEAD
     // Data structure that holds the internal representation of the program
     class MIRContext {
+=======
+        // Data structure that holds the internal representation of the program
+        class MIRContext {
+
+        public:
+            MIRContext() : backend_selection(BACKEND_INVALID){
+            }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
     public:
         MIRContext() {
@@ -375,7 +385,41 @@ namespace graphit {
             return priority_queue_alloc_list_[0]->vector_function;
         }
 
+<<<<<<< HEAD
 	std::vector<mir::PriorityQueueAllocExpr::Ptr> priority_queue_alloc_list_;
+=======
+            mir::Type::Ptr getVectorItemType(std::string vector_name){
+                return vector_item_type_map_[vector_name];
+            }
+
+            void addEdgesetType(std::string edgeset_name, mir::EdgeSetType::Ptr edgeset_type){
+                edgeset_element_type_map_[edgeset_name] = edgeset_type;
+            }
+
+            mir::EdgeSetType::Ptr getEdgesetType(std::string edgeset_name){
+                return edgeset_element_type_map_[edgeset_name];
+            }
+	    mir::EdgeSetType::Ptr getEdgeSetTypeFromElementType(mir::ElementType::Ptr element_type, bool match_both = false){
+               for(auto edge_set = edgeset_element_type_map_.begin(); edge_set != edgeset_element_type_map_.end(); edge_set++) {
+                   if (match_both == false) {
+                      if ((*edge_set->second->vertex_element_type_list)[0]->ident == element_type->ident || (*edge_set->second->vertex_element_type_list)[1]->ident == element_type->ident)
+                          return edge_set->second;
+                   }else{
+                      if ((*edge_set->second->vertex_element_type_list)[0]->ident == element_type->ident && (*edge_set->second->vertex_element_type_list)[1]->ident == element_type->ident)
+                          return edge_set->second; 
+                   }
+               }
+               return nullptr;
+	    }
+
+            std::string getEdgeSetNameFromEdgeSetType(mir::EdgeSetType::Ptr edge_set_type) {
+                for(auto edge_set = edgeset_element_type_map_.begin(); edge_set != edgeset_element_type_map_.end(); edge_set++) {
+                  if (edge_set->second == edge_set_type)
+		    return edge_set->first;
+                }
+                return "";
+            }
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
         //private:
 
@@ -435,7 +479,21 @@ namespace graphit {
         // used by cache/numa optimization
         std::map<std::string, std::map<std::string, int>> edgeset_to_label_to_num_segment;
 
+<<<<<<< HEAD
         std::vector<mir::FuncDecl::Ptr> exported_functions_list_;
+=======
+
+    
+	    enum BackendT backend_selection;
+
+            // maps element type to an input file that reads the set from
+            // for example, reading an edge set
+            std::map<std::string, mir::Expr::Ptr> input_filename_map_;
+            // maps element type to the number of elements (initially)
+            std::map<std::string, mir::Expr::Ptr> num_elements_map_;
+            // maps element type to the fields associated with the type
+            std::map<std::string, std::vector<mir::VarDecl::Ptr>*> properties_map_;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
 
 
@@ -460,6 +518,11 @@ namespace graphit {
 
         std::vector<mir::Type::Ptr> types_requiring_typedef;
 
+<<<<<<< HEAD
+=======
+            // used by cache/numa optimization
+	    std::map<std::string, std::map<std::string, int>> edgeset_to_label_to_num_segment;
+>>>>>>> 6fd63244... Squashing all commits of hb-backend and rebasing on common ancestor commit with upstream-master
 
 	// Used by kernel fusion optimization
 	std::vector<mir::WhileStmt::Ptr> fused_while_loops;

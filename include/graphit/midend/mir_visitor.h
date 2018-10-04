@@ -74,6 +74,10 @@ namespace graphit {
         struct NaryExpr;
         struct EqExpr;
 
+        struct AndExpr;
+        struct OrExpr;
+        struct XorExpr;
+        struct NotExpr;
 
         struct StructTypeDecl;
         struct VarDecl;
@@ -135,6 +139,11 @@ namespace graphit {
             virtual void visit(std::shared_ptr<VarExpr>){};
             virtual void visit(std::shared_ptr<EdgeSetLoadExpr>);
 
+
+            virtual void visit(std::shared_ptr<AndExpr>);
+            virtual void visit(std::shared_ptr<OrExpr>);
+            virtual void visit(std::shared_ptr<XorExpr>);
+            virtual void visit(std::shared_ptr<NotExpr>);
 
             virtual void visit(std::shared_ptr<NegExpr>);
             virtual void visit(std::shared_ptr<EqExpr>);

@@ -82,6 +82,11 @@ namespace graphit {
             virtual void visit(fir::NegExpr::Ptr);
             virtual void visit(fir::EqExpr::Ptr);
 
+            virtual void visit(fir::AndExpr::Ptr);
+            virtual void visit(fir::NotExpr::Ptr);
+            virtual void visit(fir::OrExpr::Ptr);
+            virtual void visit(fir::XorExpr::Ptr);
+
 
             virtual void visit(fir::MulExpr::Ptr);
             virtual void visit(fir::DivExpr::Ptr);
@@ -125,4 +130,3 @@ namespace graphit {
 }
 
 #endif //GRAPHIT_MIR_EMITTER_H
-

@@ -7,6 +7,24 @@
 namespace graphit {
     namespace fir {
 
+
+	// Use the GPU backend instead of the CPU backend
+	high_level_schedule::ProgramScheduleNode::Ptr
+	high_level_schedule::ProgramScheduleNode::generateGPUCode(void) {
+		if (schedule_ == nullptr)
+			schedule_ = new Schedule();
+		schedule_->backend_selection = BACKEND_GPU;
+		return this->shared_from_this();
+	}
+
+        high_level_schedule::ProgramScheduleNode::Ptr
+        high_level_schedule::ProgramScheduleNode::generateHBCode(void) {
+            if (schedule_ == nullptr)
+                schedule_ = new Schedule();
+            schedule_->backend_selection = BACKEND_HB;
+            return this->shared_from_this();
+        }
+
         high_level_schedule::ProgramScheduleNode::Ptr
         high_level_schedule::ProgramScheduleNode::splitForLoop(std::string original_loop_label,
                                                                std::string split_loop1_label,
@@ -289,6 +307,8 @@ namespace graphit {
                         = {apply_label, ApplySchedule::DirectionType::PULL,
                            ApplySchedule::ParType::Serial,
                            ApplySchedule::DeduplicationType::Enable,
+                           ApplySchedule::BlockingType::Disable,
+                           ApplySchedule::AlignmentType::Disable,
                            ApplySchedule::OtherOpt::QUEUE,
                            ApplySchedule::PullFrontierType::BOOL_MAP,
                            ApplySchedule::PullLoadBalance::VERTEX_BASED,
@@ -336,6 +356,8 @@ namespace graphit {
                         = {apply_label, ApplySchedule::DirectionType::PULL,
                            ApplySchedule::ParType::Serial,
                            ApplySchedule::DeduplicationType::Enable,
+                           ApplySchedule::BlockingType::Disable,
+                           ApplySchedule::AlignmentType::Disable,
                            ApplySchedule::OtherOpt::QUEUE,
                            ApplySchedule::PullFrontierType::BOOL_MAP,
                            ApplySchedule::PullLoadBalance::VERTEX_BASED,
@@ -368,6 +390,14 @@ namespace graphit {
                         = ApplySchedule::PullLoadBalance::EDGE_BASED;
             } else if (apply_schedule_str == "numa_aware") {
                 (*schedule_->apply_schedules)[apply_label].numa_aware = true;
+            } else if (apply_schedule_str == "enable_blocking") {
+                (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Enable;
+            } else if (apply_schedule_str == "disable_blocking") {
+                (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Disable;
+            } else if (apply_schedule_str == "enable_alignment") {
+                (*schedule_->apply_schedules)[apply_label].alignment_type = ApplySchedule::AlignmentType::Enable;
+            } else if (apply_schedule_str == "disable_alignment") {
+                (*schedule_->apply_schedules)[apply_label].alignment_type = ApplySchedule::AlignmentType::Disable;
             } else {
                 std::cout << "unrecognized schedule for apply: " << apply_schedule_str << std::endl;
                 exit(0);

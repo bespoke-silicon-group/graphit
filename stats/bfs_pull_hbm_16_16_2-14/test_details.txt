@@ -1,0 +1,1 @@
+ran one iteration of bfs pull on 4x4 tile group with hbm memory simulation

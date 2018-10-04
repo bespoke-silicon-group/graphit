@@ -1,0 +1,3 @@
+attempted to run bfs one iteration with graph500.20.16 with ~20% of vertices active in frontier on 4x4 tile group. 
+also had parent state array passed. used hbm and fast io simulation. had to make changes (no global vars) 
+Used the HBM model with one channel instead of 8.

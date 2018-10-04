@@ -1,0 +1,3 @@
+bfs pull unoptimized run with kronecker graph of scale 16, ef 16. Used a frontier containing 25% of the vertices. 
+ran one iteration in parallel. 
+This run had a bug in how we initialized our tile group variables so not all tiles did useful work.

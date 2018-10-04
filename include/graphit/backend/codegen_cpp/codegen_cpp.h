@@ -10,7 +10,7 @@
 #include <graphit/midend/mir_context.h>
 #include <iostream>
 #include <sstream>
-#include <graphit/backend/gen_edge_apply_func_decl.h>
+#include <graphit/backend/codegen_cpp/gen_edge_apply_func_decl.h>
 
 namespace graphit {
     class CodeGenCPP : mir::MIRVisitor{
@@ -63,6 +63,10 @@ namespace graphit {
         virtual void visit(mir::NegExpr::Ptr);
         virtual void visit(mir::EqExpr::Ptr);
 
+        virtual void visit(mir::AndExpr::Ptr);
+        virtual void visit(mir::OrExpr::Ptr);
+        virtual void visit(mir::XorExpr::Ptr);
+        virtual void visit(mir::NotExpr::Ptr);
 
         virtual void visit(mir::MulExpr::Ptr);
         virtual void visit(mir::DivExpr::Ptr);

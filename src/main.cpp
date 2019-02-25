@@ -9,6 +9,11 @@
 #include <fstream>
 #include <graphit/frontend/high_level_schedule.h>
 
+#include <graphit/midend/mir_printer.h>
+#include <string>
+#include <iostream>
+#include <sstream>
+
 using namespace graphit;
 
 
@@ -54,6 +59,15 @@ int main(int argc, char* argv[]) {
 
     graphit::Midend* me = new graphit::Midend(context, program->getSchedule());
     me->emitMIR(mir_context);
+    
+    //NOTE(Emily): adding in printer here
+    std::filebuf fb;
+    fb.open("mir_printed.txt", std::ios::out);
+    std::ostream os(&fb);
+    os << "testing MIR printer here: \n";
+    os << mir_context->getMainFuncDecl();
+    fb.close();
+    
     graphit::Backend* be = new graphit::Backend(mir_context);
     be->emitCPP(output_file);
 

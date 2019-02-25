@@ -19,11 +19,12 @@ namespace graphit {
 
 
             //Delayed for later
-//            virtual void visit(VarDecl::Ptr);
-//            virtual void visit(FuncDecl::Ptr);
+            virtual void visit(VarDecl::Ptr);
+            virtual void visit(FuncDecl::Ptr);
 
 
             virtual void visit(Expr::Ptr);
+            virtual void visit(ExprStmt::Ptr stmt);
             virtual void visit(AddExpr::Ptr);
             virtual void visit(SubExpr::Ptr);
             virtual void visit(IntLiteral::Ptr);

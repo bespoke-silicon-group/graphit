@@ -35,7 +35,7 @@ int main(int argc, char* argv[]) {
     
     //TODO(Emily): this should ideally be a compiler flag
     //need to figure out the integration of this file with graphitc.py
-    bool verbose = false;
+    bool verbose = true;
 
     //read input file into buffer
     std::ifstream file(cli.input_filename());

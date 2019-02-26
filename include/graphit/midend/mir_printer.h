@@ -19,75 +19,75 @@ namespace graphit {
 
 
             //Delayed for later
-            virtual void visit(std::shared_ptr<Stmt>){};
+            virtual void visit(Stmt::Ptr){};
             
-            virtual void visit(std::shared_ptr<NameNode>);
+            virtual void visit(NameNode::Ptr);
             
-            virtual void visit(std::shared_ptr<ForStmt>);
-            virtual void visit(std::shared_ptr<WhileStmt>);
-            virtual void visit(std::shared_ptr<IfStmt>);
-            
-            
-            virtual void visit(std::shared_ptr<ForDomain>);
-            virtual void visit(std::shared_ptr<AssignStmt>);
-            virtual void visit(std::shared_ptr<ReduceStmt>);
-            virtual void visit(std::shared_ptr<CompareAndSwapStmt>);
-            
-            virtual void visit(std::shared_ptr<PrintStmt>);
-            virtual void visit(std::shared_ptr<BreakStmt>) {};
-            virtual void visit(std::shared_ptr<ExprStmt>);
-            virtual void visit(std::shared_ptr<StmtBlock>);
-            virtual void visit(std::shared_ptr<Expr>);
-            virtual void visit(std::shared_ptr<Call>);
-            
-            virtual void visit(std::shared_ptr<VertexSetApplyExpr>);
-            virtual void visit(std::shared_ptr<EdgeSetApplyExpr>);
-            
-            virtual void visit(std::shared_ptr<PushEdgeSetApplyExpr>);
-            virtual void visit(std::shared_ptr<PullEdgeSetApplyExpr>);
-            virtual void visit(std::shared_ptr<HybridDenseEdgeSetApplyExpr>);
-            virtual void visit(std::shared_ptr<HybridDenseForwardEdgeSetApplyExpr>);
+            virtual void visit(ForStmt::Ptr);
+            virtual void visit(WhileStmt::Ptr);
+            virtual void visit(IfStmt::Ptr);
             
             
-            virtual void visit(std::shared_ptr<VertexSetWhereExpr>);
-            virtual void visit(std::shared_ptr<EdgeSetWhereExpr>);
+            virtual void visit(ForDomain::Ptr);
+            virtual void visit(AssignStmt::Ptr);
+            virtual void visit(ReduceStmt::Ptr);
+            virtual void visit(CompareAndSwapStmt::Ptr);
+            
+            virtual void visit(PrintStmt::Ptr);
+            virtual void visit(BreakStmt::Ptr);
+            virtual void visit(ExprStmt::Ptr);
+            virtual void visit(StmtBlock::Ptr);
+            virtual void visit(Expr::Ptr);
+            virtual void visit(Call::Ptr);
+            
+            virtual void visit(VertexSetApplyExpr::Ptr);
+            virtual void visit(EdgeSetApplyExpr::Ptr);
+            
+            virtual void visit(PushEdgeSetApplyExpr::Ptr);
+            virtual void visit(PullEdgeSetApplyExpr::Ptr);
+            virtual void visit(HybridDenseEdgeSetApplyExpr::Ptr);
+            virtual void visit(HybridDenseForwardEdgeSetApplyExpr::Ptr);
             
             
-            virtual void visit(std::shared_ptr<TensorReadExpr>);
-            virtual void visit(std::shared_ptr<TensorArrayReadExpr>);
-            virtual void visit(std::shared_ptr<TensorStructReadExpr>);
-            
-            virtual void visit(std::shared_ptr<BoolLiteral>);
-            virtual void visit(std::shared_ptr<StringLiteral>);
-            virtual void visit(std::shared_ptr<FloatLiteral>);
-            virtual void visit(std::shared_ptr<IntLiteral> op);
-            virtual void visit(std::shared_ptr<VertexSetAllocExpr>);
-            virtual void visit(std::shared_ptr<ListAllocExpr>);
-            virtual void visit(std::shared_ptr<VarExpr>);
-            virtual void visit(std::shared_ptr<EdgeSetLoadExpr>);
+            virtual void visit(VertexSetWhereExpr::Ptr);
+            virtual void visit(EdgeSetWhereExpr::Ptr);
             
             
-            virtual void visit(std::shared_ptr<NegExpr>);
-            virtual void visit(std::shared_ptr<EqExpr>);
-            virtual void visit(std::shared_ptr<AddExpr>);
-            virtual void visit(std::shared_ptr<SubExpr>);
-            virtual void visit(std::shared_ptr<MulExpr>);
-            virtual void visit(std::shared_ptr<DivExpr>);
-            virtual void visit(std::shared_ptr<Type>){};
-            virtual void visit(std::shared_ptr<ScalarType>);
-            virtual void visit(std::shared_ptr<StructTypeDecl>);
-            virtual void visit(std::shared_ptr<VarDecl>);
-            virtual void visit(std::shared_ptr<IdentDecl>);
-            virtual void visit(std::shared_ptr<FuncDecl>);
-            virtual void visit(std::shared_ptr<ElementType>);
-            virtual void visit(std::shared_ptr<VertexSetType>);
-            virtual void visit(std::shared_ptr<ListType>);
-            virtual void visit(std::shared_ptr<EdgeSetType>);
-            virtual void visit(std::shared_ptr<VectorType>);
+            virtual void visit(TensorReadExpr::Ptr);
+            virtual void visit(TensorArrayReadExpr::Ptr);
+            virtual void visit(TensorStructReadExpr::Ptr);
+            
+            virtual void visit(BoolLiteral::Ptr);
+            virtual void visit(StringLiteral::Ptr);
+            virtual void visit(FloatLiteral::Ptr);
+            virtual void visit(IntLiteral::Ptr);
+            virtual void visit(VertexSetAllocExpr::Ptr);
+            virtual void visit(ListAllocExpr::Ptr);
+            virtual void visit(VarExpr::Ptr);
+            virtual void visit(EdgeSetLoadExpr::Ptr);
             
             
-            virtual void visitBinaryExpr(std::shared_ptr<BinaryExpr>);
-            virtual void visitNaryExpr(std::shared_ptr<NaryExpr>);
+            virtual void visit(NegExpr::Ptr);
+            virtual void visit(EqExpr::Ptr);
+            virtual void visit(AddExpr::Ptr);
+            virtual void visit(SubExpr::Ptr);
+            virtual void visit(MulExpr::Ptr);
+            virtual void visit(DivExpr::Ptr);
+            virtual void visit(Type::Ptr){};
+            virtual void visit(ScalarType::Ptr);
+            virtual void visit(StructTypeDecl::Ptr);
+            virtual void visit(VarDecl::Ptr);
+            virtual void visit(IdentDecl::Ptr);
+            virtual void visit(FuncDecl::Ptr);
+            virtual void visit(ElementType::Ptr);
+            virtual void visit(VertexSetType::Ptr);
+            virtual void visit(ListType::Ptr);
+            virtual void visit(EdgeSetType::Ptr);
+            virtual void visit(VectorType::Ptr);
+            
+            
+            virtual void visitBinaryExpr(BinaryExpr::Ptr);
+            virtual void visitNaryExpr(NaryExpr::Ptr);
             
 
 

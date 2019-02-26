@@ -117,6 +117,7 @@ namespace graphit {
         void MIRPrinter::visit(VertexSetType::Ptr type){};
         void MIRPrinter::visit(ListType::Ptr type){};
         void MIRPrinter::visit(EdgeSetType::Ptr type){};
+        void MIRPrinter::visit(VectorType::Ptr type){};
         
 
         std::ostream &operator<<(std::ostream &oss, MIRNode &node) {

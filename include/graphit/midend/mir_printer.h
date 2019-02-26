@@ -57,13 +57,13 @@ namespace graphit {
             virtual void visit(std::shared_ptr<TensorArrayReadExpr>);
             virtual void visit(std::shared_ptr<TensorStructReadExpr>);
             
-            virtual void visit(std::shared_ptr<BoolLiteral>){};
-            virtual void visit(std::shared_ptr<StringLiteral>){};
-            virtual void visit(std::shared_ptr<FloatLiteral>){};
-            virtual void visit(std::shared_ptr<IntLiteral> op) {} //leaf FIR nodes need no recursive calls
+            virtual void visit(std::shared_ptr<BoolLiteral>);
+            virtual void visit(std::shared_ptr<StringLiteral>);
+            virtual void visit(std::shared_ptr<FloatLiteral>);
+            virtual void visit(std::shared_ptr<IntLiteral> op);
             virtual void visit(std::shared_ptr<VertexSetAllocExpr>);
             virtual void visit(std::shared_ptr<ListAllocExpr>);
-            virtual void visit(std::shared_ptr<VarExpr>){};
+            virtual void visit(std::shared_ptr<VarExpr>);
             virtual void visit(std::shared_ptr<EdgeSetLoadExpr>);
             
             
@@ -74,12 +74,12 @@ namespace graphit {
             virtual void visit(std::shared_ptr<MulExpr>);
             virtual void visit(std::shared_ptr<DivExpr>);
             virtual void visit(std::shared_ptr<Type>){};
-            virtual void visit(std::shared_ptr<ScalarType>){};
+            virtual void visit(std::shared_ptr<ScalarType>);
             virtual void visit(std::shared_ptr<StructTypeDecl>);
             virtual void visit(std::shared_ptr<VarDecl>);
-            virtual void visit(std::shared_ptr<IdentDecl>){};
+            virtual void visit(std::shared_ptr<IdentDecl>);
             virtual void visit(std::shared_ptr<FuncDecl>);
-            virtual void visit(std::shared_ptr<ElementType>){};
+            virtual void visit(std::shared_ptr<ElementType>);
             virtual void visit(std::shared_ptr<VertexSetType>);
             virtual void visit(std::shared_ptr<ListType>);
             virtual void visit(std::shared_ptr<EdgeSetType>);

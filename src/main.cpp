@@ -32,6 +32,10 @@ int main(int argc, char* argv[]) {
     //parse the arguments
     if (!cli.ParseArgs())
         return -1;
+    
+    //TODO(Emily): this should ideally be a compiler flag
+    //need to figure out the integration of this file with graphitc.py
+    bool verbose = false;
 
     //read input file into buffer
     std::ifstream file(cli.input_filename());
@@ -61,12 +65,15 @@ int main(int argc, char* argv[]) {
     me->emitMIR(mir_context);
     
     //NOTE(Emily): adding in printer here
-    std::filebuf fb;
-    fb.open("mir_printed.txt", std::ios::out);
-    std::ostream os(&fb);
-    os << "testing MIR printer here: \n";
-    os << mir_context->getMainFuncDecl();
-    fb.close();
+    if(verbose)
+    {
+        std::filebuf fb;
+        fb.open("mir_printed.txt", std::ios::out);
+        std::ostream os(&fb);
+        os << "testing MIR printer here: \n";
+        os << mir_context->getMainFuncDecl();
+        fb.close();
+    }
     
     graphit::Backend* be = new graphit::Backend(mir_context);
     be->emitCPP(output_file);

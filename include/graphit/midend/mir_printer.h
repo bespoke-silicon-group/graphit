@@ -19,7 +19,7 @@ namespace graphit {
 
 
             //Delayed for later
-            virtual void visit(Stmt::Ptr){};
+            virtual void visit(Stmt::Ptr);
             
             virtual void visit(NameNode::Ptr);
             
@@ -86,8 +86,8 @@ namespace graphit {
             virtual void visit(VectorType::Ptr);
             
             
-            virtual void visitBinaryExpr(BinaryExpr::Ptr);
-            virtual void visitNaryExpr(NaryExpr::Ptr);
+            //virtual void visitBinaryExpr(BinaryExpr::Ptr);
+            //virtual void visitNaryExpr(NaryExpr::Ptr);
             
 
 

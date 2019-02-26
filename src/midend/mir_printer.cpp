@@ -60,6 +60,64 @@ namespace graphit {
             expr->rhs->accept(this);
             oss << ")";
         }
+        
+        void MIRPrinter::visit(Stmt::Ptr stmt){};
+        
+        void MIRPrinter::visit(NameNode::Ptr name){};
+        
+        void MIRPrinter::visit(ForStmt::Ptr stmt) {};
+        void MIRPrinter::visit(WhileStmt::Ptr stmt){};
+        void MIRPrinter::visit(IfStmt::Ptr){};
+        
+        
+        void MIRPrinter::visit(ForDomain::Ptr domain){};
+        void MIRPrinter::visit(AssignStmt::Ptr stmt){};
+        void MIRPrinter::visit(ReduceStmt::Ptr stmt){};
+        void MIRPrinter::visit(CompareAndSwapStmt::Ptr stmt){};
+        
+        void MIRPrinter::visit(PrintStmt::Ptr stmt){};
+        void MIRPrinter::visit(BreakStmt::Ptr stmt){};
+        void MIRPrinter::visit(StmtBlock::Ptr stmt){};
+        void MIRPrinter::visit(Call::Ptr call){};
+        
+        void MIRPrinter::visit(VertexSetApplyExpr::Ptr expr){};
+        void MIRPrinter::visit(EdgeSetApplyExpr::Ptr expr){};
+        
+        void MIRPrinter::visit(PushEdgeSetApplyExpr::Ptr expr){};
+        void MIRPrinter::visit(PullEdgeSetApplyExpr::Ptr expr){};
+        void MIRPrinter::visit(HybridDenseEdgeSetApplyExpr::Ptr expr){};
+        void MIRPrinter::visit(HybridDenseForwardEdgeSetApplyExpr::Ptr expr){};
+        
+        
+        void MIRPrinter::visit(VertexSetWhereExpr::Ptr expr){};
+        void MIRPrinter::visit(EdgeSetWhereExpr::Ptr expr){};
+        
+        
+        void MIRPrinter::visit(TensorReadExpr::Ptr expr){};
+        void MIRPrinter::visit(TensorArrayReadExpr::Ptr expr){};
+        void MIRPrinter::visit(TensorStructReadExpr::Ptr expr){};
+        
+        void MIRPrinter::visit(BoolLiteral::Ptr lit){};
+        void MIRPrinter::visit(StringLiteral::Ptr lit){};
+        void MIRPrinter::visit(FloatLiteral::Ptr lit){};
+        void MIRPrinter::visit(VertexSetAllocExpr::Ptr expr){};
+        void MIRPrinter::visit(ListAllocExpr::Ptr expr){};
+        void MIRPrinter::visit(VarExpr::Ptr expr){};
+        void MIRPrinter::visit(EdgeSetLoadExpr::Ptr expr){};
+        
+        
+        void MIRPrinter::visit(NegExpr::Ptr expr){};
+        void MIRPrinter::visit(EqExpr::Ptr expr){};
+        void MIRPrinter::visit(MulExpr::Ptr expr){};
+        void MIRPrinter::visit(DivExpr::Ptr expr){};
+        void MIRPrinter::visit(ScalarType::Ptr type){};
+        void MIRPrinter::visit(StructTypeDecl::Ptr decl){};
+        void MIRPrinter::visit(IdentDecl::Ptr decl){};
+        void MIRPrinter::visit(ElementType::Ptr type){};
+        void MIRPrinter::visit(VertexSetType::Ptr type){};
+        void MIRPrinter::visit(ListType::Ptr type){};
+        void MIRPrinter::visit(EdgeSetType::Ptr type){};
+        
 
         std::ostream &operator<<(std::ostream &oss, MIRNode &node) {
             MIRPrinter printer(oss);

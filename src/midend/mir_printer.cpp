@@ -7,13 +7,19 @@ namespace graphit {
     namespace mir {
 
         void MIRPrinter::visit(VarDecl::Ptr expr) {
+            indent();
+            printIndent();
+            oss << "var decl " << expr->name;
             expr->accept(this);
+            dedent();
         };
 
         void MIRPrinter::visit(ExprStmt::Ptr stmt) {
         }
 
         void MIRPrinter::visit(FuncDecl::Ptr func_decl) {
+            indent();
+            printIndent();
             oss << "func ";
             oss << func_decl->name << " ";
 
@@ -35,14 +41,22 @@ namespace graphit {
             //if (!func_decl->result) {
 
             //}
+            dedent();
         };
 
         void MIRPrinter::visit(Expr::Ptr expr) {
+            indent();
+            printIndent();
+            oss << "expr ";
             expr->accept(this);
+            dedent();
         };
 
         void MIRPrinter::visit(IntLiteral::Ptr lit) {
+            indent();
+            printIndent();
             oss << lit->val;
+            dedent();
         }
 
         void MIRPrinter::visit(AddExpr::Ptr expr) {

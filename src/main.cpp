@@ -71,6 +71,8 @@ int main(int argc, char* argv[]) {
         fb.open("mir_printed.txt", std::ios::out);
         std::ostream os(&fb);
         os << "testing MIR printer here: \n";
+        //TODO(Emily): it doesn't look like function calls are the correct way to access
+        // the start/root of the AST
         os << mir_context->getFunctionList().at(0);
         fb.close();
     }

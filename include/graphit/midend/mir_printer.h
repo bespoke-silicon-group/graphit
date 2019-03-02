@@ -93,7 +93,7 @@ namespace graphit {
 
             void indent() { ++indentLevel; }
             void dedent() { --indentLevel; }
-            void printIndent() { oss << std::string(2 * indentLevel, ' '); }
+            void printIndent() { oss << "\n" << std::string(2 * indentLevel, ' '); }
 
             void printBinaryExpr(BinaryExpr::Ptr expr, const std::string op);
 

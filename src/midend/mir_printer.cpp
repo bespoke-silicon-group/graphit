@@ -12,7 +12,7 @@ namespace graphit {
             oss << "var decl " << expr->name;
             expr->initVal->accept(this);
             dedent();
-        };
+        }
 
         void MIRPrinter::visit(ExprStmt::Ptr stmt) {
             indent();
@@ -47,7 +47,7 @@ namespace graphit {
 
             //}
             dedent();
-        };
+        }
 
         void MIRPrinter::visit(Expr::Ptr expr) {
             indent();
@@ -56,7 +56,7 @@ namespace graphit {
             //TODO(Emily): is this terminal?
             //expr->accept(this);
             dedent();
-        };
+        }
 
         void MIRPrinter::visit(IntLiteral::Ptr lit) {
             indent();
@@ -94,7 +94,7 @@ namespace graphit {
             //TODO(Emily): is this terminal?
             //stmt->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(NameNode::Ptr name){
             indent();
@@ -102,7 +102,7 @@ namespace graphit {
             oss << "name node: " << name->stmt_label;
             name->body->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(ForStmt::Ptr stmt) {
             indent();
@@ -111,7 +111,7 @@ namespace graphit {
             stmt->domain->accept(this);
             stmt->body->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(WhileStmt::Ptr stmt){
             indent();
@@ -120,7 +120,7 @@ namespace graphit {
             stmt->cond->accept(this);
             stmt->body->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(IfStmt::Ptr stmt){
             indent();
@@ -130,7 +130,7 @@ namespace graphit {
             stmt->ifBody->accept(this);
             stmt->elseBody->accept(this);
             dedent();
-        };
+        }
         
         
         void MIRPrinter::visit(ForDomain::Ptr domain){
@@ -140,7 +140,7 @@ namespace graphit {
             domain->upper->accept(this);
             domain->lower->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(AssignStmt::Ptr stmt){
             indent();
@@ -148,7 +148,7 @@ namespace graphit {
             oss << "assign stmt: " << stmt->stmt_label;
             stmt->lhs->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(ReduceStmt::Ptr stmt){
             indent();
@@ -157,7 +157,7 @@ namespace graphit {
             //TODO(Emily): is this terminal?
             //stmt->reduce_op_;
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(CompareAndSwapStmt::Ptr stmt){
             indent();
@@ -165,7 +165,7 @@ namespace graphit {
             oss << "comp and swap: " << stmt->stmt_label;
             stmt->compare_val_expr->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(PrintStmt::Ptr stmt){
             indent();
@@ -173,7 +173,7 @@ namespace graphit {
             oss << "print stmt: " << stmt->stmt_label;
             stmt->expr->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(BreakStmt::Ptr stmt){
             indent();
@@ -181,7 +181,7 @@ namespace graphit {
             oss << "break stmt: " << stmt->stmt_label;
             //TODO(Emily): is this terminal
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(StmtBlock::Ptr stmt){
             indent();
@@ -194,7 +194,7 @@ namespace graphit {
             }
              */
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(Call::Ptr call){
             indent();
@@ -206,7 +206,7 @@ namespace graphit {
             }
             dedent();
             
-        };
+        }
         
         void MIRPrinter::visit(VertexSetApplyExpr::Ptr expr){
             indent();
@@ -214,7 +214,7 @@ namespace graphit {
             oss << "vertex set apply expr: " << expr->input_function_name;
             expr->target->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(EdgeSetApplyExpr::Ptr expr){
             indent();
@@ -222,7 +222,7 @@ namespace graphit {
             oss << "edge set apply expr: " << expr->input_function_name;
             expr->target->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(PushEdgeSetApplyExpr::Ptr expr){
             indent();
@@ -230,7 +230,7 @@ namespace graphit {
             oss << "push edge set apply expr: " << expr->input_function_name;
             expr->target->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(PullEdgeSetApplyExpr::Ptr expr){
             indent();
@@ -238,7 +238,7 @@ namespace graphit {
             oss << "pull edge set apply expr: " << expr->input_function_name;
             expr->target->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(HybridDenseEdgeSetApplyExpr::Ptr expr){
             indent();
@@ -246,7 +246,7 @@ namespace graphit {
             oss << "hybrid dense edge set apply expr: " << expr->input_function_name;
             expr->target->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(HybridDenseForwardEdgeSetApplyExpr::Ptr expr){
             indent();
@@ -254,7 +254,7 @@ namespace graphit {
             oss << "hybrid dense forward edge set apply expr: " << expr->input_function_name;
             expr->target->accept(this);
             dedent();
-        };
+        }
         
         
         void MIRPrinter::visit(VertexSetWhereExpr::Ptr expr){
@@ -263,7 +263,7 @@ namespace graphit {
             oss << "vertex set where expr: " << expr->input_func;
             //TODO(Emily): is this terminal
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(EdgeSetWhereExpr::Ptr expr){
             indent();
@@ -271,20 +271,89 @@ namespace graphit {
             oss << "edge set where expr: " << expr->input_func;
             //TODO(Emily): is this terminal
             dedent();
-        };
+        }
         
         
-        void MIRPrinter::visit(TensorReadExpr::Ptr expr){};
-        void MIRPrinter::visit(TensorArrayReadExpr::Ptr expr){};
-        void MIRPrinter::visit(TensorStructReadExpr::Ptr expr){};
+        void MIRPrinter::visit(TensorReadExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << expr->getIndexNameStr() << " " << expr->getTargetNameStr();
+            expr->index->accept(this);
+            expr->target->accept(this);
+            dedent();
+        }
         
-        void MIRPrinter::visit(BoolLiteral::Ptr lit){};
-        void MIRPrinter::visit(StringLiteral::Ptr lit){};
-        void MIRPrinter::visit(FloatLiteral::Ptr lit){};
-        void MIRPrinter::visit(VertexSetAllocExpr::Ptr expr){};
-        void MIRPrinter::visit(ListAllocExpr::Ptr expr){};
-        void MIRPrinter::visit(VarExpr::Ptr expr){};
-        void MIRPrinter::visit(EdgeSetLoadExpr::Ptr expr){};
+        void MIRPrinter::visit(TensorArrayReadExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << expr->getIndexNameStr() << " " << expr->getTargetNameStr();
+            expr->index->accept(this);
+            expr->target->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(TensorStructReadExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << expr->getIndexNameStr() << " " << expr->getTargetNameStr();
+            expr->field_target->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(BoolLiteral::Ptr lit){
+            indent();
+            printIndent();
+            oss << lit->val;
+            dedent();
+        }
+        
+        void MIRPrinter::visit(StringLiteral::Ptr lit){
+            indent();
+            printIndent();
+            oss << lit->val;
+            dedent();
+        }
+        
+        void MIRPrinter::visit(FloatLiteral::Ptr lit){
+            indent();
+            printIndent();
+            oss << lit->val;
+            dedent();
+        }
+        
+        void MIRPrinter::visit(VertexSetAllocExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << "vertex set alloc expr";
+            expr->size_expr->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(ListAllocExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << "list alloc expr";
+            expr->element_type->accept(this);
+            expr->size_expr->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(VarExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << expr->var.getName();
+            //TODO(Emily): anything else to do here?
+            dedent();
+            
+        }
+        
+        void MIRPrinter::visit(EdgeSetLoadExpr::Ptr expr){
+            indent();
+            printIndent();
+            oss << "edge set load expr";
+            expr->file_name->accept(this);
+            dedent();
+        }
         
         
         void MIRPrinter::visit(NegExpr::Ptr expr){
@@ -293,7 +362,7 @@ namespace graphit {
             oss << "!";
             expr->operand->accept(this);
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(EqExpr::Ptr expr){
             indent();
@@ -305,30 +374,90 @@ namespace graphit {
                 arg->accept(this);
             }
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(MulExpr::Ptr expr){
             indent();
             printIndent();
             printBinaryExpr(expr, "*");
             dedent();
-        };
+        }
         
         void MIRPrinter::visit(DivExpr::Ptr expr){
             indent();
             printIndent();
             printBinaryExpr(expr, "/");
             dedent();
-        };
+        }
         
-        void MIRPrinter::visit(ScalarType::Ptr type){};
-        void MIRPrinter::visit(StructTypeDecl::Ptr decl){};
-        void MIRPrinter::visit(IdentDecl::Ptr decl){};
-        void MIRPrinter::visit(ElementType::Ptr type){};
-        void MIRPrinter::visit(VertexSetType::Ptr type){};
-        void MIRPrinter::visit(ListType::Ptr type){};
-        void MIRPrinter::visit(EdgeSetType::Ptr type){};
-        void MIRPrinter::visit(VectorType::Ptr type){};
+        void MIRPrinter::visit(ScalarType::Ptr type){
+            indent();
+            printIndent();
+            //TODO(Emily): confirm this is terminal
+            oss << "Scalar Type";
+            dedent();
+            
+        }
+        
+        void MIRPrinter::visit(StructTypeDecl::Ptr decl){
+            indent();
+            printIndent();
+            oss << decl->name;
+            for(auto field : decl->fields)
+            {
+                field->accept(this);
+            }
+            dedent();
+        }
+        
+        void MIRPrinter::visit(IdentDecl::Ptr decl){
+            indent();
+            printIndent();
+            oss << decl->name;
+            decl->type->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(ElementType::Ptr type){
+            indent();
+            printIndent();
+            oss << type->ident;
+            dedent();
+        }
+        
+        void MIRPrinter::visit(VertexSetType::Ptr type){
+            indent();
+            printIndent();
+            oss << "Vertex set type " << type->element->ident;
+            //TODO(Emily): not sure this is the correct way to print this
+            dedent();
+        }
+        
+        void MIRPrinter::visit(ListType::Ptr type){
+            indent();
+            printIndent();
+            oss << "List type ";
+            type->element_type->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(EdgeSetType::Ptr type){
+            indent();
+            printIndent();
+            oss << "edge set type: ";
+            type->element->accept(this);
+            type->weight_type->accept(this);
+            dedent();
+        }
+        
+        void MIRPrinter::visit(VectorType::Ptr type){
+            indent();
+            printIndent();
+            oss << type->typedef_name_; //TODO(Emily): is this what we want to print?
+            type->element_type->accept(this);
+            type->vector_element_type->accept(this);
+            dedent();
+        }
         
 
         std::ostream &operator<<(std::ostream &oss, MIRNode &node) {

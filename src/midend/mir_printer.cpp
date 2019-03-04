@@ -48,33 +48,6 @@ namespace graphit {
             //}
             dedent();
         }
-        
-        void MIRPrinter::visit(FuncDecl func_decl) {
-            indent();
-            printIndent();
-            oss << "func ";
-            oss << func_decl.name << " ";
-            
-            oss << "(";
-            
-            bool printDelimiter = false;
-            for (auto arg : func_decl.args) {
-                if (printDelimiter) {
-                    oss << ", ";
-                }
-                oss << arg.getName();
-                //arg->accept(this);
-                printDelimiter = true;
-            }
-            
-            oss << ") ";
-            
-            func_decl.body->accept(this);
-            //if (!func_decl->result) {
-            
-            //}
-            dedent();
-        }
 
         void MIRPrinter::visit(Expr::Ptr expr) {
             indent();
@@ -488,7 +461,6 @@ namespace graphit {
 
         std::ostream &operator<<(std::ostream &oss, FuncDecl &node) {
             MIRPrinter printer(oss);
-            oss << "entered printing, now beginning traversal: \n";
             node.accept(&printer);
             return oss;
         }

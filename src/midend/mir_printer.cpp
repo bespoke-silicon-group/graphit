@@ -458,7 +458,6 @@ namespace graphit {
             type->vector_element_type->accept(this);
             dedent();
         }
-        
 
         std::ostream &operator<<(std::ostream &oss, MIRNode &node) {
             MIRPrinter printer(oss);

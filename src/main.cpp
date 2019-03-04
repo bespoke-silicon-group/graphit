@@ -67,19 +67,19 @@ int main(int argc, char* argv[]) {
     //NOTE(Emily): adding in printer here
     if(verbose)
     {
+        std::string mir_print_file;
+        mir_print_file = cli.input_filename() + ".mir_printout.txt";
         std::filebuf fb;
-        fb.open("mir_printed.txt", std::ios::out);
+        fb.open(mir_print_file, std::ios::out);
         std::ostream os(&fb);
         os << "testing MIR printer here: \n";
-        //TODO(Emily): it doesn't look like function calls are the correct way to access
-        // the start/root of the AST
+        
         std::vector<mir::FuncDecl::Ptr> functions = mir_context->getFunctionList();
         
         graphit::mir::MIRPrinter printer(os);
         
         
         for (auto it = functions.begin(); it != functions.end(); it++) {
-            //os << it->get();
             printer.printMIR(it->get());
         }
         fb.close();

@@ -73,7 +73,11 @@ int main(int argc, char* argv[]) {
         os << "testing MIR printer here: \n";
         //TODO(Emily): it doesn't look like function calls are the correct way to access
         // the start/root of the AST
-        os << mir_context->getFunctionList().at(0);
+        for(auto edge : mir_context->getEdgeSets())
+        {
+            os << edge;
+        }
+        //os << mir_context->getFunctionList().at(0);
         fb.close();
     }
     

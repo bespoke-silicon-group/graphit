@@ -61,7 +61,7 @@ namespace graphit {
         void MIRPrinter::visit(IntLiteral::Ptr lit) {
             indent();
             printIndent();
-            oss << lit->val;
+            oss << "int literal: " << lit->val;
             dedent();
         }
 
@@ -305,21 +305,21 @@ namespace graphit {
         void MIRPrinter::visit(BoolLiteral::Ptr lit){
             indent();
             printIndent();
-            oss << lit->val;
+            oss << "bool literal: " << lit->val;
             dedent();
         }
         
         void MIRPrinter::visit(StringLiteral::Ptr lit){
             indent();
             printIndent();
-            oss << lit->val;
+            oss << "string literal: " << lit->val;
             dedent();
         }
         
         void MIRPrinter::visit(FloatLiteral::Ptr lit){
             indent();
             printIndent();
-            oss << lit->val;
+            oss << "float literal: " << lit->val;
             dedent();
         }
         
@@ -343,7 +343,7 @@ namespace graphit {
         void MIRPrinter::visit(VarExpr::Ptr expr){
             indent();
             printIndent();
-            oss << expr->var.getName();
+            oss << "var expr: " << expr->var.getName();
             //TODO(Emily): anything else to do here?
             dedent();
             
@@ -404,7 +404,7 @@ namespace graphit {
         void MIRPrinter::visit(StructTypeDecl::Ptr decl){
             indent();
             printIndent();
-            oss << decl->name;
+            oss << "struct type decl: " << decl->name;
             for(auto field : decl->fields)
             {
                 field->accept(this);
@@ -415,7 +415,7 @@ namespace graphit {
         void MIRPrinter::visit(IdentDecl::Ptr decl){
             indent();
             printIndent();
-            oss << decl->name;
+            oss << "ident decl: " << decl->name;
             decl->type->accept(this);
             dedent();
         }
@@ -423,7 +423,7 @@ namespace graphit {
         void MIRPrinter::visit(ElementType::Ptr type){
             indent();
             printIndent();
-            oss << type->ident;
+            oss << "element type: " << type->ident;
             dedent();
         }
         
@@ -455,7 +455,7 @@ namespace graphit {
         void MIRPrinter::visit(VectorType::Ptr type){
             indent();
             printIndent();
-            oss << type->typedef_name_; //TODO(Emily): is this what we want to print?
+            oss << "vector type: " << type->typedef_name_; //TODO(Emily): is this what we want to print?
             type->element_type->accept(this);
             type->vector_element_type->accept(this);
             dedent();

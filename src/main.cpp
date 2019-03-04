@@ -33,8 +33,6 @@ int main(int argc, char* argv[]) {
     if (!cli.ParseArgs())
         return -1;
     
-    //TODO(Emily): this should ideally be a compiler flag
-    //need to figure out the integration of this file with graphitc.py
     bool verbose = true;
     if(cli.verbose_filename() == "")
     {

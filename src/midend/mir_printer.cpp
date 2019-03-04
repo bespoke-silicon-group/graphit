@@ -343,7 +343,8 @@ namespace graphit {
         void MIRPrinter::visit(VarExpr::Ptr expr){
             indent();
             printIndent();
-            oss << "var expr: " << expr->var.getName() << " type: " << expr->var.getType();
+            oss << "var expr: " << expr->var.getName();
+            expr->var.getType().get()->accept(this);
             //TODO(Emily): anything else to do here?
             dedent();
             

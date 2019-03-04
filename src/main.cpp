@@ -35,10 +35,12 @@ int main(int argc, char* argv[]) {
     
     //TODO(Emily): this should ideally be a compiler flag
     //need to figure out the integration of this file with graphitc.py
-    bool verbose = false;
-    if(cli.verbose_filename() != "")
-        verbose = true;
-
+    bool verbose = true;
+    if(cli.verbose_filename() == "")
+    {
+        std::cout << "a verbose file was not provided \n";
+        verbose = false;
+    }
     //read input file into buffer
     std::ifstream file(cli.input_filename());
     std::stringstream buffer;

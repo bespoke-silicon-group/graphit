@@ -23,11 +23,11 @@ def parseArgs():
 
 if __name__ == '__main__':
     args = parseArgs()
+    verbose_file_name = args['verbose_file_name']
     input_file_name = args['input_file_name']
     output_file_name = args['output_file_name']
     runtime_include_path = args['runtime_include_path']
     graphitlib_path = args['graphitlib_path']
-    verbose_file_name = args['verbose_file_name']
 
     #check if user supplied a separate algorithm file from the schedule file
     supplied_separate_algo_file = False

@@ -66,6 +66,11 @@ public:
             std::cout << "No output file specified. (Use -h for help)" << std::endl;
             return false;
         }
+        
+        if(verbose_filename_ == "") {
+            std::cout << "No verbose file specified. (Use -h for help)" << std::endl;
+            return false;
+        }
 
         return true;
     }

@@ -23,7 +23,7 @@ protected:
     char** argv_;
     std::string name_;
     // f: means -f flag requires a follow on name,
-    std::string get_args_ = "v:f:o:h";
+    std::string get_args_ = "f:o:hv:";
     std::vector<std::string> help_strings_;
     std::string input_filename_ = "";
     std::string output_filename_ = "";
@@ -67,10 +67,10 @@ public:
             return false;
         }
         
-        if(verbose_filename_ == "") {
-            std::cout << "No verbose file specified. (Use -h for help)" << std::endl;
-            return false;
-        }
+        //if(verbose_filename_ == "") {
+        //    std::cout << "No verbose file specified. (Use -h for help)" << std::endl;
+        //    return false;
+        //}
 
         return true;
     }

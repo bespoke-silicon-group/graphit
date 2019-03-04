@@ -88,7 +88,6 @@ namespace graphit {
             
             //virtual void visitBinaryExpr(BinaryExpr::Ptr);
             //virtual void visitNaryExpr(NaryExpr::Ptr);
-            
 
 
             void indent() { ++indentLevel; }

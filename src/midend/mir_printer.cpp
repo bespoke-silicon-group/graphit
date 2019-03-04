@@ -459,8 +459,9 @@ namespace graphit {
             dedent();
         }
 
-        std::ostream &operator<<(std::ostream &oss, MIRNode &node) {
+        std::ostream &operator<<(std::ostream &oss, FuncDecl &node) {
             MIRPrinter printer(oss);
+            oss << "entered printing, now beginning traversal: \n";
             node.accept(&printer);
             return oss;
         }

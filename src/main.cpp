@@ -75,8 +75,12 @@ int main(int argc, char* argv[]) {
         // the start/root of the AST
         std::vector<mir::FuncDecl::Ptr> functions = mir_context->getFunctionList();
         
+        graphit::mir::MIRPrinter printer(os);
+        
+        
         for (auto it = functions.begin(); it != functions.end(); it++) {
-            os << it->get();
+            //os << it->get();
+            printer.printMIR(it->get());
         }
         fb.close();
     }

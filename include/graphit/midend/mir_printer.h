@@ -13,7 +13,7 @@ namespace graphit {
         struct MIRPrinter : public MIRVisitor {
             MIRPrinter(std::ostream &oss) : oss(oss), indentLevel(0) {}
 
-            //void printMIR(MIR::Program::Ptr program){program->accept(this);};
+            void printMIR(FuncDecl func){func.accept(this);};
 
         protected:
 
@@ -84,6 +84,8 @@ namespace graphit {
             virtual void visit(ListType::Ptr);
             virtual void visit(EdgeSetType::Ptr);
             virtual void visit(VectorType::Ptr);
+            
+            virtual void visit(FuncDecl);
             
             
             //virtual void visitBinaryExpr(BinaryExpr::Ptr);

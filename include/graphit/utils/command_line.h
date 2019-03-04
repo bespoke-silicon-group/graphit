@@ -23,10 +23,11 @@ protected:
     char** argv_;
     std::string name_;
     // f: means -f flag requires a follow on name,
-    std::string get_args_ = "f:o:h";
+    std::string get_args_ = "v:f:o:h";
     std::vector<std::string> help_strings_;
     std::string input_filename_ = "";
     std::string output_filename_ = "";
+    std::string verbose_filename_ = "";
 
 
     void AddHelpLine(char opt, std::string opt_arg, std::string text,
@@ -48,6 +49,7 @@ public:
         AddHelpLine('h', "", "print this help message");
         AddHelpLine('f', "file", "input file");
         AddHelpLine('o', "", "output file");
+        AddHelpLine('v', "", "verbose output file");
     }
 
     bool ParseArgs() {
@@ -70,6 +72,7 @@ public:
 
     void virtual HandleArg(signed char opt, char* opt_arg) {
         switch (opt) {
+            case 'v': verbose_filename_ = std::string(opt_arg);         break;
             case 'f': input_filename_ = std::string(opt_arg);           break;
             case 'o': output_filename_ = std::string(opt_arg);                     break;
             case 'h': PrintUsage();                               break;
@@ -86,6 +89,7 @@ public:
 
     std::string input_filename() const { return input_filename_; }
     std::string output_filename() const { return output_filename_; }
+    std::string verbose_filename() const { return verbose_filename_; }
 };
 
 

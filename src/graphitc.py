@@ -12,6 +12,7 @@ GRAPHIT_SOURCE_DIRECTORY="${GRAPHIT_SOURCE_DIRECTORY}".strip().rstrip('/')
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='compiling graphit files')
+    parser.add_argument('-v', dest = 'verbose_file_name')
     parser.add_argument('-f', dest = 'input_file_name')
     parser.add_argument('-o', dest = 'output_file_name')
     parser.add_argument('-a', dest = 'input_algo_file_name')
@@ -26,6 +27,7 @@ if __name__ == '__main__':
     output_file_name = args['output_file_name']
     runtime_include_path = args['runtime_include_path']
     graphitlib_path = args['graphitlib_path']
+    verbose_file_name = args['verbose_file_name']
 
     #check if user supplied a separate algorithm file from the schedule file
     supplied_separate_algo_file = False

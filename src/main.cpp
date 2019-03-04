@@ -35,7 +35,9 @@ int main(int argc, char* argv[]) {
     
     //TODO(Emily): this should ideally be a compiler flag
     //need to figure out the integration of this file with graphitc.py
-    bool verbose = true;
+    bool verbose = false;
+    if(cli.verbose_filename() != "")
+        verbose = true;
 
     //read input file into buffer
     std::ifstream file(cli.input_filename());
@@ -67,10 +69,7 @@ int main(int argc, char* argv[]) {
     //NOTE(Emily): adding in printer here
     if(verbose)
     {
-        //TODO(Emily): probably want a better file naming scheme here
-        //(this defaults to algo.gt - again need to figure out python file)
-        std::string mir_print_file;
-        mir_print_file = cli.input_filename() + ".mir_printout.txt";
+        std::string mir_print_file = cli.verbose_filename();
         
         std::filebuf fb;
         fb.open(mir_print_file, std::ios::out);

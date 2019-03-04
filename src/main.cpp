@@ -33,10 +33,11 @@ int main(int argc, char* argv[]) {
     if (!cli.ParseArgs())
         return -1;
     
-    //TODO(Emily): this should ideally be a compiler flag
-    //need to figure out the integration of this file with graphitc.py
-    bool verbose = false;
-
+    bool verbose = true;
+    if(cli.verbose_filename() == "")
+    {
+        verbose = false;
+    }
     //read input file into buffer
     std::ifstream file(cli.input_filename());
     std::stringstream buffer;
@@ -67,11 +68,25 @@ int main(int argc, char* argv[]) {
     //NOTE(Emily): adding in printer here
     if(verbose)
     {
+        std::string mir_print_file = cli.verbose_filename();
+        
         std::filebuf fb;
-        fb.open("mir_printed.txt", std::ios::out);
+        fb.open(mir_print_file, std::ios::out);
+        
         std::ostream os(&fb);
         os << "testing MIR printer here: \n";
-        os << mir_context->getMainFuncDecl();
+        
+        //NOTE(Emily): get functions here
+        std::vector<mir::FuncDecl::Ptr> functions = mir_context->getFunctionList();
+        
+        //NOTE(Emily): initialize printer here
+        graphit::mir::MIRPrinter printer(os);
+        
+        //NOTE(Emily): print AST for each function here
+        for (auto it = functions.begin(); it != functions.end(); it++) {
+            printer.printMIR(it->get());
+        }
+        
         fb.close();
     }
     

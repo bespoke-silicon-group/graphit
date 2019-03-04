@@ -38,7 +38,6 @@ int main(int argc, char* argv[]) {
     bool verbose = true;
     if(cli.verbose_filename() == "")
     {
-        std::cout << "a verbose file was not provided \n";
         verbose = false;
     }
     //read input file into buffer

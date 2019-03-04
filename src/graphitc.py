@@ -43,7 +43,7 @@ if __name__ == '__main__':
         verbose = True
         verbose_file_name = args['verbose_file_name']
     else:
-        verbose = false
+        verbose = False
 
     compile_file_name = 'compile.cpp'
 

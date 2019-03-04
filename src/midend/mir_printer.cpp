@@ -188,11 +188,11 @@ namespace graphit {
             printIndent();
             oss << "stmt block: " << stmt->stmt_label;
             //TODO(Emily): need to determine how to iterate through stmts in block
-            std::vector<Stmt::Ptr> stmt_list = *(stmt->stmts);
+            std::vector<Stmt::Ptr> * stmt_list = stmt->stmts;
             //for(stmtptr : list) ... stmtptr->accept(this);
-            for(auto stmtptr : stmt_list)
+            for(auto stmtptr = stmt_list->begin(); stmtptr < stmt_list->end(); stmt_list++)
             {
-                stmtptr->accept(this);
+                stmtptr->get()->accept(this);
             }
             
             dedent();

@@ -67,21 +67,28 @@ int main(int argc, char* argv[]) {
     //NOTE(Emily): adding in printer here
     if(verbose)
     {
+        //TODO(Emily): probably want a better file naming scheme here
+        //(this defaults to algo.gt - again need to figure out python file)
         std::string mir_print_file;
         mir_print_file = cli.input_filename() + ".mir_printout.txt";
+        
         std::filebuf fb;
         fb.open(mir_print_file, std::ios::out);
+        
         std::ostream os(&fb);
         os << "testing MIR printer here: \n";
         
+        //NOTE(Emily): get functions here
         std::vector<mir::FuncDecl::Ptr> functions = mir_context->getFunctionList();
         
+        //NOTE(Emily): initialize printer here
         graphit::mir::MIRPrinter printer(os);
         
-        
+        //NOTE(Emily): print AST for each function here
         for (auto it = functions.begin(); it != functions.end(); it++) {
             printer.printMIR(it->get());
         }
+        
         fb.close();
     }
     

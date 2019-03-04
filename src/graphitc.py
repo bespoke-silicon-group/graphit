@@ -83,5 +83,5 @@ if __name__ == '__main__':
     #TODO: code here uses very fragile relavtive paths, figure out a better way
     # Maybe setting environment variables
     subprocess.check_call(CXX_COMPILER + " -g -std=c++11 -I {0} {1} -o compile.o {2}".format(runtime_include_path, compile_file_name, graphitlib_path), shell=True)
-    subprocess.check_call("./compile.o  -f " + algo_file_name +  " -o " + output_file_name, shell=True)
+    subprocess.check_call("./compile.o  -v " + verbose_file_name + " -f " + algo_file_name +  " -o " + output_file_name, shell=True)
     #subprocess.check_call("g++ -g -std=c++11 -I ../../src/runtime_lib/  " + output_file_name + " -o test.o", shell=True)

@@ -57,6 +57,9 @@ namespace graphit {
 
 		// High Level API for selecting the GPU backend
 		ProgramScheduleNode::Ptr generateGPUCode(void);
+                        
+                // NOTE(Emily): High level API for selecting the Hammerblade backend 
+                ProgramScheduleNode::Ptr generateHBCode(void);
 
                 // High level API for fusing together two fields / system vectors as ArrayOfStructs
                 ProgramScheduleNode::Ptr fuseFields(string first_field_name,

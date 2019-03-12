@@ -15,6 +15,7 @@ namespace graphit {
     enum BackendT {
         BACKEND_CPP,
         BACKEND_GPU,
+        BACKEND_HB,     //NOTE(Emily): hammerblade backend selection
         
         BACKEND_INVALID
     };

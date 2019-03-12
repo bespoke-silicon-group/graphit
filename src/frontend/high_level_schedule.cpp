@@ -16,6 +16,14 @@ namespace graphit {
 		schedule_->backend_selection = BACKEND_GPU;
 		return this->shared_from_this();
 	}
+        
+        high_level_schedule::ProgramScheduleNode::Ptr
+        high_level_schedule::ProgramScheduleNode::generateHBCode(void) {
+            if (schedule_ == nullptr)
+                schedule_ = new Schedule();
+            schedule_->backend_selection = BACKEND_HB;
+            return this->shared_from_this();
+        }
 
         high_level_schedule::ProgramScheduleNode::Ptr
         high_level_schedule::ProgramScheduleNode::splitForLoop(std::string original_loop_label,

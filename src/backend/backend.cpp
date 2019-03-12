@@ -11,6 +11,7 @@ int Backend::emit(std::ostream &oss) {
 		int flag;
 		CodeGenCPP *codegen_cpp;
 		CodeGenGunrock *codegen_gunrock;
+    
 		
 	switch(mir_context_->backend_selection) {
 		case BACKEND_CPP:
@@ -25,6 +26,10 @@ int Backend::emit(std::ostream &oss) {
 			delete codegen_cpp;
 			return flag;
 			break;
+        case BACKEND_HB:
+            std::cerr << "Hammerblade backend not yet implemented\n";
+            return -1;
+            break;
 		default:
 			std::cerr << "Invalid backend chosen, failing with error\n";
 			return -1;

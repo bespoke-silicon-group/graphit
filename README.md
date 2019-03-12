@@ -12,6 +12,8 @@ To compile the generated C++ implementations with support for parallleism, you n
 
 To use NUMA optimizations on multi-socket machines, libnuma needs to be installed (on Ubuntu, sudo apt-get install libnuma-dev). We do note, a good number of optimized implementations do not require enabling NUMA optimizations. You can give GraphIt a try even if you do not have libnuma installed.  
 
+If you are a mac user who recently upgraded to macOS Mojave, and are having issues with unable to find header files "string.h" or "wchar.h" when using cmake, c++ compiler, or the python scripts that uses the c++ compilers, maybe this [post](https://yunmingzhang.wordpress.com/2019/02/13/mojave-upgrade-c-compilation-and-header-files-missing-issue/) will help. As always, let us know if you have any issues with building and using GraphIt. 
+
 Build Graphit
 ===========
 
@@ -147,9 +149,16 @@ schedule:
 
 The **test/input** and **test/input\_with\_schedules** directories contain many examples of the algorithm and schedule files. Use them as references when writing your own schedule.
 
+ We provide **more detailed instructions on evaluating the code generation and performance capability** of GraphIt in **graphit/graphit_eval/GraphIt_Evaluation_Guide.md**. In the guide, we provide instructions for using a series of scripts that make it easeir for people to evaluate GraphIt.. 
+
 Input Graph Formats
 ===========
 
 GraphIt reuses [GAPBS input formats](https://github.com/sbeamer/gapbs). Specifically, we have tested with edge list file (.el), weighted edge list file (.wel), binary edge list (.sg), and weighted binary edge list (.wsg) formats. Users can use the converters in GAPBS (GAPBS/src/converter.cc) to convert other graph formats into the supported formats, or convert weighted and unweighted edge list files into their respective binary formats. 
 
 We have provided sample input graph files in the `graphit/test/graphs/` directory. The python tests use the sample input files. 
+
+Autotuning GraphIt Schedules
+===========
+Pleaes refer to **README.md** in **graphit/auotune** for more details. 
+The auotuner is still somehwat experimental. Please read the instructions carefully before trying it out. 

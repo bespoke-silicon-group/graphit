@@ -9,6 +9,11 @@
 #include <fstream>
 #include <graphit/frontend/high_level_schedule.h>
 
+#include <graphit/midend/mir_printer.h>
+#include <string>
+#include <iostream>
+#include <sstream>
+
 using namespace graphit;
 
 
@@ -27,7 +32,12 @@ int main(int argc, char* argv[]) {
     //parse the arguments
     if (!cli.ParseArgs())
         return -1;
-
+    
+    bool verbose = true;
+    if(cli.verbose_filename() == "")
+    {
+        verbose = false;
+    }
     //read input file into buffer
     std::ifstream file(cli.input_filename());
     std::stringstream buffer;
@@ -54,6 +64,32 @@ int main(int argc, char* argv[]) {
 
     graphit::Midend* me = new graphit::Midend(context, program->getSchedule());
     me->emitMIR(mir_context);
+    
+    //NOTE(Emily): adding in printer here
+    if(verbose)
+    {
+        std::string mir_print_file = cli.verbose_filename();
+        
+        std::filebuf fb;
+        fb.open(mir_print_file, std::ios::out);
+        
+        std::ostream os(&fb);
+        os << "testing MIR printer here: \n";
+        
+        //NOTE(Emily): get functions here
+        std::vector<mir::FuncDecl::Ptr> functions = mir_context->getFunctionList();
+        
+        //NOTE(Emily): initialize printer here
+        graphit::mir::MIRPrinter printer(os);
+        
+        //NOTE(Emily): print AST for each function here
+        for (auto it = functions.begin(); it != functions.end(); it++) {
+            printer.printMIR(it->get());
+        }
+        
+        fb.close();
+    }
+    
     graphit::Backend* be = new graphit::Backend(mir_context);
     be->emit(output_file);
 

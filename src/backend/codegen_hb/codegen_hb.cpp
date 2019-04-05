@@ -62,7 +62,7 @@ namespace graphit {
         */
         oss << std::endl;
         return 0;
-    };
+    }
     
     void CodeGenHB::genIncludeStmts() {
         oss << "#include <string.h> " << std::endl;

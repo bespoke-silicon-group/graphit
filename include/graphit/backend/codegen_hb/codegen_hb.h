@@ -84,13 +84,14 @@ namespace graphit {
         int indent(void);
         int dedent(void);
         void printIndent(void);
-        
+*/        
     private:
         MIRContext * mir_context_;
         std::ostream &oss;
         int indent_value;
         enum mir::FuncDecl::function_context current_context;
     };
+/*
     class ExtractReadWriteSet : public mir::MIRVisitor {
     public:
         ExtractReadWriteSet() : read_set(read_set_), write_set(write_set_){

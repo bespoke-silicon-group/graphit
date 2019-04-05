@@ -2,7 +2,7 @@
 #include <graphit/backend/codegen_hb/codegen_hb.h>
 
 namespace graphit {
-    int CodeGenHB::genHB() {
+    int CodeGenHB::genHBCode() {
         genIncludeStmts();
         genEdgeSets();
         //genElementData();
@@ -98,7 +98,7 @@ namespace graphit {
     /**
      * Generate the struct types before the arrays are generated
      */
-    void CodeGenHB::genStructTypeDecls() {
+    /*void CodeGenHB::genStructTypeDecls() {
         for (auto const &struct_type_decl_entry : mir_context_->struct_type_decls) {
             auto struct_type_decl = struct_type_decl_entry.second;
             oss << "typedef struct ";
@@ -118,7 +118,7 @@ namespace graphit {
             }
             oss << "} " << struct_type_decl->name << ";" << std::endl;
         }
-    }
+    }*/
     
 }
 

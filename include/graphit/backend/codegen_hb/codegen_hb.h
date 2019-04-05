@@ -1,3 +1,6 @@
+#ifndef GRAPHIT_CODEGEN_HB_H
+#define GRAPHIT_CODEGEN_HB_H
+
 #include <graphit/midend/mir.h>
 #include <graphit/midend/mir_visitor.h>
 #include <graphit/midend/mir_context.h>
@@ -17,8 +20,11 @@ namespace graphit {
         int genHBCode(void);
         
     protected:
-        int genIncludeStmts(void);
-        int genEdgeSets(void);
+        void genIncludeStmts(void);
+        void genEdgeSets(void);
+        
+        //TODO(Emily): implement these function stubs
+        /*
         int genVertexSets(void);
         int genPropertyArrayDecl(mir::VarDecl::Ptr);
         int genPropertyArrayAlloca(mir::VarDecl::Ptr);
@@ -104,5 +110,8 @@ namespace graphit {
         std::vector<mir::Var> read_set_;
         std::vector<mir::Var> write_set_;
     };
+         */
 }
+
+#endif
 

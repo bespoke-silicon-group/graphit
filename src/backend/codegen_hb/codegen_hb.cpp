@@ -10,7 +10,7 @@ namespace graphit {
         //genStructTypeDecls();
         
         //TODO(Emily): need to implement this pass through the AST to generate code
-        /*
+        
         //Processing the constants, generting declartions
         for (auto constant : mir_context_->getLoweredConstants()) {
             if ((std::dynamic_pointer_cast<mir::VectorType>(constant->type)) != nullptr) {
@@ -36,7 +36,7 @@ namespace graphit {
                 genScalarDecl(constant);
             }
         }
-        
+        /*
         // Generate global declarations for socket-local buffers used by NUMA optimization
         for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
             for (auto inner_iter : iter.second) {
@@ -62,6 +62,41 @@ namespace graphit {
         */
         oss << std::endl;
         return 0;
+    }
+    
+    void CodeGenHB::visit(mir::VectorType::Ptr vector_type) {
+        
+    }
+    
+    void CodeGenCPP::visit(mir::ScalarType::Ptr scalar_type) {
+        switch (scalar_type->type) {
+            case mir::ScalarType::Type::INT:
+                oss << "int ";
+                break;
+            case mir::ScalarType::Type::FLOAT:
+                oss << "float ";
+                break;
+            case mir::ScalarType::Type::DOUBLE:
+                oss << "double ";
+                break;
+            case mir::ScalarType::Type::BOOL:
+                oss << "bool ";
+                break;
+            case mir::ScalarType::Type::STRING:
+                oss << "string ";
+                break;
+            default:
+                break;
+        }
+    }
+    
+    void CodeGenHB::visit(mir::EdgeSetType::Ptr edgeset_type) {
+        oss << " Graph ";
+    }
+    
+    void CodeGenHB::visit(mir::ElementType::Ptr element_type) {
+        //currently, we generate an index id into the vectors
+        oss << "NodeID ";
     }
     
     void CodeGenHB::genIncludeStmts() {
@@ -94,31 +129,57 @@ namespace graphit {
         }
     }
     
-    
-    /**
-     * Generate the struct types before the arrays are generated
-     */
-    /*void CodeGenHB::genStructTypeDecls() {
-        for (auto const &struct_type_decl_entry : mir_context_->struct_type_decls) {
-            auto struct_type_decl = struct_type_decl_entry.second;
-            oss << "typedef struct ";
-            oss << struct_type_decl->name << " { " << std::endl;
+    void CodeGenHB::genPropertyArrayDecl(mir::VarDecl::Ptr var_decl) {
+        // read the name of the array
+        const auto name = var_decl->name;
+        
+        // read the type of the array
+        mir::VectorType::Ptr vector_type = std::dynamic_pointer_cast<mir::VectorType>(var_decl->type);
+        assert(vector_type != nullptr);
+        auto vector_element_type = vector_type->vector_element_type;
+        assert(vector_element_type != nullptr);
+        
+        /**  Deprecated, now we generate an array declaration, not a vector one
+         //generate std::vector implementation
+         oss << "std::vector< ";
+         vector_element_type->accept(this);
+         // pointer declaration
+         oss << " >  ";
+         oss << name;
+         oss << ";" << std::endl;
+         **/
+        
+        if (!mir::isa<mir::VectorType>(vector_element_type)){
+            vector_element_type->accept(this);
+            oss << " * __restrict " << name << ";" << std::endl;
+        } else if (mir::isa<mir::VectorType>(vector_element_type)) {
+            //if each element is a vector
+            auto vector_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
+            assert(vector_vector_element_type->range_indexset != 0);
+            int range = vector_vector_element_type->range_indexset;
             
-            for (auto var_decl : struct_type_decl->fields) {
-                indent();
-                printIndent();
-                var_decl->type->accept(this);
-                //we don't initialize in the struct declarations anymore
-                // the initializations are done in the main function
-                oss << var_decl->name;
-                // << " = ";
-                //var_decl->initVal->accept(this);
-                oss << ";" << std::endl;
-                dedent();
-            }
-            oss << "} " << struct_type_decl->name << ";" << std::endl;
+            //first generates a typedef for the vector type
+            oss << "typedef ";
+            vector_vector_element_type->vector_element_type->accept(this);
+            std::string typedef_name = "defined_type_" + mir_context_->getUniqueNameCounterString();
+            oss << typedef_name <<  " ";
+            oss << "[ " << range << "]; " << std::endl;
+            vector_vector_element_type->typedef_name_ = typedef_name;
+            
+            //use the typedef defined type to declare a new pointer
+            oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
+            
+        } else {
+            std::cout << "unsupported type for property: " << var_decl->name << std::endl;
+            exit(0);
         }
-    }*/
+    }
+    
+    void CodeGenHB::genScalarDecl(mir::VarDecl::Ptr var_decl){
+        //the declaration and the value are separate. The value is generated as a separate assign statement in the main function
+        var_decl->type->accept(this);
+        oss << var_decl->name << "; " << std::endl;
+    }
     
 }
 

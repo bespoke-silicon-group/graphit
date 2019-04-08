@@ -9,8 +9,6 @@ namespace graphit {
         //TODO(Emily): need to implement the visit patterns to call Struct Type Decls
         //genStructTypeDecls();
         
-        //TODO(Emily): need to implement this pass through the AST to generate code
-        
         //Processing the constants, generting declartions
         for (auto constant : mir_context_->getLoweredConstants()) {
             if ((std::dynamic_pointer_cast<mir::VectorType>(constant->type)) != nullptr) {
@@ -36,6 +34,8 @@ namespace graphit {
                 genScalarDecl(constant);
             }
         }
+        
+        //TODO(Emily): need to implement this pass through the AST to generate code
         /*
         // Generate global declarations for socket-local buffers used by NUMA optimization
         for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
@@ -51,7 +51,7 @@ namespace graphit {
         // TODO: actually complete the generation, fow now we will use libraries to test a few schedules
         auto gen_edge_apply_function_visitor = EdgesetApplyFunctionDeclGenerator(mir_context_, oss);
         gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
-        
+        */
         //Processing the functions
         std::map<std::string, mir::FuncDecl::Ptr>::iterator it;
         std::vector<mir::FuncDecl::Ptr> functions = mir_context_->getFunctionList();
@@ -59,7 +59,6 @@ namespace graphit {
         for (auto it = functions.begin(); it != functions.end(); it++) {
             it->get()->accept(this);
         }
-        */
         oss << std::endl;
         return 0;
     }
@@ -98,6 +97,199 @@ namespace graphit {
         //currently, we generate an index id into the vectors
         oss << "NodeID ";
     }
+    
+    void CodeGenHB::visit(mir::FuncDecl::Ptr func_decl) {
+        // Generate function signature
+        if (func_decl->name == "main") {
+            func_decl->isFunctor = false;
+            oss << "int " << func_decl->name << "(int argc, char * argv[])";
+        } else {
+            // Use functors for better compiler inlining
+            func_decl->isFunctor = true;
+            oss << "struct " << func_decl->name << std::endl;
+            printBeginIndent();
+            indent();
+            oss << std::string(2 * indentLevel, ' ');
+            
+            if (func_decl->result.isInitialized()) {
+                func_decl->result.getType()->accept(this);
+                
+                //insert an additional var_decl for returning result
+                const auto var_decl = std::make_shared<mir::VarDecl>();
+                var_decl->name = func_decl->result.getName();
+                var_decl->type = func_decl->result.getType();
+                if (func_decl->body->stmts == nullptr) {
+                    func_decl->body->stmts = new std::vector<mir::Stmt::Ptr>();
+                }
+                auto it = func_decl->body->stmts->begin();
+                func_decl->body->stmts->insert(it, var_decl);
+            } else {
+                oss << "void ";
+            }
+            
+            oss << "operator() (";
+            bool printDelimiter = false;
+            for (auto arg : func_decl->args) {
+                if (printDelimiter) {
+                    oss << ", ";
+                }
+                
+                arg.getType()->accept(this);
+                oss << arg.getName();
+                printDelimiter = true;
+            }
+            oss << ") ";
+        }
+        
+        oss << std::endl;
+        printBeginIndent();
+        indent();
+        
+        //TODO(Emily): need to implement this to fit our needs for functors/functions
+        /*
+        
+        if (func_decl->name == "main") {
+            //generate special initialization code for main function
+            //TODO: this is probably a hack that could be fixed for later
+            
+            //First, allocate the edgesets (read them from outside files if needed)
+            for (auto stmt : mir_context_->edgeset_alloc_stmts) {
+                stmt->accept(this);
+            }
+            
+            // Initialize graphSegments if necessary
+            auto segment_map = mir_context_->edgeset_to_label_to_num_segment;
+            for (auto edge_iter = segment_map.begin(); edge_iter != segment_map.end(); edge_iter++) {
+                auto edgeset = mir_context_->getConstEdgeSetByName((*edge_iter).first);
+                auto edge_set_type = mir::to<mir::EdgeSetType>(edgeset->type);
+                bool is_weighted = (edge_set_type->weight_type != nullptr);
+                for (auto label_iter = (*edge_iter).second.begin();
+                     label_iter != (*edge_iter).second.end(); label_iter++) {
+                    auto edge_iter_first = (*edge_iter).first;
+                    auto label_iter_first = (*label_iter).first;
+                    auto label_iter_second = (*label_iter).second;
+                    auto numa_aware_flag = mir_context_->edgeset_to_label_to_merge_reduce[edge_iter_first][label_iter_first]->numa_aware;
+                    
+                    if (label_iter_second < 0) {
+                        //do a specical case for negative number of segments. I
+                        // in the case of negative integer, we use the number as argument to runtimve argument argv
+                        // this is the only place in the generated code that we set the number of segments
+                        oss << "  " << edgeset->name << ".buildPullSegmentedGraphs(\"" << label_iter_first
+                        << "\", " << "atoi(argv[" << -1*label_iter_second << "])"
+                        << (numa_aware_flag ? ", true" : "") << ");" << std::endl;
+                    } else {
+                        // just use the positive integer as argument to number of segments
+                        oss << "  " << edgeset->name << ".buildPullSegmentedGraphs(\"" << label_iter_first
+                        << "\", " << label_iter_second
+                        << (numa_aware_flag ? ", true" : "") << ");" << std::endl;
+                    }
+                }
+            }
+            
+            //generate allocation statemetns for field vectors
+            for (auto constant : mir_context_->getLoweredConstants()) {
+                if ((std::dynamic_pointer_cast<mir::VectorType>(constant->type)) != nullptr) {
+                    mir::VectorType::Ptr type = std::dynamic_pointer_cast<mir::VectorType>(constant->type);
+                    // if the constant decl is a field property of an element (system vector)
+                    if (type->element_type != nullptr) {
+                        //genPropertyArrayImplementationWithInitialization(constant);
+                        //genPropertyArrayDecl(constant);
+                        if (constant->needs_allocation)
+                            genPropertyArrayAlloc(constant);
+                    }
+                } else if (std::dynamic_pointer_cast<mir::VertexSetType>(constant->type)) {
+                    // if the constant is a vertex set  decl
+                    // currently, no code is generated
+                } else {
+                    // regular constant declaration
+                    //constant->accept(this);
+                    genScalarAlloc(constant);
+                }
+            }
+            
+            // the stmts that initializes the field vectors
+            for (auto stmt : mir_context_->field_vector_init_stmts) {
+                stmt->accept(this);
+            }
+            
+            for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
+                for (auto inner_iter : iter.second) {
+                    
+                    if ((inner_iter.second)->numa_aware) {
+                        auto merge_reduce = inner_iter.second;
+                        std::string local_field = "local_" + merge_reduce->field_name;
+                        oss << "  " << local_field << " = new ";
+                        merge_reduce->scalar_type->accept(this);
+                        oss << "*[omp_get_num_places()];\n";
+                        
+                        oss << "  for (int socketId = 0; socketId < omp_get_num_places(); socketId++) {\n";
+                        oss << "    " << local_field << "[socketId] = (";
+                        merge_reduce->scalar_type->accept(this);
+                        oss << "*)numa_alloc_onnode(sizeof(";
+                        merge_reduce->scalar_type->accept(this);
+                        oss << ") * ";
+                        auto count_expr = mir_context_->getElementCount(
+                                                                        mir_context_->getElementTypeFromVectorOrSetName(merge_reduce->field_name));
+                        count_expr->accept(this);
+                        oss << ", socketId);\n";
+                        
+                        oss << "    parallel_for (int n = 0; n < ";
+                        count_expr->accept(this);
+                        oss << "; n++) {\n";
+                        oss << "      " << local_field << "[socketId][n] = " << merge_reduce->field_name << "[n];\n";
+                        oss << "    }\n  }\n";
+                        
+                        oss << "  omp_set_nested(1);" << std::endl;
+                    }
+                }
+            }
+        }
+        
+        
+        //if the function has a body
+        if (func_decl->body->stmts) {
+            
+            
+            func_decl->body->accept(this);
+            
+            //print a return statemetn if there is a result
+            if (func_decl->result.isInitialized()) {
+                printIndent();
+                oss << "return " << func_decl->result.getName() << ";" << std::endl;
+            }
+            
+            
+        }
+        
+        if (func_decl->isFunctor) {
+            dedent();
+            printEndIndent();
+            oss << ";";
+            oss << std::endl;
+        }
+        
+        if (func_decl->name == "main") {
+            for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
+                for (auto inner_iter : iter.second) {
+                    if (inner_iter.second->numa_aware) {
+                        auto merge_reduce = inner_iter.second;
+                        oss << "  for (int socketId = 0; socketId < omp_get_num_places(); socketId++) {\n";
+                        oss << "    numa_free(local_" << merge_reduce->field_name << "[socketId], sizeof(";
+                        merge_reduce->scalar_type->accept(this);
+                        oss << ") * ";
+                        mir_context_->getElementCount(mir_context_->getElementTypeFromVectorOrSetName(merge_reduce->field_name))->accept(this);
+                        oss << ");\n  }\n";
+                    }
+                }
+            }
+        }
+        */
+        dedent();
+        printEndIndent();
+        oss << ";";
+        oss << std::endl;
+         
+    };
     
     void CodeGenHB::genIncludeStmts() {
         oss << "#include <string.h> " << std::endl;

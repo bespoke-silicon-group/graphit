@@ -98,6 +98,130 @@ namespace graphit {
         oss << "NodeID ";
     }
     
+    void CodeGenHB::visit(mir::ForStmt::Ptr for_stmt) {
+        printIndent();
+        auto for_domain = for_stmt->domain;
+        auto loop_var = for_stmt->loopVar;
+        oss << "for ( int " << loop_var << " = ";
+        //for_domain->lower->accept(this);
+        oss << "; " << loop_var << " < ";
+        //for_domain->upper->accept(this);
+        oss << "; " << loop_var << "++ )" << std::endl;
+        printBeginIndent();
+        indent();
+        //for_stmt->body->accept(this);
+        dedent();
+        printEndIndent();
+        oss << std::endl;
+        
+    }
+    
+    void CodeGenHB::visit(mir::WhileStmt::Ptr while_stmt) {
+        printIndent();
+        oss << "while ( ";
+        //while_stmt->cond->accept(this);
+        oss << ")" << std::endl;
+        printBeginIndent();
+        indent();
+        //while_stmt->body->accept(this);
+        dedent();
+        printEndIndent();
+        oss << std::endl;
+        
+    }
+    
+    void CodeGenHB::visit(mir::IfStmt::Ptr stmt) {
+        printIndent();
+        oss << "if (";
+        //stmt->cond->accept(this);
+        oss << ")" << std::endl;
+        
+        printIndent();
+        oss << " { " << std::endl;
+        
+        indent();
+        //stmt->ifBody->accept(this);
+        dedent();
+        
+        printIndent();
+        oss << " } " << std::endl;
+        
+        if (stmt->elseBody) {
+            printIndent();
+            oss << "else" << std::endl;
+            
+            printIndent();
+            oss << " { " << std::endl;
+            
+            indent();
+            //stmt->elseBody->accept(this);
+            dedent();
+            
+            oss << std::endl;
+            
+            printIndent();
+            oss << " } " << std::endl;
+            
+        }
+        
+        //printIndent();
+        //oss << "end";
+        
+    }
+    
+    void CodeGenHB::visit(mir::ExprStmt::Ptr expr_stmt) {
+        
+        if (mir::isa<mir::EdgeSetApplyExpr>(expr_stmt->expr)) {
+            printIndent();
+            auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(expr_stmt->expr);
+            //genEdgesetApplyFunctionCall(edgeset_apply_expr);
+        } else {
+            printIndent();
+            //expr_stmt->expr->accept(this);
+            oss << ";" << std::endl;
+        }
+    }
+    
+    void CodeGenHB::visit(mir::AssignStmt::Ptr assign_stmt) {
+        
+        if (mir::isa<mir::VertexSetWhereExpr>(assign_stmt->expr)) {
+            // declaring a new vertexset as output from where expression
+            printIndent();
+            //assign_stmt->expr->accept(this);
+            oss << std::endl;
+            
+            printIndent();
+            
+            //assign_stmt->lhs->accept(this);
+            oss << "  = ____graphit_tmp_out; "  << std::endl;
+            
+        } else if (mir::isa<mir::EdgeSetApplyExpr>(assign_stmt->expr)) {
+            printIndent();
+            //assign_stmt->lhs->accept(this);
+            oss << " = ";
+            auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
+            //genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            
+        } else {
+            printIndent();
+            //assign_stmt->lhs->accept(this);
+            oss << " = ";
+            //assign_stmt->expr->accept(this);
+            oss << ";" << std::endl;
+        }
+    }
+    
+    void CodeGenHB::visit(mir::CompareAndSwapStmt::Ptr cas_stmt) {
+        printIndent();
+        oss << cas_stmt->tracking_var_ << " = compare_and_swap ( ";
+        //cas_stmt->lhs->accept(this);
+        oss << ", ";
+        //cas_stmt->compare_val_expr->accept(this);
+        oss << ", ";
+        //cas_stmt->expr->accept(this);
+        oss << ");" << std::endl;
+    }
+    
     void CodeGenHB::visit(mir::FuncDecl::Ptr func_decl) {
         // Generate function signature
         if (func_decl->name == "main") {
@@ -245,7 +369,7 @@ namespace graphit {
             }
         }
         
-        
+        */
         //if the function has a body
         if (func_decl->body->stmts) {
             
@@ -267,7 +391,7 @@ namespace graphit {
             oss << ";";
             oss << std::endl;
         }
-        
+        /*
         if (func_decl->name == "main") {
             for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
                 for (auto inner_iter : iter.second) {

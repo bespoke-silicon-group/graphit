@@ -31,7 +31,7 @@ namespace graphit {
         int fillLambdaBody(mir::FuncDecl::Ptr, std::vector<std::string>);
         std::string getAllGlobals(void);
         
-        
+        */
         
          virtual void visit(mir::ForStmt::Ptr);
          virtual void visit(mir::WhileStmt::Ptr);
@@ -40,7 +40,7 @@ namespace graphit {
          
          virtual void visit(mir::ExprStmt::Ptr);
          virtual void visit(mir::AssignStmt::Ptr);
-         virtual void visit(mir::ReduceStmt::Ptr);
+ /*        virtual void visit(mir::ReduceStmt::Ptr);
          virtual void visit(mir::CompareAndSwapStmt::Ptr);
          
          virtual void visit(mir::PrintStmt::Ptr);

@@ -68,7 +68,7 @@ namespace graphit {
         
     }
     
-    void CodeGenCPP::visit(mir::ScalarType::Ptr scalar_type) {
+    void CodeGenHB::visit(mir::ScalarType::Ptr scalar_type) {
         switch (scalar_type->type) {
             case mir::ScalarType::Type::INT:
                 oss << "int ";

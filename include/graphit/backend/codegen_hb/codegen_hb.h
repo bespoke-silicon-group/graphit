@@ -14,7 +14,7 @@
 namespace graphit {
     class CodeGenHB : mir::MIRVisitor {
     public:
-        CodeGenHB(std::ostream &input_oss, MIRContext *mir_context) : oss(input_oss), mir_context_(mir_context), indent_value(0), current_context(mir::FuncDecl::CONTEXT_HOST){
+        CodeGenHB(std::ostream &input_oss, MIRContext *mir_context) : oss(input_oss), mir_context_(mir_context), indentLevel(0), current_context(mir::FuncDecl::CONTEXT_HOST){
             //TODO(Emily): look at the C++ codegen backend to see what happens here
             //edgeset_apply_func_gen_ = new EdgesetApplyFunctionDeclGenerator(mir_context_, oss);
         }
@@ -99,7 +99,7 @@ namespace graphit {
     private:
         MIRContext * mir_context_;
         std::ostream &oss;
-        unsigned indent_value;
+        unsigned indentLevel;
         void indent() { ++indentLevel; }
         void dedent() { --indentLevel; }
         void printIndent() { oss << std::string(2 * indentLevel, ' '); }

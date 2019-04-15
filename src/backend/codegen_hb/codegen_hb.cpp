@@ -229,11 +229,13 @@ namespace graphit {
             oss << "int " << func_decl->name << "(int argc, char * argv[])";
         } else {
             // Use functors for better compiler inlining
-            func_decl->isFunctor = true;
-            oss << "struct " << func_decl->name << std::endl;
-            printBeginIndent();
-            indent();
-            oss << std::string(2 * indentLevel, ' ');
+            //func_decl->isFunctor = true;
+            //oss << "struct " << func_decl->name << std::endl;
+            //printBeginIndent();
+            //indent();
+            //oss << std::string(2 * indentLevel, ' ');
+            
+            func_decl->isFunctor = false;
             
             if (func_decl->result.isInitialized()) {
                 func_decl->result.getType()->accept(this);
@@ -251,7 +253,8 @@ namespace graphit {
                 oss << "void ";
             }
             
-            oss << "operator() (";
+            //oss << "operator() (";
+            oss << func_decl->name << "(";
             bool printDelimiter = false;
             for (auto arg : func_decl->args) {
                 if (printDelimiter) {

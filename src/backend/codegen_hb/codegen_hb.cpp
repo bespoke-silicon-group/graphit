@@ -812,18 +812,18 @@ namespace graphit {
     }
     
     //TODO(Emily): probably need to change this - unless we keep these types (and vectors)
-    void CodeGenCPP::visit(mir::VertexSetType::Ptr vertexset_type) {
+    void CodeGenHB::visit(mir::VertexSetType::Ptr vertexset_type) {
         oss << "VertexSubset<int> *  ";
     }
     
     //TODO(Emily): need to change this if we don't keep vectors
-    void CodeGenCPP::visit(mir::ListType::Ptr list_type) {
+    void CodeGenHB::visit(mir::ListType::Ptr list_type) {
         oss << "std::vector< ";
         list_type->element_type->accept(this);
         oss << " > *  ";
     }
     
-    void CodeGenCPP::visit(mir::StructTypeDecl::Ptr struct_type) {
+    void CodeGenHB::visit(mir::StructTypeDecl::Ptr struct_type) {
         oss << struct_type->name << " ";
     }
     

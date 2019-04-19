@@ -40,14 +40,14 @@ namespace graphit {
          
          virtual void visit(mir::ExprStmt::Ptr);
          virtual void visit(mir::AssignStmt::Ptr);
- //        virtual void visit(mir::ReduceStmt::Ptr);
+         virtual void visit(mir::ReduceStmt::Ptr);
          virtual void visit(mir::CompareAndSwapStmt::Ptr);
-/*
+
          virtual void visit(mir::PrintStmt::Ptr);
          virtual void visit(mir::BreakStmt::Ptr);
-         */
+        
          virtual void visit(mir::FuncDecl::Ptr);
-         /*
+        
          virtual void visit(mir::Call::Ptr);
          
          //virtual void visit(mir::TensorReadExpr::Ptr);
@@ -56,18 +56,20 @@ namespace graphit {
          
          virtual void visit(mir::VertexSetAllocExpr::Ptr);
          virtual void visit(mir::ListAllocExpr::Ptr);
-         
+        
          //functional operators
          virtual void visit(mir::VertexSetApplyExpr::Ptr);
-         virtual void visit(mir::PullEdgeSetApplyExpr::Ptr);
-         virtual void visit(mir::PushEdgeSetApplyExpr::Ptr);
+        //NOTE(EMILY): these two functions for direction haven't been implemented yet
+        //need to implement these as we determine what directions we support
+         //virtual void visit(mir::PullEdgeSetApplyExpr::Ptr);
+         //virtual void visit(mir::PushEdgeSetApplyExpr::Ptr);
          
          virtual void visit(mir::VertexSetWhereExpr::Ptr);
          //virtual void visit(mir::EdgeSetWhereExpr::Ptr);
          
          virtual void visit(mir::VarExpr::Ptr);
          virtual void visit(mir::EdgeSetLoadExpr::Ptr);
-         
+        
          virtual void visit(mir::NegExpr::Ptr);
          virtual void visit(mir::EqExpr::Ptr);
          
@@ -82,15 +84,15 @@ namespace graphit {
          virtual void visit(mir::StringLiteral::Ptr);
          virtual void visit(mir::FloatLiteral::Ptr);
          virtual void visit(mir::IntLiteral::Ptr);
+        
          
-         
-         virtual void visit(mir::VarDecl::Ptr); */
+         virtual void visit(mir::VarDecl::Ptr);
          virtual void visit(mir::ElementType::Ptr element_type);
-         /*
+        
          virtual void visit(mir::VertexSetType::Ptr vertexset_type);
          virtual void visit(mir::ListType::Ptr list_type);
          
-         virtual void visit(mir::StructTypeDecl::Ptr struct_type); */
+         virtual void visit(mir::StructTypeDecl::Ptr struct_type); 
          virtual void visit(mir::ScalarType::Ptr scalar_type);
          virtual void visit(mir::VectorType::Ptr vector_type);
          

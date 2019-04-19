@@ -103,13 +103,13 @@ namespace graphit {
         auto for_domain = for_stmt->domain;
         auto loop_var = for_stmt->loopVar;
         oss << "for ( int " << loop_var << " = ";
-        //for_domain->lower->accept(this);
+        for_domain->lower->accept(this);
         oss << "; " << loop_var << " < ";
-        //for_domain->upper->accept(this);
+        for_domain->upper->accept(this);
         oss << "; " << loop_var << "++ )" << std::endl;
         printBeginIndent();
         indent();
-        //for_stmt->body->accept(this);
+        for_stmt->body->accept(this);
         dedent();
         printEndIndent();
         oss << std::endl;
@@ -119,11 +119,11 @@ namespace graphit {
     void CodeGenHB::visit(mir::WhileStmt::Ptr while_stmt) {
         printIndent();
         oss << "while ( ";
-        //while_stmt->cond->accept(this);
+        while_stmt->cond->accept(this);
         oss << ")" << std::endl;
         printBeginIndent();
         indent();
-        //while_stmt->body->accept(this);
+        while_stmt->body->accept(this);
         dedent();
         printEndIndent();
         oss << std::endl;
@@ -133,14 +133,14 @@ namespace graphit {
     void CodeGenHB::visit(mir::IfStmt::Ptr stmt) {
         printIndent();
         oss << "if (";
-        //stmt->cond->accept(this);
+        stmt->cond->accept(this);
         oss << ")" << std::endl;
         
         printIndent();
         oss << " { " << std::endl;
         
         indent();
-        //stmt->ifBody->accept(this);
+        stmt->ifBody->accept(this);
         dedent();
         
         printIndent();
@@ -154,7 +154,7 @@ namespace graphit {
             oss << " { " << std::endl;
             
             indent();
-            //stmt->elseBody->accept(this);
+            stmt->elseBody->accept(this);
             dedent();
             
             oss << std::endl;
@@ -177,7 +177,7 @@ namespace graphit {
             //genEdgesetApplyFunctionCall(edgeset_apply_expr);
         } else {
             printIndent();
-            //expr_stmt->expr->accept(this);
+            expr_stmt->expr->accept(this);
             oss << ";" << std::endl;
         }
     }
@@ -187,26 +187,26 @@ namespace graphit {
         if (mir::isa<mir::VertexSetWhereExpr>(assign_stmt->expr)) {
             // declaring a new vertexset as output from where expression
             printIndent();
-            //assign_stmt->expr->accept(this);
+            assign_stmt->expr->accept(this);
             oss << std::endl;
             
             printIndent();
             
-            //assign_stmt->lhs->accept(this);
+            assign_stmt->lhs->accept(this);
             oss << "  = ____graphit_tmp_out; "  << std::endl;
             
         } else if (mir::isa<mir::EdgeSetApplyExpr>(assign_stmt->expr)) {
             printIndent();
-            //assign_stmt->lhs->accept(this);
+            assign_stmt->lhs->accept(this);
             oss << " = ";
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
             //genEdgesetApplyFunctionCall(edgeset_apply_expr);
             
         } else {
             printIndent();
-            //assign_stmt->lhs->accept(this);
+            assign_stmt->lhs->accept(this);
             oss << " = ";
-            //assign_stmt->expr->accept(this);
+            assign_stmt->expr->accept(this);
             oss << ";" << std::endl;
         }
     }
@@ -214,11 +214,11 @@ namespace graphit {
     void CodeGenHB::visit(mir::CompareAndSwapStmt::Ptr cas_stmt) {
         printIndent();
         oss << cas_stmt->tracking_var_ << " = compare_and_swap ( ";
-        //cas_stmt->lhs->accept(this);
+        cas_stmt->lhs->accept(this);
         oss << ", ";
-        //cas_stmt->compare_val_expr->accept(this);
+        cas_stmt->compare_val_expr->accept(this);
         oss << ", ";
-        //cas_stmt->expr->accept(this);
+        cas_stmt->expr->accept(this);
         oss << ");" << std::endl;
     }
     
@@ -418,6 +418,417 @@ namespace graphit {
          
     };
     
+    void CodeGenHB::visit(mir::ReduceStmt::Ptr reduce_stmt) {
+        
+        if (mir::isa<mir::VertexSetWhereExpr>(reduce_stmt->expr) ||
+            mir::isa<mir::EdgeSetApplyExpr>(reduce_stmt->expr)) {
+            
+            
+        } else {
+            switch (reduce_stmt->reduce_op_) {
+                case mir::ReduceStmt::ReductionOp::SUM:
+                    printIndent();
+                    reduce_stmt->lhs->accept(this);
+                    oss << " += ";
+                    reduce_stmt->expr->accept(this);
+                    oss << ";" << std::endl;
+                    
+                    if (reduce_stmt->tracking_var_name_ != "") {
+                        // need to set the tracking variable
+                        printIndent();
+                        oss << reduce_stmt->tracking_var_name_ << " = true ; " << std::endl;
+                    }
+                    
+                    break;
+                case mir::ReduceStmt::ReductionOp::MIN:
+                    printIndent();
+                    oss << "if ( ( ";
+                    reduce_stmt->lhs->accept(this);
+                    oss << ") > ( ";
+                    reduce_stmt->expr->accept(this);
+                    oss << ") ) { " << std::endl;
+                    indent();
+                    printIndent();
+                    reduce_stmt->lhs->accept(this);
+                    oss << "= ";
+                    reduce_stmt->expr->accept(this);
+                    oss << "; " << std::endl;
+                    
+                    
+                    if (reduce_stmt->tracking_var_name_ != "") {
+                        // need to generate a tracking variable
+                        printIndent();
+                        oss << reduce_stmt->tracking_var_name_ << " = true ; " << std::endl;
+                    }
+                    
+                    dedent();
+                    printIndent();
+                    oss << "} " << std::endl;
+                    break;
+                case mir::ReduceStmt::ReductionOp::MAX:
+                    //TODO: not supported yet
+                    
+                    oss << " max= ";
+                    break;
+                case mir::ReduceStmt::ReductionOp::ATOMIC_MIN:
+                    printIndent();
+                    oss << reduce_stmt->tracking_var_name_ << " = ";
+                    oss << "writeMin( &";
+                    reduce_stmt->lhs->accept(this);
+                    oss << ", ";
+                    reduce_stmt->expr->accept(this);
+                    oss << " ); " << std::endl;
+                    break;
+                case mir::ReduceStmt::ReductionOp::ATOMIC_SUM:
+                    printIndent();
+                    if (reduce_stmt->tracking_var_name_ != "")
+                        oss << reduce_stmt->tracking_var_name_ << " =  true;\n";
+                    oss << "writeAdd( &";
+                    reduce_stmt->lhs->accept(this);
+                    oss << ", ";
+                    reduce_stmt->expr->accept(this);
+                    oss << " ); " << std::endl;
+                    break;
+            }
+            
+        }
+    }
+    
+    void CodeGenHB::visit(mir::PrintStmt::Ptr print_stmt) {
+        printIndent();
+        oss << "std::cout << ";
+        print_stmt->expr->accept(this);
+        oss << "<< std::endl;" << std::endl;
+    }
+    
+    void CodeGenHB::visit(mir::BreakStmt::Ptr print_stmt) {
+        printIndent();
+        oss << "break;" << std::endl;
+    }
+    
+    void CodeGenHB::visit(mir::Call::Ptr call_expr) {
+        oss << call_expr->name;
+        
+        
+        if (call_expr->generic_type != nullptr) {
+            oss << " < ";
+            call_expr->generic_type->accept(this);
+            oss << " > ";
+        }
+        
+        if (mir_context_->isFunction(call_expr->name)) {
+            auto mir_func_decl = mir_context_->getFunction(call_expr->name);
+            if (mir_func_decl->isFunctor)
+                oss << "()";
+        }
+        
+        oss << "(";
+        
+        bool printDelimiter = false;
+        
+        for (auto arg : call_expr->args) {
+            if (printDelimiter) {
+                oss << ", ";
+            }
+            arg->accept(this);
+            printDelimiter = true;
+        }
+        
+        oss << ") ";
+    };
+    
+    void CodeGenHB::visit(mir::TensorArrayReadExpr::Ptr expr) {
+        //for dense array tensor read
+        expr->target->accept(this);
+        oss << "[";
+        expr->index->accept(this);
+        oss << "]";
+    };
+    
+    void CodeGenHB::visit(mir::TensorStructReadExpr::Ptr expr) {
+        //for dense array tensor read
+        oss << expr->array_of_struct_target << "[";
+        expr->index->accept(this);
+        oss << "].";
+        expr->field_target->accept(this);
+        oss << " ";
+    };
+    
+    void CodeGenHB::visit(mir::VertexSetAllocExpr::Ptr alloc_expr) {
+        oss << "new VertexSubset<int> ( ";
+        //This is the current number of elements, but we need the range
+        //alloc_expr->size_expr->accept(this);
+        const auto size_expr = mir_context_->getElementCount(alloc_expr->element_type);
+        size_expr->accept(this);
+        oss << " , ";
+        alloc_expr->size_expr->accept(this);
+        oss << ")";
+    }
+    
+    void CodeGenHB::visit(mir::ListAllocExpr::Ptr alloc_expr) {
+        oss << "new std::vector< ";
+        alloc_expr->element_type->accept(this);
+        oss << " > ( ";
+        // currently we don't support initializing a vector with size
+        //This is the current number of elements, but we need the range
+        //alloc_expr->size_expr->accept(this);
+        //const auto size_expr = mir_context_->getElementCount(alloc_expr->element_type);
+        //size_expr->accept(this);
+        //oss << " , ";
+        //alloc_expr->size_expr->accept(this);
+        oss << ")";
+    }
+    
+    void CodeGenHB::visit(mir::VertexSetApplyExpr::Ptr apply_expr) {
+        //vertexset apply
+        auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply_expr->target);
+        
+        if (mir_context_->isConstVertexSet(mir_var->var.getName())){
+            //if the verstexset is a const / global vertexset, then we can get size easily
+            auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
+            assert(associated_element_type);
+            auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
+            assert(associated_element_type_size);
+            std::string for_type = apply_expr->is_parallel ? "parallel_for" : "for";
+            oss << for_type << " (int vertexsetapply_iter = 0; vertexsetapply_iter < ";
+            associated_element_type_size->accept(this);
+            oss << "; vertexsetapply_iter++) {" << std::endl;
+            indent();
+            printIndent();
+            oss << apply_expr->input_function_name << "()(vertexsetapply_iter);" << std::endl;
+            dedent();
+            printIndent();
+            oss << "}";
+        } else {
+            // if this is a dynamically created vertexset
+            oss << " builtin_vertexset_apply ( " << mir_var->var.getName() << ", ";
+            oss << apply_expr->input_function_name << "() ); " << std::endl;
+            
+            
+        }
+        
+        
+    }
+    
+    void CodeGenHB::visit(mir::VertexSetWhereExpr::Ptr vertexset_where_expr) {
+        
+        
+        //dense vertex set apply
+        if (vertexset_where_expr->is_constant_set) {
+            auto associated_element_type =
+            mir_context_->getElementTypeFromVectorOrSetName(vertexset_where_expr->target);
+            assert(associated_element_type);
+            auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
+            assert(associated_element_type_size);
+            oss << "auto ____graphit_tmp_out = new VertexSubset <NodeID> ( ";
+            
+            //get the total number of vertices in the vertex set
+            auto vertex_type = mir_context_->getElementTypeFromVectorOrSetName(vertexset_where_expr->target);
+            auto vertices_range_expr =
+            mir_context_->getElementCount(vertex_type);
+            vertices_range_expr->accept(this);
+            oss << " , ";
+            //vertices_range_expr->accept(this);
+            // the output vertexset is initially set to 0
+            oss << "0";
+            oss << " );" << std::endl;
+            std::string next_bool_map_name = "next" + mir_context_->getUniqueNameCounterString();
+            oss << "bool * " << next_bool_map_name << " = newA(bool, ";
+            vertices_range_expr->accept(this);
+            oss << ");\n";
+            printIndent();
+            oss << "parallel_for (int v = 0; v < ";
+            associated_element_type_size->accept(this);
+            oss << "; v++) {" << std::endl;
+            indent();
+            printIndent();
+            oss << next_bool_map_name << "[v] = 0;" << std::endl;
+            oss << "if ( " << vertexset_where_expr->input_func << "()( v ) )" << std::endl;
+            indent();
+            printIndent();
+            oss << next_bool_map_name << "[v] = 1;" << std::endl;
+            dedent();
+            dedent();
+            printIndent();
+            oss << "} //end of loop\n";
+            oss << "____graphit_tmp_out->num_vertices_ = sequence::sum( "
+            <<  next_bool_map_name << ", " ;
+            vertices_range_expr->accept(this);
+            oss << " );\n"
+            "____graphit_tmp_out->bool_map_ = ";
+            oss << next_bool_map_name << ";\n";
+        }
+        
+    }
+    
+    void CodeGenHB::visit(mir::VarExpr::Ptr expr) {
+        oss << expr->var.getName();
+    };
+    
+    //NOTE(Emily): we either want to rewrite these built in load functions
+    //or do something else here
+    void CodeGenHB::visit(mir::EdgeSetLoadExpr::Ptr edgeset_load_expr) {
+        if (edgeset_load_expr->is_weighted_){
+            oss << "builtin_loadWeightedEdgesFromFile ( ";
+            edgeset_load_expr->file_name->accept(this);
+            oss << ") ";
+        } else {
+            oss << "builtin_loadEdgesFromFile ( ";
+            edgeset_load_expr->file_name->accept(this);
+            oss << ") ";
+        }
+    }
+    
+    void CodeGenHB::visit(mir::NegExpr::Ptr neg_expr) {
+        if (neg_expr->negate) oss << " -";
+        neg_expr->operand->accept(this);
+    }
+    
+    void CodeGenHB::visit(mir::EqExpr::Ptr expr) {
+        oss << "(";
+        expr->operands[0]->accept(this);
+        oss << ")";
+        
+        for (unsigned i = 0; i < expr->ops.size(); ++i) {
+            switch (expr->ops[i]) {
+                case mir::EqExpr::Op::LT:
+                    oss << " < ";
+                    break;
+                case mir::EqExpr::Op::LE:
+                    oss << " <= ";
+                    break;
+                case mir::EqExpr::Op::GT:
+                    oss << " > ";
+                    break;
+                case mir::EqExpr::Op::GE:
+                    oss << " >= ";
+                    break;
+                case mir::EqExpr::Op::EQ:
+                    oss << " == ";
+                    break;
+                case mir::EqExpr::Op::NE:
+                    oss << " != ";
+                    break;
+                default:
+                    break;
+            }
+            
+            oss << "(";
+            expr->operands[i + 1]->accept(this);
+            oss << ")";
+        }
+    }
+    
+    void CodeGenHB::visit(mir::MulExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " * ";
+        expr->rhs->accept(this);
+        oss << ')';
+    }
+    
+    void CodeGenHB::visit(mir::DivExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " / ";
+        expr->rhs->accept(this);
+        oss << ')';
+    }
+    
+    void CodeGenHB::visit(mir::AddExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " + ";
+        expr->rhs->accept(this);
+        oss << ')';
+    };
+    
+    void CodeGenHB::visit(mir::SubExpr::Ptr expr) {
+        oss << '(';
+        expr->lhs->accept(this);
+        oss << " - ";
+        expr->rhs->accept(this);
+        oss << ')';
+    };
+    
+    void CodeGenHB::visit(mir::BoolLiteral::Ptr expr) {
+        oss << "(bool) ";
+        oss << (bool) expr->val;
+    };
+    
+    void CodeGenHB::visit(mir::StringLiteral::Ptr expr) {
+        oss << "\"";
+        oss << expr->val;
+        oss << "\"";
+    };
+    
+    void CodeGenHB::visit(mir::FloatLiteral::Ptr expr) {
+        oss << "(";
+        oss << "(float) ";
+        oss << expr->val;
+        oss << ") ";
+    };
+    
+    void CodeGenHB::visit(mir::IntLiteral::Ptr expr) {
+        oss << "(";
+        //oss << "(int) ";
+        oss << expr->val;
+        oss << ") ";
+    }
+    
+    void CodeGenHB::visit(mir::VarDecl::Ptr var_decl) {
+        
+        if (mir::isa<mir::VertexSetWhereExpr>(var_decl->initVal)) {
+            // declaring a new vertexset as output from where expression
+            printIndent();
+            var_decl->initVal->accept(this);
+            oss << std::endl;
+            
+            printIndent();
+            var_decl->type->accept(this);
+            oss << var_decl->name << "  = ____graphit_tmp_out; " << std::endl;
+            
+        } else if (mir::isa<mir::EdgeSetApplyExpr>(var_decl->initVal)) {
+            printIndent();
+            var_decl->type->accept(this);
+            oss << var_decl->name << " = ";
+            auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(var_decl->initVal);
+            //TODO(Emily): need to implement this
+            //genEdgesetApplyFunctionCall(edgeset_apply_expr);
+        } else {
+            printIndent();
+            
+            //we probably don't need the modifiers now
+            //oss << var_decl->modifier << ' ';
+            
+            var_decl->type->accept(this);
+            oss << var_decl->name << " ";
+            if (var_decl->initVal != nullptr) {
+                oss << "= ";
+                var_decl->initVal->accept(this);
+            }
+            oss << ";" << std::endl;
+        }
+    }
+    
+    //TODO(Emily): probably need to change this - unless we keep these types (and vectors)
+    void CodeGenCPP::visit(mir::VertexSetType::Ptr vertexset_type) {
+        oss << "VertexSubset<int> *  ";
+    }
+    
+    //TODO(Emily): need to change this if we don't keep vectors
+    void CodeGenCPP::visit(mir::ListType::Ptr list_type) {
+        oss << "std::vector< ";
+        list_type->element_type->accept(this);
+        oss << " > *  ";
+    }
+    
+    void CodeGenCPP::visit(mir::StructTypeDecl::Ptr struct_type) {
+        oss << struct_type->name << " ";
+    }
+    
+    
+    //******END OF VISIT FUNCS****
     void CodeGenHB::genIncludeStmts() {
         oss << "#include <string.h> " << std::endl;
         oss << "#include \"bsg_manycore.h\"" << std::endl;

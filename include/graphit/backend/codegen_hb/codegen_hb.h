@@ -103,6 +103,7 @@ namespace graphit {
         MIRContext * mir_context_;
         std::ostream &oss;
         unsigned indentLevel;
+        HBEdgesetApplyFunctionGenerator* edgeset_apply_func_gen_;
         void indent() { ++indentLevel; }
         void dedent() { --indentLevel; }
         void printIndent() { oss << std::string(2 * indentLevel, ' '); }

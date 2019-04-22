@@ -17,7 +17,7 @@ namespace graphit {
     public:
         CodeGenHB(std::ostream &input_oss, MIRContext *mir_context) : oss(input_oss), mir_context_(mir_context), indentLevel(0), current_context(mir::FuncDecl::CONTEXT_HOST){
             //TODO(Emily): look at the C++ codegen backend to see what happens here
-            //edgeset_apply_func_gen_ = new EdgesetApplyFunctionDeclGenerator(mir_context_, oss);
+            edgeset_apply_func_gen_ = new HBEdgesetApplyFunctionGenerator(mir_context_, oss);
         }
         int genHBCode(void);
         

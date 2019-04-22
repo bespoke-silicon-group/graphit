@@ -158,7 +158,7 @@ namespace graphit {
         if (mir::isa<mir::EdgeSetApplyExpr>(expr_stmt->expr)) {
             printIndent();
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(expr_stmt->expr);
-            //genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            genEdgesetApplyFunctionCall(edgeset_apply_expr);
         } else {
             printIndent();
             expr_stmt->expr->accept(this);
@@ -184,7 +184,7 @@ namespace graphit {
             assign_stmt->lhs->accept(this);
             oss << " = ";
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
-            //genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            genEdgesetApplyFunctionCall(edgeset_apply_expr);
             
         } else {
             printIndent();
@@ -778,7 +778,7 @@ namespace graphit {
             oss << var_decl->name << " = ";
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(var_decl->initVal);
             //TODO(Emily): need to implement this
-            //genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            genEdgesetApplyFunctionCall(edgeset_apply_expr);
         } else {
             printIndent();
             
@@ -893,6 +893,66 @@ namespace graphit {
         //the declaration and the value are separate. The value is generated as a separate assign statement in the main function
         var_decl->type->accept(this);
         oss << var_decl->name << "; " << std::endl;
+    }
+    
+    void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply) {
+        // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
+        
+        auto edgeset_apply_func_name = edgeset_apply_func_gen_->genFunctionName(apply);
+        oss << edgeset_apply_func_name << "(";
+        auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
+        std::vector<std::string> arguments = std::vector<std::string>();
+        
+        
+        if (apply->from_func != "") {
+            if (mir_context_->isFunction(apply->from_func)) {
+                // the schedule is an input from function
+                // Create functor instance
+                arguments.push_back(apply->from_func + "()");
+            } else {
+                // the input is an input from vertexset
+                arguments.push_back(apply->from_func);
+            }
+        }
+        
+        if (apply->to_func != "") {
+            if (mir_context_->isFunction(apply->to_func)) {
+                // the schedule is an input to function
+                // Create functor instance
+                arguments.push_back(apply->to_func + "()");
+            } else {
+                // the input is an input to vertexset
+                arguments.push_back(apply->to_func);
+            }
+        }
+        
+        // the original apply function (pull direction in hybrid case)
+        arguments.push_back(apply->input_function_name + "()");
+        
+        // a filter function for the push direction in hybrid code
+        //TODO(Emily) implement other directions
+        /*
+        if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)){
+            auto apply_expr = mir::to<mir::HybridDenseEdgeSetApplyExpr>(apply);
+            if (apply_expr->push_to_function_ != ""){
+                arguments.push_back(apply_expr->push_to_function_ + "()");
+            }
+        }
+        
+        // the push direction apply function for hybrid schedule
+        if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)){
+            auto apply_expr = mir::to<mir::HybridDenseEdgeSetApplyExpr>(apply);
+            arguments.push_back(apply_expr->push_function_ + "()");
+        }
+         */
+        
+        // the edgeset that is being applied over (target)
+        apply->target->accept(this);
+        for (auto &arg : arguments) {
+            oss << ", " << arg;
+        }
+        
+        oss << "); " << std::endl;
     }
     
 }

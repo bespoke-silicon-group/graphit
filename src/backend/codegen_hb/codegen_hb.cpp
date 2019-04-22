@@ -36,8 +36,8 @@ namespace graphit {
         }
         
         //TODO(Emily): need to modify these calls for our machine
-        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
-        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
+        //auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
+        //gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
         
         //Processing the functions
         std::map<std::string, mir::FuncDecl::Ptr>::iterator it;

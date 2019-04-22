@@ -15,6 +15,7 @@ namespace graphit {
      */
     struct HBEdgesetApplyFunctionGenerator : mir::MIRVisitor {
         
+        virtual void visit (mir::PushEdgeSetApplyExpr::Ptr push_apply);
         //TODO(Emily): implement these directions later, starting with just push for now
         //virtual void visit (mir::PullEdgeSetApplyExpr::Ptr pull_apply);
         //virtual void visit (mir::HybridDenseEdgeSetApplyExpr::Ptr hybrid_dense_apply);
@@ -25,11 +26,7 @@ namespace graphit {
             indentLevel = 0;
         }
         
-        ~HBEdgesetApplyFunctionGenerator()=default;
-        
-        //note moved from above and not virtual anymore
-        void visit (mir::PushEdgeSetApplyExpr::Ptr push_apply);
-
+        //~HBEdgesetApplyFunctionGenerator()=default;
         
         void genEdgeApplyFuncDecls(){
             //Processing the functions

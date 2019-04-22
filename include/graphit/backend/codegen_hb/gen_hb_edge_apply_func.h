@@ -26,7 +26,7 @@ namespace graphit {
             indentLevel = 0;
         }
         
-        
+        ~HBEdgesetApplyFunctionGeneratr() : default;
         
         void genEdgeApplyFuncDecls(){
             //Processing the functions

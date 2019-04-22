@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <graphit/backend/codegen_hb/gen_hb_edge_apply_func.h>
 
 #define DEFAULT(T) virtual void visit(mir::T::Ptr x) { std::cerr << "Is a " #T "\n";}
 
@@ -92,7 +93,7 @@ namespace graphit {
          virtual void visit(mir::VertexSetType::Ptr vertexset_type);
          virtual void visit(mir::ListType::Ptr list_type);
          
-         virtual void visit(mir::StructTypeDecl::Ptr struct_type); 
+         virtual void visit(mir::StructTypeDecl::Ptr struct_type);
          virtual void visit(mir::ScalarType::Ptr scalar_type);
          virtual void visit(mir::VectorType::Ptr vector_type);
          

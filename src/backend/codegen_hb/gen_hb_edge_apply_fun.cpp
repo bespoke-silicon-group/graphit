@@ -25,14 +25,15 @@ namespace graphit {
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
-        if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+        //TODO(Emily): implement other directions
+        /*if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
             genEdgePullApplyFunctionDeclBody(apply);
-        }
-        /*
+        }*/
+        
         if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
             genEdgePushApplyFunctionDeclBody(apply);
         }
-        
+        /*
         if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
             genEdgeHybridDenseApplyFunctionDeclBody(apply);
         }
@@ -71,49 +72,12 @@ namespace graphit {
         
         
         if (!mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
-            //            if (from_vertexset_specified){
-            //                printIndent();
-            //                // for push, we use sparse vertexset
-            //                oss_ << "    long m = from_vertexset->size();\n";
-            //            }
             
-            //we need to calculate the outdegrees and m if it is hybrid_dense, hybrid_denseforward or push with output
-            if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)
-                || mir::isa<mir::HybridDenseForwardEdgeSetApplyExpr>(apply)
-                || (mir::isa<mir::PushEdgeSetApplyExpr>(apply) && apply_expr_gen_frontier)) {
-                if (from_vertexset_specified) {
-                    oss_ << "    from_vertexset->toSparse();" << std::endl;
-                    oss_ << "    long m = from_vertexset->size();\n";
-                    
-                } else {
-                    oss_ << "    long m = numVertices; \n";
-                }
-                oss_ << "    // used to generate nonzero indices to get degrees\n"
-                "    uintT *degrees = newA(uintT, m);\n"
-                "    // We probably need this when we get something that doesn't have a dense set, not sure\n"
-                "    // We can also write our own, the eixsting one doesn't quite work for bitvectors\n"
-                "    //from_vertexset->toSparse();\n"
-                "    {\n";
-                
-                if (from_vertexset_specified){
-                    oss_ <<  "        parallel_for (long i = 0; i < m; i++) {\n"
-                    "            NodeID v = from_vertexset->dense_vertex_set_[i];\n"
-                    "            degrees[i] = g.out_degree(v);\n"
-                    "        }\n"
-                    "    }\n"
-                    "    uintT outDegrees = sequence::plusReduce(degrees, m);\n";
-                } else {
-                    oss_ << "        parallel_for (long i = 0; i < numVertices; i++) {\n"
-                    "            degrees[i] = g.out_degree(i);\n"
-                    "        }\n"
-                    "    }\n"
-                    "    uintT outDegrees = sequence::plusReduce(degrees, m);\n";
-                }
-            }
-            else if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)){
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)){
                 //we still need to convert the from_vertexset to sparse, and compute m for SparsePush
                 // even when it does not return a frontier
                 if (from_vertexset_specified) {
+                    //TODO(Emily): we will need to implement our own toSparse() (or remove this)
                     oss_ << "    from_vertexset->toSparse();" << std::endl;
                     oss_ << "    long m = from_vertexset->size();\n";
                     
@@ -148,6 +112,7 @@ namespace graphit {
         if (apply_expr_gen_frontier) {
             // build an empty vertex subset if apply function returns
             //set up code for outputing frontier for push based edgeset apply operations
+            //TODO(Emily): need to update this code here to use our data types
             oss_ <<
             "    VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
             "    if (numVertices != from_vertexset->getVerticesRange()) {\n"
@@ -165,6 +130,7 @@ namespace graphit {
         
         printIndent();
         
+        //TODO(Emily): need to use our parallel blocked macro here
         std::string for_type = "for";
         if (apply->is_parallel)
             for_type = "parallel_for";
@@ -252,11 +218,6 @@ namespace graphit {
             printIndent();
             oss_ << "} else { outEdges[offset + j] = UINT_E_MAX; }" << std::endl;
             
-            
-            
-            //            dedent();
-            //            printIndent();
-            //            oss_ << "}" << std::endl;
         }
         
         
@@ -321,6 +282,8 @@ namespace graphit {
 
 
     // Iterate through per-socket local buffers and merge the result into the global buffer
+    //NOTE(Emily): we will probably want to leverage code like this for our own memory system
+    //For now we shouldn't ever be using this
     void HBEdgesetApplyFunctionGenerator::printNumaMerge(mir::EdgeSetApplyExpr::Ptr apply) {
         oss_ << "}// end of per-socket parallel region\n\n";
         auto edgeset_name = mir::to<mir::VarExpr>(apply->target)->var.getName();
@@ -343,6 +306,7 @@ namespace graphit {
         oss_ << "    }\n  }" << std::endl;
     }
 
+    //NOTE(Emily): also probably useful for distributing data on our machine
     void HBEdgesetApplyFunctionGenerator::printNumaScatter(mir::EdgeSetApplyExpr::Ptr apply) {
         oss_ << "parallel_for (int n = 0; n < numVertices; n++) {\n";
         oss_ << "    for (int socketId = 0; socketId < omp_get_num_places(); socketId++) {\n";
@@ -369,6 +333,7 @@ namespace graphit {
         vector<string> templates = vector<string>();
         vector<string> arguments = vector<string>();
         
+        //TODO(Emily): are we going to use their Graph class or will we need our own
         if (apply->is_weighted) {
             arguments.push_back("WGraph & g");
         } else {
@@ -401,22 +366,6 @@ namespace graphit {
         templates.push_back("typename APPLY_FUNC");
         arguments.push_back("APPLY_FUNC apply_func");
         
-        if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
-            auto apply_expr = mir::to<mir::HybridDenseEdgeSetApplyExpr>(apply);
-            
-            if (apply_expr->push_to_function_ != "") {
-                templates.push_back("typename PUSH_TO_FUNC");
-                arguments.push_back("PUSH_TO_FUNC push_to_func");
-            }
-        }
-        
-        
-        if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
-            auto apply_expr = mir::to<mir::HybridDenseEdgeSetApplyExpr>(apply);
-            templates.push_back("typename PUSH_APPLY_FUNC");
-            arguments.push_back("PUSH_APPLY_FUNC push_apply_func");
-        }
-        
         oss_ << "template <";
         
         bool first = true;
@@ -445,6 +394,7 @@ namespace graphit {
         
     }
 
+    //NOTE(Emily): we may want to somehow signify this is a parallel kernel in the name, but otherwise we don't need to change this
     //generates different function name for different schedules
     // important for cases where we split the kernel iterations and assign different schedules to different iters
     std::string HBEdgesetApplyFunctionGenerator::genFunctionName(mir::EdgeSetApplyExpr::Ptr apply) {

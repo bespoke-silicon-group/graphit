@@ -24,8 +24,6 @@ namespace graphit {
                 genScalarDecl(constant);
             }
         }
-        
-        //TODO(Emily): need to implement this pass through the AST to generate code
     
         // Generate global declarations for socket-local buffers used by NUMA optimization
         for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
@@ -37,12 +35,9 @@ namespace graphit {
             }
         }
         
-        //Generates function declarations for various edgeset apply operations with different schedules
-        // TODO: actually complete the generation, fow now we will use libraries to test a few schedules
-        
-        //TODO(Emily): need to implement these two calls
-        //auto gen_edge_apply_function_visitor = EdgesetApplyFunctionDeclGenerator(mir_context_, oss);
-        //gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
+        //TODO(Emily): need to modify these calls for our machine
+        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
+        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
         
         //Processing the functions
         std::map<std::string, mir::FuncDecl::Ptr>::iterator it;

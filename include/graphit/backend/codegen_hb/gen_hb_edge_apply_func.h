@@ -1,3 +1,6 @@
+#ifndef GRAPHIT_GEN_EDGE_APPLY_FUNC_DECL_H
+#define GRAPHIT_GEN_EDGE_APPLY_FUNC_DECL_H
+
 #include <graphit/midend/mir.h>
 #include <graphit/midend/mir_visitor.h>
 #include <graphit/midend/mir_context.h>
@@ -111,3 +114,5 @@ namespace graphit {
         
     };
 }
+
+#endif

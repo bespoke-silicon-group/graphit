@@ -101,7 +101,7 @@ namespace graphit {
                                                                                  std::string apply_func_name) {
         
         
-        
+        //TODO(Emily): do we want to support this? if so it needs to be modified
         //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
         if (apply->enable_deduplication && apply_expr_gen_frontier) {
             oss_ << "    if (g.flags_ == nullptr){\n"
@@ -115,6 +115,8 @@ namespace graphit {
             // build an empty vertex subset if apply function returns
             //set up code for outputing frontier for push based edgeset apply operations
             //TODO(Emily): need to update this code here to use our data types
+            //           + we want to load next frontier in blocks, so should have it fully initialized
+            //           + this most likely means having everything as dense, instead of switching from sparse to dense
             oss_ <<
             "    VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
             "    if (numVertices != from_vertexset->getVerticesRange()) {\n"
@@ -133,6 +135,8 @@ namespace graphit {
         printIndent();
         
         //TODO(Emily): need to use our parallel blocked macro here
+        //              we probably want to add the extra outer loops for loading in blocks
+        //              then change iteration of for loop below to follow multicore arch
         std::string for_type = "for";
         if (apply->is_parallel)
             for_type = "parallel_for";
@@ -261,7 +265,8 @@ namespace graphit {
         
         
         
-        
+        //TODO(Emily): this is generating new frontier to be returned
+        //             we will want to modify this to be what we want before returning
         //return a new vertexset if no subset vertexset is returned
         if (apply_expr_gen_frontier) {
             oss_ << "  uintE *nextIndices = newA(uintE, outEdgeCount);\n"

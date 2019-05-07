@@ -16,9 +16,10 @@ namespace graphit {
             return;
         }
         
-        
+        //TODO(Emily): if we don't want to allow templates this is where we would need to change the code
         genEdgeApplyFunctionSignature(apply);
         oss_ << "{ " << endl; //the end of the function declaration
+        //TODO(Emily): this func call is what we need to change to fit our execution model
         genEdgeApplyFunctionDeclBody(apply);
         oss_ << "} //end of edgeset apply function " << endl; //the end of the function declaration
         
@@ -88,6 +89,7 @@ namespace graphit {
         }
     }
 
+    //TODO(Emily): this is the main part of code to modify for our purposes
     // Print the code for traversing the edges in the push direction and return the new frontier
     // the apply_func_name is used for hybrid schedule, when a special push_apply_func is used
     // usually, the apply_func_name is fixed to "apply_func" (see the default argument)
@@ -323,6 +325,7 @@ namespace graphit {
         string dst_type;
         setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
         setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
+        //TODO(Emily): this is the main algorithmic func that we need to change
         printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
     }
 

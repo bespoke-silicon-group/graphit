@@ -5,8 +5,7 @@ namespace graphit {
     int CodeGenHB::genHBCode() {
         genIncludeStmts();
         genEdgeSets();
-        //TODO(Emily): need to implement the visit patterns to call Struct Type Decls
-        //genStructTypeDecls();
+        genStructTypeDecls();
         
         //Processing the constants, generting declartions
         for (auto constant : mir_context_->getLoweredConstants()) {
@@ -35,7 +34,7 @@ namespace graphit {
             }
         }
         
-        //TODO(Emily): need to modify these calls for our machine
+        //TODO(Emily): need to modify these calls for manycore blocking
         auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
         gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
         
@@ -378,6 +377,7 @@ namespace graphit {
             oss << ";";
             oss << std::endl;
         }
+        //TODO(Emily): implement main function code generation
         /*
         if (func_decl->name == "main") {
             for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
@@ -953,6 +953,31 @@ namespace graphit {
         }
         
         oss << "); " << std::endl;
+    }
+    
+    /**
+     * Generate the struct types before the arrays are generated
+     */
+    void CodeGenHB::genStructTypeDecls() {
+        for (auto const &struct_type_decl_entry : mir_context_->struct_type_decls) {
+            auto struct_type_decl = struct_type_decl_entry.second;
+            oss << "typedef struct ";
+            oss << struct_type_decl->name << " { " << std::endl;
+            
+            for (auto var_decl : struct_type_decl->fields) {
+                indent();
+                printIndent();
+                var_decl->type->accept(this);
+                //we don't initialize in the struct declarations anymore
+                // the initializations are done in the main function
+                oss << var_decl->name;
+                // << " = ";
+                //var_decl->initVal->accept(this);
+                oss << ";" << std::endl;
+                dedent();
+            }
+            oss << "} " << struct_type_decl->name << ";" << std::endl;
+        }
     }
     
 }

@@ -120,7 +120,7 @@ namespace graphit {
         
         void genEdgeSets();
         
-        //void genStructTypeDecls();
+        void genStructTypeDecls();
         
         void genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply);
         

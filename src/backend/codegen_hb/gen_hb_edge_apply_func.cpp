@@ -144,16 +144,17 @@ namespace graphit {
         std::string node_id_type = "NodeID";
         if (apply->is_weighted) node_id_type = "WNode";
         
-        
+        //TODO(Emily): will we always assume from vertexset is specified?
+        //             - also do we want to use vertex_t type? or just assume we will always index w/ long type
         if (from_vertexset_specified)
-            oss_ << for_type << " (long i=0; i < m; i++) {" << std::endl;
+            oss_ << for_type << " (long i=0; i < blocked_vertexset_size_of_block(from_vertexset, fbid); i++) {" << std::endl;
         else
             oss_ << for_type << " (NodeID s=0; s < g.num_nodes(); s++) {" << std::endl;
         
         indent();
         
         if (from_vertexset_specified){
-            oss_ << "    NodeID s = from_vertexset->dense_vertex_set_[i];\n"
+            oss_ << "    NodeID s = blocked_vertexset_block_vertex_at(from_vertexset, i);\n"
             "    int j = 0;\n";
             if (apply_expr_gen_frontier){
                 oss_ <<  "    uintT offset = offsets[i];\n";
@@ -169,8 +170,13 @@ namespace graphit {
         
         printIndent();
         
+        //TODO(Emily): will we support out_neigh() in our Graph library?
         oss_ << "for(" << node_id_type << " d : g.out_neigh(s)){" << std::endl;
         
+        //want to check that we're in the correct block of next frontier
+        indent();
+        printIndent();
+        oss_ << "if(blocked_vertexset_block_of(next_frontier, d){" << std::endl;
         
         // print the checks on filtering on sources s
         if (apply->to_func != "") {
@@ -216,6 +222,7 @@ namespace graphit {
             }
             
             indent();
+            //TODO(Emily): they're using this outEdges as a temp var to build the frontier, not sure we want this
             //generate the code for adding destination to "next" frontier
             oss_ << " ) { " << std::endl;
             printIndent();
@@ -247,6 +254,10 @@ namespace graphit {
             oss_ << "j++;" << std::endl;
         }
         
+        dedent();
+        printIndent();
+        oss_ << "} //end of if statement to check if in current block" << std::endl;
+        
         //end of for loop on the neighbors
         dedent();
         printIndent();
@@ -266,7 +277,8 @@ namespace graphit {
         
         
         //TODO(Emily): this is generating new frontier to be returned
-        //             we will want to modify this to be what we want before returning
+        //             we will want to modify this to be what we want before returningls
+        
         //return a new vertexset if no subset vertexset is returned
         if (apply_expr_gen_frontier) {
             oss_ << "  uintE *nextIndices = newA(uintE, outEdgeCount);\n"

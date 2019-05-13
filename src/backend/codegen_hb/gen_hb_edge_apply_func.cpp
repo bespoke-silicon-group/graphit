@@ -134,9 +134,21 @@ namespace graphit {
         
         printIndent();
         
-        //TODO(Emily): need to use our parallel blocked macro here
-        //              we probably want to add the extra outer loops for loading in blocks
-        //              then change iteration of for loop below to follow multicore arch
+        //TODO(Emily): using our parallel blocked macro here
+        //             do we want to load in the distance blocked vertex like in example?
+        //             how do we change the generation of distance to reflect src/dist
+        
+        if(apply_expr_gen_frontier)
+        {
+            printIndent();
+            oss_ << "bvs_block_t fbid, nbid;" << std::endl;
+            oss_ << "blocked_vertex_set_foreach_block(from_vertexset, fbid) {" << std::endl;
+            indent();
+            printIndent();
+            oss_ << "blocked_vertex_set_foreach_block(next_frontier, nbid) {" << std::endl;
+            indent();
+        }
+        
         std::string for_type = "for";
         if (apply->is_parallel)
             for_type = "parallel_for";
@@ -167,6 +179,7 @@ namespace graphit {
             oss_ << "if (from_func(s)){ " << std::endl;
             indent();
         }
+        
         
         printIndent();
         
@@ -274,6 +287,13 @@ namespace graphit {
         printIndent();
         oss_ << "}" << std::endl;
         
+        dedent();
+        printIndent();
+        oss_ << "}" << std::endl; //end of next frontier blocking
+        
+        dedent();
+        printIndent();
+        oss_ << "}" << std::endl; //end of current frontier blocking
         
         
         //TODO(Emily): this is generating new frontier to be returned

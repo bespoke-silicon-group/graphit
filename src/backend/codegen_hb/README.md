@@ -12,4 +12,4 @@ It is not fully implemented at this time.
 
 1. Do we plan to keep the same next/current frontier data structures for entire run? GraphIt creates new structures for each iteration.
 2. How do we want to implement the Graph data type? Can we create a macro for setting up blocked vertexsets?
-
+3. Do we want to support templates? i.e. passing in the apply/filter funcs as params to the main kernel code

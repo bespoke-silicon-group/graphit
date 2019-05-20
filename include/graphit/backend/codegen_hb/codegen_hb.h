@@ -126,11 +126,11 @@ namespace graphit {
         
         void genPropertyArrayDecl(mir::VarDecl::Ptr shared_ptr);
         
-        //void genPropertyArrayAlloc(mir::VarDecl::Ptr shared_ptr);
+        void genPropertyArrayAlloc(mir::VarDecl::Ptr shared_ptr);
         
         void genScalarDecl(mir::VarDecl::Ptr var_decl);
         
-        //void genScalarAlloc(mir::VarDecl::Ptr shared_ptr);
+        void genScalarAlloc(mir::VarDecl::Ptr shared_ptr);
     };
 }
 

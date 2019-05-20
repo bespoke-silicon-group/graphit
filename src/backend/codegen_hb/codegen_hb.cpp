@@ -895,6 +895,57 @@ namespace graphit {
         oss << var_decl->name << "; " << std::endl;
     }
     
+    void CodeGenCPP::genScalarAlloc(mir::VarDecl::Ptr var_decl) {
+        
+        printIndent();
+        
+        oss << var_decl->name << " ";
+        if (var_decl->initVal != nullptr) {
+            oss << "= ";
+            var_decl->initVal->accept(this);
+        }
+        oss << ";" << std::endl;
+        
+    }
+    
+    //TODO(Emily): look more closely at this func and see if we need to change this
+    
+    void CodeGenCPP::genPropertyArrayAlloc(mir::VarDecl::Ptr var_decl) {
+        const auto name = var_decl->name;
+        printIndent();
+        oss << name;
+        // read the size of the array
+        mir::VectorType::Ptr vector_type = std::dynamic_pointer_cast<mir::VectorType>(var_decl->type);
+        const auto size_expr = mir_context_->getElementCount(vector_type->element_type);
+        auto vector_element_type = vector_type->vector_element_type;
+        
+        assert(size_expr != nullptr);
+        
+        /** Deprecated, now we uses a "new" allocation scheme for arrays
+         oss << " = std::vector< ";
+         vector_element_type->accept(this);
+         oss << " >  ";
+         oss << " ( ";
+         size_expr->accept(this);
+         oss << " ); " << std::endl;
+         **/
+        
+        oss << " = new ";
+        
+        if (mir::isa<mir::VectorType>(vector_element_type)){
+            //for vector type, we use the name from typedef
+            auto vector_type_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
+            assert(vector_type_vector_element_type->typedef_name_ != "");
+            oss << vector_type_vector_element_type->typedef_name_ << " ";
+        } else {
+            vector_element_type->accept(this);
+        }
+        
+        oss << "[ ";
+        size_expr -> accept(this);
+        oss << "];" << std::endl;
+    }
+    
     void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply) {
         // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
         

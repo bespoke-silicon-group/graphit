@@ -255,8 +255,8 @@ namespace graphit {
         printBeginIndent();
         indent();
         
-        //TODO(Emily): need to implement this to fit our needs for functors/functions
-        /*
+        //TODO(Emily): need to modify this to fit our needs for main function initialization
+        
         
         if (func_decl->name == "main") {
             //generate special initialization code for main function
@@ -355,7 +355,7 @@ namespace graphit {
             }
         }
         
-        */
+        
         //if the function has a body
         if (func_decl->body->stmts) {
             
@@ -377,7 +377,7 @@ namespace graphit {
             oss << ";";
             oss << std::endl;
         }
-        //TODO(Emily): implement main function code generation
+        //NOTE(Emily): This is NUMA aware related. not important for our system
         /*
         if (func_decl->name == "main") {
             for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {

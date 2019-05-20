@@ -297,7 +297,7 @@ namespace graphit {
         
         
         //TODO(Emily): this is generating new frontier to be returned
-        //             we will want to modify this to be what we want before returningls
+        //             we will want to modify this to be what we want before returning
         
         //return a new vertexset if no subset vertexset is returned
         if (apply_expr_gen_frontier) {

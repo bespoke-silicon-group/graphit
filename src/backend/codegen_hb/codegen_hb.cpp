@@ -895,7 +895,7 @@ namespace graphit {
         oss << var_decl->name << "; " << std::endl;
     }
     
-    void CodeGenCPP::genScalarAlloc(mir::VarDecl::Ptr var_decl) {
+    void CodeGenHB::genScalarAlloc(mir::VarDecl::Ptr var_decl) {
         
         printIndent();
         
@@ -910,7 +910,7 @@ namespace graphit {
     
     //TODO(Emily): look more closely at this func and see if we need to change this
     
-    void CodeGenCPP::genPropertyArrayAlloc(mir::VarDecl::Ptr var_decl) {
+    void CodeGenHB::genPropertyArrayAlloc(mir::VarDecl::Ptr var_decl) {
         const auto name = var_decl->name;
         printIndent();
         oss << name;

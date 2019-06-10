@@ -123,6 +123,8 @@ class CSRGraph {
 
 
  public:
+  typedef NodeID_ NodeID;
+  typedef DestID_ DestID;
   CSRGraph() : directed_(false), num_nodes_(-1), num_edges_(-1),
     out_index_(nullptr), out_neighbors_(nullptr),
   in_index_(nullptr), in_neighbors_(nullptr), flags_(nullptr), is_transpose_(false) {}

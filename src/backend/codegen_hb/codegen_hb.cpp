@@ -76,7 +76,7 @@ namespace graphit {
     }
 
     void CodeGenHB::visit(mir::EdgeSetType::Ptr edgeset_type) {
-        oss << " Graph ";
+        oss << " GraphHB ";
     }
 
     void CodeGenHB::visit(mir::ElementType::Ptr element_type) {
@@ -659,7 +659,7 @@ namespace graphit {
             edgeset_load_expr->file_name->accept(this);
             oss << ") ";
         } else {
-            oss << "builtin_loadEdgesFromFile ( ";
+            oss << "builtin_loadEdgesFromFileToHB ( ";
             edgeset_load_expr->file_name->accept(this);
             oss << ") ";
         }
@@ -840,7 +840,7 @@ namespace graphit {
                 oss << "WGraph " << edgeset->name << ";" << std::endl;
             } else {
                 //unweighted edgeset
-                oss << "Graph " << edgeset->name << "; " << std::endl;
+                oss << "GraphHB " << edgeset->name << "; " << std::endl;
             }
         }
     }

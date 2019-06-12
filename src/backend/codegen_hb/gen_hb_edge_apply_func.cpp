@@ -2,27 +2,27 @@
 
 namespace graphit {
     using namespace std;
-    
+
     void HBEdgesetApplyFunctionGenerator::visit(mir::PushEdgeSetApplyExpr::Ptr push_apply) {
         genEdgeApplyFunctionDeclaration(push_apply);
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclaration(mir::EdgeSetApplyExpr::Ptr apply) {
         auto func_name = genFunctionName(apply);
-        
+
         // these schedules are still supported by runtime libraries
         if (func_name == "edgeset_apply_push_parallel_sliding_queue_from_vertexset_with_frontier"
             || func_name == "edgeset_apply_push_parallel_sliding_queue_weighted_deduplicatied_from_vertexset_with_frontier"){
             return;
         }
-        
+
         //TODO(Emily): if we don't want to allow templates this is where we would need to change the code
         genEdgeApplyFunctionSignature(apply);
         oss_ << "{ " << endl; //the end of the function declaration
         //TODO(Emily): this func call is what we need to change to fit our execution model
         genEdgeApplyFunctionDeclBody(apply);
         oss_ << "} //end of edgeset apply function " << endl; //the end of the function declaration
-        
+
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
@@ -30,7 +30,7 @@ namespace graphit {
         /*if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
             genEdgePullApplyFunctionDeclBody(apply);
         }*/
-        
+
         if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
             genEdgePushApplyFunctionDeclBody(apply);
         }
@@ -38,7 +38,7 @@ namespace graphit {
         if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
             genEdgeHybridDenseApplyFunctionDeclBody(apply);
         }
-        
+
         if (mir::isa<mir::HybridDenseForwardEdgeSetApplyExpr>(apply)) {
             genEdgeHybridDenseForwardApplyFunctionDeclBody(apply);
         }
@@ -49,16 +49,16 @@ namespace graphit {
                                                        bool & apply_expr_gen_frontier,
                                                        bool &from_vertexset_specified,
                                                        std::string &dst_type) {
-        
+
         // set up the flag for checking if a from_vertexset has been specified
         if (apply->from_func != "")
             if (!mir_context_->isFunction(apply->from_func))
                 from_vertexset_specified = true;
-        
+
         // Check if the apply function has a return value
         auto apply_func = mir_context_->getFunction(apply->input_function_name);
         dst_type = apply->is_weighted ? "d.v" : "d";
-        
+
         if (apply_func->result.isInitialized()) {
             // build an empty vertex subset if apply function returns
             apply_expr_gen_frontier = true;
@@ -70,10 +70,10 @@ namespace graphit {
                                                                  bool apply_expr_gen_frontier,
                                                                  bool from_vertexset_specified) {
         oss_ << "    int64_t numVertices = g.num_nodes(), numEdges = g.num_edges();\n";
-        
-        
+
+
         if (!mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
-            
+
             if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)){
                 //we still need to convert the from_vertexset to sparse, and compute m for SparsePush
                 // even when it does not return a frontier
@@ -81,7 +81,7 @@ namespace graphit {
                     //TODO(Emily): we will need to implement our own toSparse() (or remove this)
                     oss_ << "    from_vertexset->toSparse();" << std::endl;
                     oss_ << "    long m = from_vertexset->size();\n";
-                    
+
                 } else {
                     oss_ << "    long m = numVertices; \n";
                 }
@@ -94,12 +94,12 @@ namespace graphit {
     // the apply_func_name is used for hybrid schedule, when a special push_apply_func is used
     // usually, the apply_func_name is fixed to "apply_func" (see the default argument)
     void HBEdgesetApplyFunctionGenerator::printPushEdgeTraversalReturnFrontier(
-                                                                                 mir::EdgeSetApplyExpr::Ptr apply,
-                                                                                 bool from_vertexset_specified,
-                                                                                 bool apply_expr_gen_frontier,
-                                                                                 std::string dst_type,
-                                                                                 std::string apply_func_name) {
-        
+                                               mir::EdgeSetApplyExpr::Ptr apply,
+                                               bool from_vertexset_specified,
+                                               bool apply_expr_gen_frontier,
+                                               std::string dst_type,
+                                               std::string apply_func_name) {
+
         
         //TODO(Emily): do we want to support this? if so it needs to be modified
         //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
@@ -109,7 +109,7 @@ namespace graphit {
             "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
             "    }\n";
         }
-        
+
         // If apply function has a return value, then we need to return a temporary vertexsubset
         if (apply_expr_gen_frontier) {
             // build an empty vertex subset if apply function returns
@@ -128,16 +128,16 @@ namespace graphit {
             "    long outEdgeCount = sequence::plusScan(offsets, degrees, m);\n"
             "    uintE *outEdges = newA(uintE, outEdgeCount);\n";
         }
-        
-        
+
+
         indent();
-        
+
         printIndent();
-        
+
         //TODO(Emily): using our parallel blocked macro here
         //             do we want to load in the distance blocked vertex like in example?
         //             how do we change the generation of distance to reflect src/dist
-        
+
         if(apply_expr_gen_frontier)
         {
             printIndent();
@@ -148,23 +148,23 @@ namespace graphit {
             oss_ << "blocked_vertex_set_foreach_block(next_frontier, nbid) {" << std::endl;
             indent();
         }
-        
+
         std::string for_type = "for";
         if (apply->is_parallel)
             for_type = "parallel_for";
-        
+
         std::string node_id_type = "NodeID";
         if (apply->is_weighted) node_id_type = "WNode";
-        
+
         //TODO(Emily): will we always assume from vertexset is specified?
         //             - also do we want to use vertex_t type? or just assume we will always index w/ long type
         if (from_vertexset_specified)
             oss_ << for_type << " (long i=0; i < blocked_vertexset_size_of_block(from_vertexset, fbid); i++) {" << std::endl;
         else
             oss_ << for_type << " (NodeID s=0; s < g.num_nodes(); s++) {" << std::endl;
-        
+
         indent();
-        
+
         if (from_vertexset_specified){
             oss_ << "    NodeID s = blocked_vertexset_block_vertex_at(from_vertexset, i);\n"
             "    int j = 0;\n";
@@ -172,68 +172,68 @@ namespace graphit {
                 oss_ <<  "    uintT offset = offsets[i];\n";
             }
         }
-        
-        
+
+
         if (apply->from_func != "" && !from_vertexset_specified) {
             printIndent();
             oss_ << "if (from_func(s)){ " << std::endl;
             indent();
         }
-        
-        
+
+
         printIndent();
-        
+
         //TODO(Emily): will we support out_neigh() in our Graph library?
         oss_ << "for(" << node_id_type << " d : g.out_neigh(s)){" << std::endl;
-        
+
         //want to check that we're in the correct block of next frontier
         indent();
         printIndent();
         oss_ << "if(blocked_vertexset_block_of(next_frontier, d){" << std::endl;
-        
+
         // print the checks on filtering on sources s
         if (apply->to_func != "") {
             indent();
             printIndent();
-            
+
             oss_ << "if";
             //TODO: move this logic in to MIR at some point
             if (mir_context_->isFunction(apply->to_func)) {
                 //if the input expression is a function call
                 oss_ << " (to_func(" << dst_type << ")";
-                
+
             } else {
                 //the input expression is a vertex subset
                 oss_ << " (to_vertexset->bool_map_[s] ";
             }
             oss_ << ") { " << std::endl;
         }
-        
+
         indent();
         printIndent();
         if (apply_expr_gen_frontier) {
             oss_ << "if( ";
         }
-        
+
         // generating the C++ code for the apply function call
         if (apply->is_weighted) {
             oss_ << apply_func_name << " ( s , d.v, d.w )";
         } else {
             oss_ << apply_func_name << " ( s , d  )";
-            
+
         }
-        
+
         if (!apply_expr_gen_frontier) {
             oss_ << ";" << std::endl;
-            
+
         } else {
-            
-            
+
+
             //need to return a frontier
             if (apply->enable_deduplication && apply_expr_gen_frontier) {
                 oss_ << " && CAS(&(g.flags_[" << dst_type << "]), 0, 1) ";
             }
-            
+
             indent();
             //TODO(Emily): they're using this outEdges as a temp var to build the frontier, not sure we want this
             //generate the code for adding destination to "next" frontier
@@ -243,62 +243,62 @@ namespace graphit {
             dedent();
             printIndent();
             oss_ << "} else { outEdges[offset + j] = UINT_E_MAX; }" << std::endl;
-            
+
         }
-        
-        
-        
+
+
+
         // end of from filtering
         if (apply->to_func != "") {
             dedent();
             printIndent();
             oss_ << "} //end of to func" << std::endl;
-            
+
             if (apply_expr_gen_frontier){
                 printIndent();
                 oss_ << " else { outEdges[offset + j] = UINT_E_MAX;  }" << std::endl;
             }
-            
+
         }
-        
+
         //increment the index for each source vertex
         if (apply_expr_gen_frontier){
             printIndent();
             oss_ << "j++;" << std::endl;
         }
-        
+
         dedent();
         printIndent();
         oss_ << "} //end of if statement to check if in current block" << std::endl;
-        
+
         //end of for loop on the neighbors
         dedent();
         printIndent();
         oss_ << "} //end of for loop on neighbors" << std::endl;
-        
+
         if (apply->from_func != "" && !from_vertexset_specified) {
             dedent();
             printIndent();
             oss_ << "} //end of from func " << std::endl;
         }
-        
-        
+
+
         dedent();
         printIndent();
         oss_ << "}" << std::endl;
-        
+
         dedent();
         printIndent();
         oss_ << "}" << std::endl; //end of next frontier blocking
-        
+
         dedent();
         printIndent();
         oss_ << "}" << std::endl; //end of current frontier blocking
-        
-        
+
+
         //TODO(Emily): this is generating new frontier to be returned
         //             we will want to modify this to be what we want before returning
-        
+
         //return a new vertexset if no subset vertexset is returned
         if (apply_expr_gen_frontier) {
             oss_ << "  uintE *nextIndices = newA(uintE, outEdgeCount);\n"
@@ -307,7 +307,7 @@ namespace graphit {
             "  free(degrees);\n"
             "  next_frontier->num_vertices_ = nextM;\n"
             "  next_frontier->dense_vertex_set_ = nextIndices;\n";
-            
+
             //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
             if (apply->enable_deduplication && from_vertexset_specified) {
                 //clear up the indices that are set
@@ -368,18 +368,18 @@ namespace graphit {
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionSignature(mir::EdgeSetApplyExpr::Ptr apply) {
         auto func_name = genFunctionName(apply);
-        
+
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
         vector<string> templates = vector<string>();
         vector<string> arguments = vector<string>();
-        
+
         //TODO(Emily): are we going to use their Graph class or will we need our own
         if (apply->is_weighted) {
             arguments.push_back("WGraph & g");
         } else {
             arguments.push_back("Graph & g");
         }
-        
+
         if (apply->from_func != "") {
             if (mir_context_->isFunction(apply->from_func)) {
                 // the schedule is an input from function
@@ -390,7 +390,7 @@ namespace graphit {
                 arguments.push_back("VertexSubset<NodeID>* from_vertexset");
             }
         }
-        
+
         if (apply->to_func != "") {
             if (mir_context_->isFunction(apply->to_func)) {
                 // the schedule is an input to function
@@ -401,13 +401,13 @@ namespace graphit {
                 arguments.push_back("VertexSubset<NodeID>* to_vertexset");
             }
         }
-        
-        
+
+
         templates.push_back("typename APPLY_FUNC");
         arguments.push_back("APPLY_FUNC apply_func");
-        
+
         oss_ << "template <";
-        
+
         bool first = true;
         for (auto temp : templates) {
             if (first) {
@@ -419,7 +419,7 @@ namespace graphit {
         oss_ << "> ";
         oss_ << (mir_context_->getFunction(apply->input_function_name)->result.isInitialized() ?
                  "VertexSubset<NodeID>* " : "void ")  << func_name << "(";
-        
+
         first = true;
         for (auto arg : arguments) {
             if (first) {
@@ -428,10 +428,10 @@ namespace graphit {
             } else
                 oss_ << ", " << arg;
         }
-        
+
         oss_ << ") " << endl;
-        
-        
+
+
     }
 
     //NOTE(Emily): we may want to somehow signify this is a parallel kernel in the name, but otherwise we don't need to change this
@@ -447,10 +447,10 @@ namespace graphit {
         // To: "" or "to_vertexset" or "to_filter_func"
         // Frontier: "" (no frontier tracking) or "with_frontier"
         // Weighted: "" (unweighted) or "weighted"
-        
+
         string output_name = "edgeset_apply";
         auto apply_func = mir_context_->getFunction(apply->input_function_name);
-        
+
         //check direction
         if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
             output_name += "_push";
@@ -461,28 +461,28 @@ namespace graphit {
         } else if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
             output_name += "_hybrid_dense";
         }
-        
+
         //check parallelism specification
         if (apply->is_parallel) {
             output_name += "_parallel";
         } else {
             output_name += "_serial";
         }
-        
+
         if (apply->use_sliding_queue) {
             output_name += "_sliding_queue";
         }
-        
+
         //check if it is weighted
         if (apply->is_weighted) {
             output_name += "_weighted";
         }
-        
+
         // check for deduplication
         if (apply->enable_deduplication && apply_func->result.isInitialized()) {
             output_name += "_deduplicatied";
         }
-        
+
         if (apply->from_func != "") {
             if (mir_context_->isFunction(apply->from_func)) {
                 // the schedule is an input from function
@@ -492,7 +492,7 @@ namespace graphit {
                 output_name += "_from_vertexset";
             }
         }
-        
+
         if (apply->to_func != "") {
             if (mir_context_->isFunction(apply->to_func)) {
                 // the schedule is an input to function
@@ -502,7 +502,7 @@ namespace graphit {
                 output_name += "_to_vertexset";
             }
         }
-        
+
         if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
             auto apply_expr = mir::to<mir::HybridDenseEdgeSetApplyExpr>(apply);
             if (apply_expr->push_to_function_ != "") {
@@ -515,21 +515,21 @@ namespace graphit {
                 }
             }
         }
-        
-        
+
+
         if (apply_func->result.isInitialized()) {
             //if frontier tracking is enabled (when apply function returns a boolean value)
             output_name += "_with_frontier";
         }
-        
+
         if (apply->use_pull_frontier_bitvector){
             output_name += "_pull_frontier_bitvector";
         }
-        
+
         if (apply->use_pull_edge_based_load_balance){
             output_name += "_pull_edge_based_load_balance";
         }
-        
+
         return output_name;
     }
 

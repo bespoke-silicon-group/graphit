@@ -37,4 +37,4 @@ func main()
 end
 
 schedule:
-     program->generateHBCode();
+     program->configApplyDirection("s1", "SparsePush")->generateHBCode();

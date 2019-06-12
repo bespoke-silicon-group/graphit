@@ -9,13 +9,13 @@
 #include <fstream>
 
 namespace graphit{
-int Backend::emit(std::ostream &oss) {
+int Backend::emit(std::ostream &oss, std::ostream &oss_device) {
 		int flag;
 		CodeGenCPP *codegen_cpp;
 		CodeGenGunrock *codegen_gunrock;
         CodeGenHB *codegen_hb;
-		std::ofstream device_file;
-		device_file.open("device_code.cpp");
+		//std::ofstream device_file;
+		//device_file.open("device_code.cpp");
 
 	switch(mir_context_->backend_selection) {
 		case BACKEND_CPP:
@@ -32,7 +32,7 @@ int Backend::emit(std::ostream &oss) {
 			break;
     case BACKEND_HB:
             std::cerr << "Hammerblade backend not yet fully implemented\n";
-            codegen_hb = new CodeGenHB(oss, device_file, mir_context_);
+            codegen_hb = new CodeGenHB(oss, oss_device, mir_context_);
             flag = codegen_hb->genHBCode();
             delete codegen_hb;
             return flag;
@@ -42,6 +42,6 @@ int Backend::emit(std::ostream &oss) {
 			return -1;
 			break;
 	}
-	device_file.close();
+	//device_file.close();
 }
 }

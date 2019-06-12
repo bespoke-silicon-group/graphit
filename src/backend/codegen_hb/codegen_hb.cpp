@@ -4,6 +4,7 @@
 namespace graphit {
     int CodeGenHB::genHBCode() {
         genIncludeStmts();
+        //TODO(Emily): we probably want to figure out incl statements for device code
         genEdgeSets();
         genStructTypeDecls();
 

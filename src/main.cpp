@@ -54,7 +54,8 @@ int main(int argc, char* argv[]) {
 		std::string filen(cli.output_filename());
 		size_t split_index = filen.find_last_of(".");
 		std::string root_filen = filen.substr(0, split_index);
-		std::string device_filen = root_filen + "_device.cpp";
+		std::string file_ext = filen.substr(split_index);
+		std::string device_filen = root_filen + "_device" + file_ext;
 		hb_output_device_file.open(device_filen.c_str());
 
     //compile the input file

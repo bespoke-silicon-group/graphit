@@ -14,8 +14,6 @@ int Backend::emit(std::ostream &oss, std::ostream &oss_device) {
 		CodeGenCPP *codegen_cpp;
 		CodeGenGunrock *codegen_gunrock;
         CodeGenHB *codegen_hb;
-		//std::ofstream device_file;
-		//device_file.open("device_code.cpp");
 
 	switch(mir_context_->backend_selection) {
 		case BACKEND_CPP:
@@ -42,6 +40,5 @@ int Backend::emit(std::ostream &oss, std::ostream &oss_device) {
 			return -1;
 			break;
 	}
-	//device_file.close();
 }
 }

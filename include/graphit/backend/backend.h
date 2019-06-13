@@ -15,7 +15,7 @@ namespace graphit {
 
         }
 
-        int emit(std::ostream &oss = std::cout);
+        int emit(std::ostream &oss = std::cout, std::ostream &oss_device = std::cout);
 
     private:
         MIRContext* mir_context_;

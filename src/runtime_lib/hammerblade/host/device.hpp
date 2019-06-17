@@ -33,7 +33,7 @@ public:
 		updateMicroCode();
 	}
 
-	
+
 	/* void enqueue a CUDA task */
 	/* should only be called after the micro code has been set */
 	void enqueueJob(const std::string &kernel_name,
@@ -42,13 +42,13 @@ public:
 
 		if (_ucode.empty())
 			throw noUCodeError();
-		/* 
+		/*
 		 * this is necessary because of a bug in CUDA-lite
-		 * where argv is not saved as a deep copy but as 
+		 * where argv is not saved as a deep copy but as
 		 * a pointer
 		 */
 		_argv_saves.push_back(std::move(argv));
-		
+
 		err = hb_mc_grid_init(_device,
 				      hb_mc_dimension(1,1), /* grid of tile groups  */
 				      hb_mc_dimension(3,3), /* tile group dimension */
@@ -56,11 +56,11 @@ public:
 				      (char*)kernel_name.c_str(),
 				      _argv_saves.back().size(),
 				      _argv_saves.back().data());
-		
+
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
-		
-		
+
+
 	}
 
 	/*
@@ -71,7 +71,7 @@ public:
 
 		if (_ucode.empty())
 			throw noUCodeError();
-		
+
 		err = hb_mc_device_tile_groups_execute(_device);
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
@@ -87,16 +87,25 @@ public:
 	hb_mc_eva_t malloc(hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
-		
-		return 0;
+
+		hb_mc_eva_t mem;
+		int err = hb_mc_device_malloc(_device, sz, &mem);
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
+
+		return mem;
 	}
 
 	/*
 	 * free application memory on the device
 	 */
-	void free(hb_mc_eva_t) {
+	void free(hb_mc_eva_t mem) {
 		if (_ucode.empty())
 			throw noUCodeError();
+
+		int err = hb_mc_device_free(_device, mem);
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
 	}
 
 	/*
@@ -105,16 +114,33 @@ public:
 	void write(hb_mc_eva_t dst, const void *src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
+
+		int err = hb_mc_device_memcpy(_device,
+					      (void*)dst,
+					      src,
+					      sz,
+					      HB_MC_MEMCPY_TO_DEVICE);
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
 	}
-	
+
 	/*
 	 * read data from application memory
 	 */
 	void read(void *dst, hb_mc_eva_t src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
+
+		int err = hb_mc_device_memcpy(_device,
+					      dst,
+					      (const void*)src,
+					      sz,
+					      HB_MC_MEMCPY_TO_HOST);
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
+
 	}
-	
+
 private:
 	hammerblade::runtime_error noUCodeError() const {
 		return hammerblade::runtime_error("Device not initialized with microcode");
@@ -143,9 +169,9 @@ private:
 						       CUDA_ALLOC_NAME(),
 						       0);
 		if (err != HB_MC_SUCCESS)
-			throw hammerblade::manycore_runtime_error(err);		
+			throw hammerblade::manycore_runtime_error(err);
 	}
-	
+
 protected:
 	/* singleton; constructor is protected */
 	Device() : _device(nullptr) {
@@ -169,7 +195,7 @@ public:
 		err = hb_mc_device_finish(_device);
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
-		
+
 		delete _device;
 	}
 private:

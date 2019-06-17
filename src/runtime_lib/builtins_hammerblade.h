@@ -19,6 +19,19 @@ void builtin_loadMicroCodeFromSTDVectorRValue(std::vector<unsigned char> &&ucode
 	device->setMicroCode(std::move(ucode));
 }
 
+void builtin_loadMicroCodeFromSTDVectorCopy(const std::vector<unsigned char> &ucode)
+{
+	Device::Ptr device = Device::GetInstance();
+	std::vector<unsigned char> ucode_cpy = ucode;
+	device->setMicroCode(std::move(ucode_cpy));
+}
+
+void builtin_loadMicroCodeFromSTDVector(std::vector<unsigned char> &ucode)
+{
+	Device::Ptr device = Device::GetInstance();
+	device->setMicroCode(std::move(ucode));
+}
+
 void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 {
 	/* read in the micro code */

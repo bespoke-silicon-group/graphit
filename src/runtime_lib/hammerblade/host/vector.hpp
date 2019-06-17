@@ -9,16 +9,16 @@ class Vector {
 	Vector(size_t length) :
 		_mem(0), _length(length)
 		{ init(); }
-	
+
 	Vector() :
 		_mem(0), _length(0)
 		{ init(); }
-	
+
 	~Vector() { exit(); }
 
 	hb_mc_eva_t getBase()   const { return _mem; }
 	hb_mc_eva_t getLength() const { return _length; }
-	
+
 private:
 	void init(void) {
 		if (sizeof(T) != 4)

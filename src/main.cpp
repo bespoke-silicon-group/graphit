@@ -8,6 +8,7 @@
 #include <graphit/frontend/error.h>
 #include <fstream>
 #include <graphit/frontend/high_level_schedule.h>
+#include <graphit/frontend/fir_printer.h>
 
 #include <graphit/midend/mir_printer.h>
 #include <string>
@@ -64,6 +65,8 @@ int main(int argc, char* argv[]) {
     fir::high_level_schedule::ProgramScheduleNode::Ptr program
             = std::make_shared<fir::high_level_schedule::ProgramScheduleNode>(context);
 
+
+
 #ifndef USE_DEFAULT_SCHEDULE
     //Call the user provided schedule for the algorithm
     user_defined_schedule(program);
@@ -75,13 +78,22 @@ int main(int argc, char* argv[]) {
     //NOTE(Emily): adding in printer here
     if(verbose)
     {
+
         std::string mir_print_file = cli.verbose_filename();
 
         std::filebuf fb;
         fb.open(mir_print_file, std::ios::out);
 
+
+
         std::ostream os(&fb);
-        os << "testing MIR printer here: \n";
+        os << "testing FIR printer here: \n";
+
+				fir::FIRPrinter debug_print(os);
+				
+				debug_print.printFIR(context->getProgram());
+
+				os << "\n testing MIR printer here: \n";
 
         //NOTE(Emily): get functions here
         std::vector<mir::FuncDecl::Ptr> functions = mir_context->getFunctionList();

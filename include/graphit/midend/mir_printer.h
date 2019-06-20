@@ -20,43 +20,43 @@ namespace graphit {
 
             //Delayed for later
             virtual void visit(Stmt::Ptr);
-            
+
             virtual void visit(NameNode::Ptr);
-            
+
             virtual void visit(ForStmt::Ptr);
             virtual void visit(WhileStmt::Ptr);
             virtual void visit(IfStmt::Ptr);
-            
-            
+
+
             virtual void visit(ForDomain::Ptr);
             virtual void visit(AssignStmt::Ptr);
             virtual void visit(ReduceStmt::Ptr);
             virtual void visit(CompareAndSwapStmt::Ptr);
-            
+
             virtual void visit(PrintStmt::Ptr);
             virtual void visit(BreakStmt::Ptr);
             virtual void visit(ExprStmt::Ptr);
             virtual void visit(StmtBlock::Ptr);
             virtual void visit(Expr::Ptr);
             virtual void visit(Call::Ptr);
-            
+
             virtual void visit(VertexSetApplyExpr::Ptr);
             virtual void visit(EdgeSetApplyExpr::Ptr);
-            
+
             virtual void visit(PushEdgeSetApplyExpr::Ptr);
             virtual void visit(PullEdgeSetApplyExpr::Ptr);
             virtual void visit(HybridDenseEdgeSetApplyExpr::Ptr);
             virtual void visit(HybridDenseForwardEdgeSetApplyExpr::Ptr);
-            
-            
+
+
             virtual void visit(VertexSetWhereExpr::Ptr);
             virtual void visit(EdgeSetWhereExpr::Ptr);
-            
-            
+
+
             virtual void visit(TensorReadExpr::Ptr);
             virtual void visit(TensorArrayReadExpr::Ptr);
             virtual void visit(TensorStructReadExpr::Ptr);
-            
+
             virtual void visit(BoolLiteral::Ptr);
             virtual void visit(StringLiteral::Ptr);
             virtual void visit(FloatLiteral::Ptr);
@@ -65,8 +65,14 @@ namespace graphit {
             virtual void visit(ListAllocExpr::Ptr);
             virtual void visit(VarExpr::Ptr);
             virtual void visit(EdgeSetLoadExpr::Ptr);
+
+
+            virtual void visit(AndExpr::Ptr);
+            virtual void visit(OrExpr::Ptr);
+            virtual void visit(NotExpr::Ptr);
+            virtual void visit(XorExpr::Ptr);
             
-            
+
             virtual void visit(NegExpr::Ptr);
             virtual void visit(EqExpr::Ptr);
             virtual void visit(AddExpr::Ptr);
@@ -84,8 +90,8 @@ namespace graphit {
             virtual void visit(ListType::Ptr);
             virtual void visit(EdgeSetType::Ptr);
             virtual void visit(VectorType::Ptr);
-            
-            
+
+
             //virtual void visitBinaryExpr(BinaryExpr::Ptr);
             //virtual void visitNaryExpr(NaryExpr::Ptr);
 

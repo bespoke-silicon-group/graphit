@@ -295,6 +295,17 @@ namespace graphit {
             return node;
         }
 
+        void NotExpr::copy(MIRNode::Ptr node) {
+            const auto expr = mir::to<NotExpr>(node);
+            operand = expr->operand->clone<Expr>();
+        }
+
+        MIRNode::Ptr NotExpr::cloneNode() {
+            const auto node = std::make_shared<NotExpr>();
+            node->copy(shared_from_this());
+            return node;
+        }
+
         void NegExpr::copy(MIRNode::Ptr node) {
             const auto expr = mir::to<NegExpr>(node);
             operand = expr->operand->clone<Expr>();
@@ -317,6 +328,40 @@ namespace graphit {
 
         MIRNode::Ptr EqExpr::cloneNode() {
             const auto node = std::make_shared<EqExpr>();
+            node->copy(shared_from_this());
+            return node;
+        }
+
+
+        void AndExpr::copy(MIRNode::Ptr node) {
+            const auto expr = mir::to<AndExpr>(node);
+            BinaryExpr::copy(expr);
+        }
+
+        MIRNode::Ptr AndExpr::cloneNode() {
+            const auto node = std::make_shared<AndExpr>();
+            node->copy(shared_from_this());
+            return node;
+        }
+
+        void OrExpr::copy(MIRNode::Ptr node) {
+            const auto expr = mir::to<OrExpr>(node);
+            BinaryExpr::copy(expr);
+        }
+
+        MIRNode::Ptr OrExpr::cloneNode() {
+            const auto node = std::make_shared<OrExpr>();
+            node->copy(shared_from_this());
+            return node;
+        }
+
+        void XorExpr::copy(MIRNode::Ptr node) {
+            const auto expr = mir::to<XorExpr>(node);
+            BinaryExpr::copy(expr);
+        }
+
+        MIRNode::Ptr XorExpr::cloneNode() {
+            const auto node = std::make_shared<XorExpr>();
             node->copy(shared_from_this());
             return node;
         }
@@ -721,7 +766,7 @@ namespace graphit {
                 result = mir::Var(decl->result.getName(), decl->result.getType());
             //I am not sure, I think this just copies over everything
             field_vector_properties_map_ = decl->field_vector_properties_map_;
-	    realized_context = decl->realized_context; 
+	    realized_context = decl->realized_context;
         }
 
 

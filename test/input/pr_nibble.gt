@@ -26,7 +26,7 @@ end
 
 
 func addToFrontier(v : Vertex) -> output : bool
-    output = r[v] >= out_degree[v]*epsilon;
+    output = r[v] >= out_degree[v]*epsilon and out_degree[v] > 0;
 end
 
 func copyRtoRP(v : Vertex)

@@ -34,10 +34,8 @@ namespace graphit {
                 }
             }
         }
+
         oss = &oss_device;
-        //TODO(Emily): need to modify these calls for manycore blocking
-        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
-        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
 
         //Processing the functions
         std::map<std::string, mir::FuncDecl::Ptr>::iterator it;
@@ -46,6 +44,11 @@ namespace graphit {
         for (auto it = functions.begin(); it != functions.end(); it++) {
             it->get()->accept(this);
         }
+
+        //TODO(Emily): need to modify these calls for manycore blocking
+        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
+        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
+
         *oss << std::endl;
         return 0;
     }

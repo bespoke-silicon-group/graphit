@@ -367,6 +367,7 @@ namespace graphit {
         printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
     }
 
+    //TODO(Emily): we want to get rid of the templating here - need to track the params passed to call in main
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionSignature(mir::EdgeSetApplyExpr::Ptr apply) {
         auto func_name = genFunctionName(apply);
 

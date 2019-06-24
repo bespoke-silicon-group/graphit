@@ -111,7 +111,7 @@ namespace graphit {
         void dedent() { --indentLevel; }
         void printIndent() { *oss << std::string(2 * indentLevel, ' '); }
         void printBeginIndent() { *oss << std::string(2 * indentLevel, ' ') << "{" << std::endl; }
-        void printEndIndent() { *oss << std::string(2 * indentLevel, ' ') << "}" <<std::endl; }
+        void printEndIndent() { *oss << std::string(2 * indentLevel, ' ') << "}"; }
 
         enum mir::FuncDecl::function_context current_context;
 

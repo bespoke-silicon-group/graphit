@@ -37,6 +37,10 @@ namespace graphit {
 
         oss = &oss_device;
 
+        //TODO(Emily): need to modify these calls for manycore blocking
+        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
+        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
+
         //Processing the functions
         std::map<std::string, mir::FuncDecl::Ptr>::iterator it;
         std::vector<mir::FuncDecl::Ptr> functions = mir_context_->getFunctionList();
@@ -44,10 +48,6 @@ namespace graphit {
         for (auto it = functions.begin(); it != functions.end(); it++) {
             it->get()->accept(this);
         }
-
-        //TODO(Emily): need to modify these calls for manycore blocking
-        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
-        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
 
         *oss << std::endl;
         return 0;
@@ -218,13 +218,14 @@ namespace graphit {
             oss = &oss_device;
         } else {
             // Use functors for better compiler inlining
-            //func_decl->isFunctor = true;
-            //*oss << "struct " << func_decl->name << std::endl;
-            //printBeginIndent();
-            //indent();
-            //*oss << std::string(2 * indentLevel, ' ');
+            func_decl->isFunctor = true;
+            *oss << "struct " << func_decl->name << std::endl;
+            printBeginIndent();
+            indent();
+            *oss << std::string(2 * indentLevel, ' ');
 
-            func_decl->isFunctor = false;
+            //NOTE(Emily): if we don't want to use functors, uncomment this
+            //func_decl->isFunctor = false;
 
             if (func_decl->result.isInitialized()) {
                 func_decl->result.getType()->accept(this);
@@ -243,9 +244,9 @@ namespace graphit {
             }
 
             //NOTE(Emily): this is for the HB device kernel code
-            *oss << "__attribute__ ((noinline)) ";
-            //*oss << "operator() (";
-            *oss << func_decl->name << "(";
+            //*oss << "__attribute__ ((noinline)) ";
+            *oss << "operator() (";
+            //*oss << func_decl->name << "(";
             bool printDelimiter = false;
             for (auto arg : func_decl->args) {
                 if (printDelimiter) {
@@ -256,7 +257,7 @@ namespace graphit {
                 *oss << arg.getName();
                 printDelimiter = true;
             }
-            *oss << ") ";
+            *oss << ")";
         }
 
         *oss << std::endl;

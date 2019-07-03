@@ -49,7 +49,7 @@ public:
 		 */
 		_argv_saves.push_back(std::move(argv));
 
-		err = hb_mc_grid_init(_device,
+		err = hb_mc_application_init(_device,
 				      hb_mc_dimension(1,1), /* grid of tile groups  */
 				      hb_mc_dimension(3,3), /* tile group dimension */
 				       // TODO: cast is required because of bug in CUDA-lite
@@ -180,7 +180,7 @@ protected:
 		/* allocate and initialize CUDA-lite handles */
 		_device = new hb_mc_device_t;
 
-		err = hb_mc_device_init(_device, CUDA_DEVICE_NAME(), 0, hb_mc_coordinate(4,4));
+		err = hb_mc_device_init(_device, CUDA_DEVICE_NAME(), 0);
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
 

@@ -26,7 +26,7 @@ end
 
 
 func addToFrontier(v : Vertex) -> output : bool
-    output = r[v] >= out_degree[v]*epsilon;
+    output = r[v] >= out_degree[v]*epsilon and out_degree[v] > 0;
 end
 
 func copyRtoRP(v : Vertex)
@@ -51,8 +51,8 @@ func main()
     r[0] = 1;
     while (frontier.getVertexSetSize() != 0)
         vertices.apply(copyRtoRP);
-        #s1# edges.from(frontier).apply(updateNeigh);
-        #s2# frontier.apply(updateSelf);
+        #s1# frontier.apply(updateSelf);
+        #s2# edges.from(frontier).apply(updateNeigh);
         vertices.apply(copyRPtoR);
         var output : vertexset{Vertex};
         output = vertices.where(addToFrontier);

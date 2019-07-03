@@ -88,6 +88,10 @@ namespace graphit {
 
             virtual void visit(std::shared_ptr<EqExpr>);
 
+            virtual void visit(std::shared_ptr<AndExpr>);
+            virtual void visit(std::shared_ptr<OrExpr>);
+            virtual void visit(std::shared_ptr<XorExpr>);
+            virtual void visit(std::shared_ptr<NotExpr>);
 
             virtual void visit(std::shared_ptr<AddExpr>);
 

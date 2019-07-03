@@ -552,17 +552,17 @@ namespace graphit {
 		CONTEXT_NONE = 0x0,
                 CONTEXT_HOST = 0x01,
                 CONTEXT_DEVICE = 0x02,
-                
+
                 CONTEXT_BOTH = 0x3
 	    };
-	   
+
 	    enum function_context realized_context = CONTEXT_NONE;
             std::string name;
             std::vector<mir::Var> args;
             mir::Var result;
             std::unordered_map<std::string, FieldVectorProperty> field_vector_properties_map_;
             bool isFunctor;
-	
+
             //TODO: replace this with a statement
             StmtBlock::Ptr body;
 
@@ -578,8 +578,8 @@ namespace graphit {
 
             virtual MIRNode::Ptr cloneNode();
         };
-	inline enum FuncDecl::function_context operator|(enum FuncDecl::function_context a, enum FuncDecl::function_context b){return static_cast<enum FuncDecl::function_context>( (int)a | (int)b);} 
-	inline enum FuncDecl::function_context& operator|=(enum FuncDecl::function_context &a, enum FuncDecl::function_context b){return (enum FuncDecl::function_context&)( ((int&)a) |= (int)b);} 
+	inline enum FuncDecl::function_context operator|(enum FuncDecl::function_context a, enum FuncDecl::function_context b){return static_cast<enum FuncDecl::function_context>( (int)a | (int)b);}
+	inline enum FuncDecl::function_context& operator|=(enum FuncDecl::function_context &a, enum FuncDecl::function_context b){return (enum FuncDecl::function_context&)( ((int&)a) |= (int)b);}
 
         struct TensorReadExpr : public Expr {
             Expr::Ptr index;
@@ -725,8 +725,8 @@ namespace graphit {
             //default to parallel
             bool is_parallel = true;
 
-            
-            
+
+
             virtual void accept(MIRVisitor *visitor) {
                 visitor->visit(self<VertexSetApplyExpr>());
             }
@@ -1092,6 +1092,59 @@ namespace graphit {
             virtual MIRNode::Ptr cloneNode();
         };
 
+        struct AndExpr : public BinaryExpr {
+            typedef std::shared_ptr<AndExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<AndExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
+
+        struct OrExpr : public BinaryExpr {
+            typedef std::shared_ptr<OrExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<OrExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
+
+        struct XorExpr : public BinaryExpr {
+            typedef std::shared_ptr<XorExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<XorExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
+
+        struct NotExpr : public Expr {
+            Expr::Ptr operand;
+
+            typedef std::shared_ptr<NotExpr> Ptr;
+
+            virtual void accept(MIRVisitor *visitor) {
+                visitor->visit(self<NotExpr>());
+            }
+
+        protected:
+            virtual void copy(MIRNode::Ptr);
+
+            virtual MIRNode::Ptr cloneNode();
+        };
 
         struct IfStmt : public Stmt {
             Expr::Ptr cond;

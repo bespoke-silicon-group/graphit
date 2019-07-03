@@ -739,6 +739,35 @@ namespace graphit {
         }
     }
 
+    void CodeGenHB::visit(mir::AndExpr::Ptr expr) {
+        *oss << '(';
+        expr->lhs->accept(this);
+        *oss << " && ";
+        expr->rhs->accept(this);
+        *oss << ')';
+    };
+
+    void CodeGenHB::visit(mir::OrExpr::Ptr expr) {
+        *oss << '(';
+        expr->lhs->accept(this);
+        *oss << " || ";
+        expr->rhs->accept(this);
+        *oss << ')';
+    };
+
+    void CodeGenHB::visit(mir::XorExpr::Ptr expr) {
+        *oss << '(';
+        expr->lhs->accept(this);
+        *oss << " ^ ";
+        expr->rhs->accept(this);
+        *oss << ')';
+    };
+
+    void CodeGenHB::visit(mir::NotExpr::Ptr not_expr) {
+        *oss << " !";
+        not_expr->operand->accept(this);
+    }
+
     void CodeGenHB::visit(mir::MulExpr::Ptr expr) {
         *oss << '(';
         expr->lhs->accept(this);

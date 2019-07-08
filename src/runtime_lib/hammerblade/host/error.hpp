@@ -1,12 +1,13 @@
 #pragma once
 #include <bsg_manycore_errno.h>
 #include <stdexcept>
+#include <string>
 
 namespace hammerblade {
 
 class runtime_error : public std::runtime_error {
 public:
-	explicit runtime_error(const string &what) :
+	explicit runtime_error(const std::string &what) :
 		std::runtime_error(what) {}
 };
 

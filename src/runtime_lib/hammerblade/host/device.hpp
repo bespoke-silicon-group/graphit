@@ -4,6 +4,7 @@
 #include <bsg_manycore_cuda.h>
 #include <hammerblade/host/error.hpp>
 #include <memory>
+#include <vector>
 
 /*
  * grid_init() -> after program_init_binary()
@@ -164,7 +165,7 @@ private:
 
 		err = hb_mc_device_program_init_binary(_device,
 						       CUDA_PROGRAM_NAME(),
-						       (char*)_ucode.data(),
+						       _ucode.data(),
 						       _ucode.size(),
 						       CUDA_ALLOC_NAME(),
 						       0);

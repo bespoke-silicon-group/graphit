@@ -1,5 +1,5 @@
 #pragma once
-#include <infra_gapbs/graph.h>
+#include <infra_gapbs/benchmark.h>
 #include <hammerblade/host/device.hpp>
 namespace hammerblade {
 class GraphHB {

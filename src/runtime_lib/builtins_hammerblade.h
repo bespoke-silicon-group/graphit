@@ -7,18 +7,21 @@
 #include <sys/stat.h>
 #include "intrinsics.h"
 namespace hammerblade {
+
+static
 GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file)
 {
 	return GraphHB(builtin_loadEdgesFromFile(graph_file));
 }
 
-
+static
 void builtin_loadMicroCodeFromSTDVectorRValue(std::vector<unsigned char> &&ucode)
 {
 	Device::Ptr device = Device::GetInstance();
 	device->setMicroCode(std::move(ucode));
 }
 
+static
 void builtin_loadMicroCodeFromSTDVectorCopy(const std::vector<unsigned char> &ucode)
 {
 	Device::Ptr device = Device::GetInstance();
@@ -26,12 +29,14 @@ void builtin_loadMicroCodeFromSTDVectorCopy(const std::vector<unsigned char> &uc
 	device->setMicroCode(std::move(ucode_cpy));
 }
 
+static
 void builtin_loadMicroCodeFromSTDVector(std::vector<unsigned char> &ucode)
 {
 	Device::Ptr device = Device::GetInstance();
 	device->setMicroCode(std::move(ucode));
 }
 
+static
 void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 {
 	/* read in the micro code */
@@ -51,5 +56,4 @@ void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 	/* load micro code to device */
 	builtin_loadMicroCodeFromSTDVectorRValue(std::move(ucode));
 }
-
 }

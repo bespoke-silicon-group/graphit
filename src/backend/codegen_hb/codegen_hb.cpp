@@ -277,6 +277,11 @@ namespace graphit {
             //TODO: this is probably a hack that could be fixed for later
             oss = &oss_host;
             //First, allocate the edgesets (read them from outside files if needed)
+
+            //First, we want to load device code
+            printIndent();
+            *oss << "hammerblade::builtin_loadMicroCodeFromFile(ucode_path);" << std::endl;
+
             for (auto stmt : mir_context_->edgeset_alloc_stmts) {
                 stmt->accept(this);
             }
@@ -689,7 +694,7 @@ namespace graphit {
             edgeset_load_expr->file_name->accept(this);
             *oss << ") ";
         } else {
-            *oss << "builtin_loadEdgesFromFileToHB ( ";
+            *oss << "hammerblade::builtin_loadEdgesFromFileToHB ( ";
             edgeset_load_expr->file_name->accept(this);
             *oss << ") ";
         }
@@ -859,6 +864,11 @@ namespace graphit {
 
         *oss << "#include \"builtins_hammerblade.h\"" << std::endl;
         *oss << "#include <string.h> " << std::endl;
+        *oss << "#define v1_size 1024" << std::endl;
+        *oss << "using hammerblade::Device;" << std::endl;
+        *oss << "using hammerblade::Vector;" << std::endl;
+        *oss << "using hammerblade::GraphHB;" << std::endl;
+
 
         // *oss << "#include \"hammerblade-grt/printing.h\"" << std::endl;
         // *oss << "#include \"hammerblade-grt/algraph.h\"" << std::endl;

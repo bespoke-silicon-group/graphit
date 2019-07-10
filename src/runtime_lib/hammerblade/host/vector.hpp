@@ -15,17 +15,15 @@ public:
 		_mem(0), _length(0)
 		{ init(); }
 
-        Vector(Vector &&other) :
-                _mem(other._mem),
-                _length(other._length) {
-                other._mem = 0;
-                other._length = 0;
+        Vector(Vector &&other)  {
+                moveFrom(other);
         }
 
         Vector(const Vector &other) = delete;
 
-        Vector operator=(Vector && other) {
-                return std::move(other);
+        Vector & operator=(Vector && other) {
+                moveFrom(other);
+                return *this;
         }
 
 	~Vector() { exit(); }
@@ -53,6 +51,16 @@ public:
         }
 
 private:
+        void swap(const Vector &other) {
+                std::swap(other._mem, _mem);
+                std::swap(other._length, _length);
+        }
+
+        void moveFrom(const Vector &other) {
+                _mem    = other._mem;
+                _length = other._length;
+        }
+
 	void init(void) {
 		if (sizeof(T) != 4)
 			throw hammerblade::runtime_error("Only Vectors of 4 byte words supported");

@@ -34,8 +34,19 @@ public:
                 return _host_g.num_edges_;
         }
 
-private:
         using Vec = Vector<int32_t>;
+        decltype(Vec().getBase()) getOutIndicesAddr() const {
+                return _out_index.getBase();
+        }
+        decltype(Vec().getBase()) getOutNeighborsAddr() const {
+                return _out_neighbors.getBase();
+        }
+
+        const Graph & getHostGraph() const {
+                return _host_g;
+        }
+private:
+
 	static const hb_mc_eva_t DEVICE_NULLPTR = 0;
 
 	void init() { initGraphOnDevice(); }

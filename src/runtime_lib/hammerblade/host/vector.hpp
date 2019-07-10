@@ -24,11 +24,11 @@ public:
 
 	~Vector() { exit(); }
 
-
+        hb_mc_eva_t getAddr()   const { return getBase(); }
 	hb_mc_eva_t getBase()   const { return _mem; }
 	hb_mc_eva_t getLength() const { return _length; }
 
-        void copyToHost(T * host, size_t n) const {
+        void copyToHost(T * host, size_t n) {
                 if (n > _length)
                         throw hammerblade::runtime_error("Device buffer overflow");
 

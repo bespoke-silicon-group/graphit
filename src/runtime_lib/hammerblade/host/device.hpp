@@ -5,7 +5,8 @@
 #include <hammerblade/host/error.hpp>
 #include <memory>
 #include <vector>
-
+#include <iostream>
+#include <cstring>
 /*
  * grid_init() -> after program_init_binary()
  * initialize a grid of tile groups.
@@ -52,7 +53,7 @@ public:
 
 		err = hb_mc_application_init(_device,
 				      hb_mc_dimension(1,1), /* grid of tile groups  */
-				      hb_mc_dimension(3,3), /* tile group dimension */
+				      hb_mc_dimension(4,4), /* tile group dimension */
 				       // TODO: cast is required because of bug in CUDA-lite
 				      (char*)kernel_name.c_str(),
 				      _argv_saves.back().size(),
@@ -159,25 +160,30 @@ private:
 		return cuda_alloc_name;
 	}
 
-	/* update the micro code on the device */
-	void updateMicroCode() {
-		int err;
+        /* update the micro code on the device */
+        void updateMicroCode() {
+                int err;
 
-		err = hb_mc_device_program_init_binary(_device,
-						       CUDA_PROGRAM_NAME(),
-						       _ucode.data(),
-						       _ucode.size(),
-						       CUDA_ALLOC_NAME(),
-						       0);
-		if (err != HB_MC_SUCCESS)
-			throw hammerblade::manycore_runtime_error(err);
-	}
+                // necessary because device_program_exit() will
+                // free ucode_ptr (BUG)
+                unsigned char *ucode_ptr = new unsigned char[_ucode.size()];
+                memcpy(ucode_ptr, _ucode.data(), _ucode.size()*sizeof(unsigned char));
+
+                err = hb_mc_device_program_init_binary(_device,
+                                                       CUDA_PROGRAM_NAME(),
+                                                       ucode_ptr,
+                                                       _ucode.size(),
+                                                       CUDA_ALLOC_NAME(),
+                                                       0);
+                if (err != HB_MC_SUCCESS)
+                        throw hammerblade::manycore_runtime_error(err);
+        }
 
 protected:
 	/* singleton; constructor is protected */
 	Device() : _device(nullptr) {
 		int err;
-
+                std::cerr << "calling Device" << std::endl;
 		/* allocate and initialize CUDA-lite handles */
 		_device = new hb_mc_device_t;
 

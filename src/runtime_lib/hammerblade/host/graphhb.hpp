@@ -1,95 +1,98 @@
 #pragma once
 #include <infra_gapbs/benchmark.h>
 #include <hammerblade/host/device.hpp>
+#include <hammerblade/host/vector.hpp>
+
 namespace hammerblade {
 class GraphHB {
 public:
 	GraphHB() {}
-	GraphHB(Graph &&g)
-		: _host_g(std::move(g))
-		{ init(); }
-	GraphHB(GraphHB && other)
-		: _host_g(std::move(other._host_g))
-		{ exit(); }
+
+        GraphHB(Graph &&g) :
+                _host_g(std::move(g))
+                { init(); }
 
 	~GraphHB() {}
+
         /* no copying */
 	GraphHB(const GraphHB &other) = delete;
 
-	GraphHB operator=(GraphHB &&other) {
-		return std::move(other);
-	}
+        GraphHB(GraphHB &&other) {
+                moveFrom(other);
+        }
+
+        GraphHB &operator=(GraphHB &&other) {
+                moveFrom(other);
+                return *this;
+        }
+
+        decltype(Graph().num_nodes()) num_nodes() const {
+                return _host_g.num_nodes();
+        }
+
+        decltype(Graph().num_nodes()) num_edges() const {
+                return _host_g.num_edges_;
+        }
+
 private:
+        using Vec = Vector<int32_t>;
 	static const hb_mc_eva_t DEVICE_NULLPTR = 0;
 
 	void init() { initGraphOnDevice(); }
 
 	void initGraphOnDevice() {
-		Device::Ptr device = Device::GetInstance();
-		_device_out_neighbors = DEVICE_NULLPTR;
-		_device_out_offsets   = DEVICE_NULLPTR;
-		_device_in_neighbors  = DEVICE_NULLPTR;
-		_device_in_offsets    = DEVICE_NULLPTR;
-		_device_out_neighbors_sz = 0;
-		_device_out_offsets_sz   = 0;
-		_device_in_neighbors_sz  = 0;
-		_device_in_offsets_sz    = 0;
+                if (isTranspose()) {
+                        throw hammerblade::runtime_error("transpose not supported");
+                        // convert
+                        std::vector<int32_t> index(num_nodes());
 
-		/* allocate memory on device */
-		if (isTranspose()) {
-			_device_in_neighbors  = device->malloc(_device_in_neighbors_sz);
-			_device_in_offsets    = device->malloc(_device_in_offsets_sz);
-		} else {
-			_device_out_neighbors = device->malloc(_device_out_neighbors_sz);
-			_device_out_offsets   = device->malloc(_device_out_offsets_sz);
-		}
+                        # pragma omp parallel for
+                        for (int64_t i = 0; i < num_nodes(); i++)
+                                index[i] = _host_g.in_index_[i] - _host_g.in_neighbors_;
 
-		/* copy data to device */
-		if (isTranspose()) {
-			device->write(_device_in_neighbors,
-				      _host_g.in_neighbors_,
-				      _device_in_neighbors_sz);
+                        // allocate
+                        _in_index = Vec(num_nodes());
+                        _in_neighbors = Vec(num_edges());
+                        // copy
+                        _in_index.copyToDevice(index.data(), index.size());
+                        _in_neighbors.copyToDevice(_host_g.in_neighbors_, num_edges());
+                }
 
-			device->write(_device_in_offsets,
-				      _host_g.in_index_,
-				      _device_in_offsets_sz);
-		} else {
-			device->write(_device_out_neighbors,
-				      _host_g.out_neighbors_,
-				      _device_out_neighbors_sz);
+                // out neighbors
+                std::vector<int32_t> index(num_nodes());
 
-			device->write(_device_out_offsets,
-				      _host_g.out_index_,
-				      _device_out_offsets_sz);
-		}
-	}
+                #pragma omp parallel for
+                for (int64_t i = 0; i < num_nodes(); i++)
+                        index[i] = _host_g.out_index_[i] - _host_g.out_neighbors_;
+
+                //allocate
+                _out_index = Vec(num_nodes());
+                _out_neighbors = Vec(num_edges());
+                //std::cerr << "index size = " << index.size() << std::endl;
+                //std::cerr << "_out_index length = " << _out_index.getLength() << std::endl;
+                //copy
+                _out_index.copyToDevice(index.data(), index.size());
+                _out_neighbors.copyToDevice(_host_g.out_neighbors_, num_edges());
+        }
 
 	void exit() { freeGraphOnDevice(); }
 
-	void freeGraphOnDevice() {
-		Device::Ptr device = Device::GetInstance();
-
-		/* free allocated data on the device */
-		if (isTranspose()) {
-			device->free(_device_in_neighbors);
-			device->free(_device_in_offsets);
-		} else {
-			device->free(_device_out_neighbors);
-			device->free(_device_out_offsets);
-		}
-	}
+        void freeGraphOnDevice() {}
 
 	bool isTranspose() const { return _host_g.is_transpose_; }
 
 	Graph _host_g;
-	hb_mc_eva_t _device_out_neighbors;
-	hb_mc_eva_t _device_out_neighbors_sz;
-	hb_mc_eva_t _device_out_offsets;
-	hb_mc_eva_t _device_out_offsets_sz;
-	hb_mc_eva_t _device_in_neighbors;
-	hb_mc_eva_t _device_in_neighbors_sz;
-	hb_mc_eva_t _device_in_offsets;
-	hb_mc_eva_t _device_in_offsets_sz;
+        Vec   _out_index;
+        Vec   _out_neighbors;
+        Vec   _in_index;
+        Vec   _in_neighbors;
 
+        void moveFrom(GraphHB & other) {
+                _host_g = std::move(other._host_g);
+                _out_index = std::move(other._out_index);
+                _out_neighbors = std::move(other._out_neighbors);
+                _in_index = std::move(other._in_index);
+                _in_neighbors = std::move(other._in_neighbors);
+        }
 };
 }

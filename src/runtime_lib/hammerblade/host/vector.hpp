@@ -7,12 +7,8 @@ namespace hammerblade {
 template <typename T>
 class Vector {
 public:
-	Vector(size_t length) :
-		_mem(0), _length(length)
-		{ init(); }
-
-	Vector() :
-		_mem(0), _length(0)
+	Vector(size_t length = 0) :
+		_mem(0), _length(length), _device(nullptr)
 		{ init(); }
 
         Vector(Vector &&other)  {
@@ -33,32 +29,33 @@ public:
 	hb_mc_eva_t getLength() const { return _length; }
 
         void copyToHost(T * host, size_t n) const {
-                Device::Ptr device = Device::GetInstance();
-
                 if (n > _length)
                         throw hammerblade::runtime_error("Device buffer overflow");
 
-                device->read((void*)host, _mem, n * sizeof(T));
+                getDevice()->read((void*)host, _mem, n * sizeof(T));
         }
 
         void copyToDevice(const T *host, size_t n) {
-                Device::Ptr device = Device::GetInstance();
-
                 if (n > _length)
                         throw hammerblade::runtime_error("Device buffer overflow");
 
-                device->write(_mem, (const void*)host, n * sizeof(T));
+                getDevice()->write(_mem, (const void*)host, n * sizeof(T));
         }
 
 private:
         void swap(const Vector &other) {
                 std::swap(other._mem, _mem);
                 std::swap(other._length, _length);
+                std::swap(other._device, _device);
         }
 
-        void moveFrom(const Vector &other) {
+        void moveFrom(Vector &other) {
                 _mem    = other._mem;
                 _length = other._length;
+                _device = other._device;
+                other._mem = 0;
+                other._length = 0;
+                other._device = nullptr;
         }
 
 	void init(void) {
@@ -66,16 +63,22 @@ private:
 			throw hammerblade::runtime_error("Only Vectors of 4 byte words supported");
 
 		if (_length != 0) {
-			Device::Ptr device = Device::GetInstance();
-			_mem = device->malloc(_length * sizeof(T));
+			_mem = getDevice()->malloc(_length * sizeof(T));
 		}
 	}
 	void exit(void) {
 		if (_length != 0) {
-			Device::Ptr device = Device::GetInstance();
-			device->free(_mem);
+                        getDevice()->free(_mem);
 		}
 	}
+
+        Device::Ptr & getDevice() {
+                if (_device == nullptr)
+                        _device = Device::GetInstance();
+                return _device;
+        }
+
+        Device::Ptr _device;
 	hb_mc_eva_t _mem;
 	size_t _length;
 };

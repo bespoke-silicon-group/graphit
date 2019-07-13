@@ -183,7 +183,7 @@ protected:
 	/* singleton; constructor is protected */
 	Device() : _device(nullptr) {
 		int err;
-                std::cerr << "calling Device" << std::endl;
+
 		/* allocate and initialize CUDA-lite handles */
 		_device = new hb_mc_device_t;
 

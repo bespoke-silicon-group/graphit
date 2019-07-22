@@ -281,6 +281,11 @@ namespace graphit {
             //TODO: this is probably a hack that could be fixed for later
             oss = &oss_host;
             //First, allocate the edgesets (read them from outside files if needed)
+
+            //First, we want to load device code
+            printIndent();
+            *oss << "hammerblade::builtin_loadMicroCodeFromFile(ucode_path);" << std::endl;
+
             for (auto stmt : mir_context_->edgeset_alloc_stmts) {
                 stmt->accept(this);
             }
@@ -693,7 +698,7 @@ namespace graphit {
             edgeset_load_expr->file_name->accept(this);
             *oss << ") ";
         } else {
-            *oss << "builtin_loadEdgesFromFileToHB ( ";
+            *oss << "hammerblade::builtin_loadEdgesFromFileToHB ( ";
             edgeset_load_expr->file_name->accept(this);
             *oss << ") ";
         }
@@ -879,17 +884,33 @@ namespace graphit {
 
     //******END OF VISIT FUNCS****
     void CodeGenHB::genIncludeStmts() {
-        *oss << "#include <string.h> " << std::endl;
+        oss = &oss_device;
+
         *oss << "#include \"bsg_manycore.h\"" << std::endl;
         *oss << "#include \"bsg_set_tile_x_y.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/printing.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/algraph.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/csrgraph.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/array_size.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/swap.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/syscheck.h\"" << std::endl;
-        *oss << "#include \"hammerblade-grt/core_id.h\"" << std::endl;
-        *oss << "#include \"reference/serial_breadth_first_search.h\"" << std::endl;
+        *oss << "#define BSG_TILE_GROUP_X_DIM bsg_tiles_X" << std::endl;
+        *oss << "#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y" << std::endl;
+        *oss << "#include \"bsg_tile_group_barrier.h\"" << std::endl;
+        *oss << "INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);" << std::endl;
+
+        oss = &oss_host;
+
+        *oss << "#include \"builtins_hammerblade.h\"" << std::endl;
+        *oss << "#include <string.h> " << std::endl;
+        *oss << "#define v1_size 1024" << std::endl;
+        *oss << "using hammerblade::Device;" << std::endl;
+        *oss << "using hammerblade::Vector;" << std::endl;
+        *oss << "using hammerblade::GraphHB;" << std::endl;
+
+
+        // *oss << "#include \"hammerblade-grt/printing.h\"" << std::endl;
+        // *oss << "#include \"hammerblade-grt/algraph.h\"" << std::endl;
+        // *oss << "#include \"hammerblade-grt/csrgraph.h\"" << std::endl;
+        // *oss << "#include \"hammerblade-grt/array_size.h\"" << std::endl;
+        // *oss << "#include \"hammerblade-grt/swap.h\"" << std::endl;
+        // *oss << "#include \"hammerblade-grt/syscheck.h\"" << std::endl;
+        // *oss << "#include \"hammerblade-grt/core_id.h\"" << std::endl;
+        // *oss << "#include \"reference/serial_breadth_first_search.h\"" << std::endl;
 
     }
 

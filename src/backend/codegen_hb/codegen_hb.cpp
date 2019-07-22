@@ -897,7 +897,6 @@ namespace graphit {
 
         *oss << "#include \"builtins_hammerblade.h\"" << std::endl;
         *oss << "#include <string.h> " << std::endl;
-        *oss << "#define v1_size 1024" << std::endl;
         *oss << "using hammerblade::Device;" << std::endl;
         *oss << "using hammerblade::Vector;" << std::endl;
         *oss << "using hammerblade::GraphHB;" << std::endl;

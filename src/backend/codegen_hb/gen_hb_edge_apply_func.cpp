@@ -90,25 +90,26 @@ namespace graphit {
         }
     }
 
+
     //TODO(Emily): this is the main part of code to modify for our purposes
     // Print the code for traversing the edges in the push direction and return the new frontier
     // the apply_func_name is used for hybrid schedule, when a special push_apply_func is used
     // usually, the apply_func_name is fixed to "apply_func" (see the default argument)
     void HBEdgesetApplyFunctionGenerator::printPushEdgeTraversalReturnFrontier(
-                                               mir::EdgeSetApplyExpr::Ptr apply,
-                                               bool from_vertexset_specified,
-                                               bool apply_expr_gen_frontier,
-                                               std::string dst_type,
-                                               std::string apply_func_name) {
+            mir::EdgeSetApplyExpr::Ptr apply,
+            bool from_vertexset_specified,
+            bool apply_expr_gen_frontier,
+            std::string dst_type,
+            std::string apply_func_name) {
 
 
         //TODO(Emily): do we want to support this? if so it needs to be modified
         //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
         if (apply->enable_deduplication && apply_expr_gen_frontier) {
             *oss_ << "    if (g.flags_ == nullptr){\n"
-            "      g.flags_ = new int[numVertices]();\n"
-            "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
-            "    }\n";
+                    "      g.flags_ = new int[numVertices]();\n"
+                    "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
+                    "    }\n";
         }
 
         // If apply function has a return value, then we need to return a temporary vertexsubset
@@ -119,15 +120,15 @@ namespace graphit {
             //           + we want to load next frontier in blocks, so should have it fully initialized
             //           + this most likely means having everything as dense, instead of switching from sparse to dense
             *oss_ <<
-            "    VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
-            "    if (numVertices != from_vertexset->getVerticesRange()) {\n"
-            "        cout << \"edgeMap: Sizes Don't match\" << endl;\n"
-            "        abort();\n"
-            "    }\n"
-            "    if (outDegrees == 0) return next_frontier;\n"
-            "    uintT *offsets = degrees;\n"
-            "    long outEdgeCount = sequence::plusScan(offsets, degrees, m);\n"
-            "    uintE *outEdges = newA(uintE, outEdgeCount);\n";
+                 "    VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
+                         "    if (numVertices != from_vertexset->getVerticesRange()) {\n"
+                         "        cout << \"edgeMap: Sizes Don't match\" << endl;\n"
+                         "        abort();\n"
+                         "    }\n"
+                         "    if (outDegrees == 0) return next_frontier;\n"
+                         "    uintT *offsets = degrees;\n"
+                         "    long outEdgeCount = sequence::plusScan(offsets, degrees, m);\n"
+                         "    uintE *outEdges = newA(uintE, outEdgeCount);\n";
         }
 
 
@@ -139,16 +140,17 @@ namespace graphit {
         //             do we want to load in the distance blocked vertex like in example?
         //             how do we change the generation of distance to reflect src/dist
 
-        if(apply_expr_gen_frontier)
-        {
-            printIndent();
-            *oss_ << "bvs_block_t fbid, nbid;" << std::endl;
-            *oss_ << "blocked_vertex_set_foreach_block(from_vertexset, fbid) {" << std::endl;
-            indent();
-            printIndent();
-            *oss_ << "blocked_vertex_set_foreach_block(next_frontier, nbid) {" << std::endl;
-            indent();
-        }
+
+        //     printIndent();
+        //     *oss_ << "bvs_block_t fbid, nbid;" << std::endl;
+        //     *oss_ << "blocked_vertex_set_foreach_block(from_vertexset, fbid) {" << std::endl;
+        //     indent();
+        // if(apply_expr_gen_frontier)
+        // {
+        //     printIndent();
+        //     *oss_ << "blocked_vertex_set_foreach_block(next_frontier, nbid) {" << std::endl;
+        //     indent();
+        // }
 
         std::string for_type = "for";
         if (apply->is_parallel)
@@ -160,15 +162,15 @@ namespace graphit {
         //TODO(Emily): will we always assume from vertexset is specified?
         //             - also do we want to use vertex_t type? or just assume we will always index w/ long type
         if (from_vertexset_specified)
-            *oss_ << for_type << " (long i=0; i < blocked_vertexset_size_of_block(from_vertexset, fbid); i++) {" << std::endl;
+            *oss_ << for_type << " (long i=0; i < m; i++) {" << std::endl;
         else
             *oss_ << for_type << " (NodeID s=0; s < g.num_nodes(); s++) {" << std::endl;
 
         indent();
 
         if (from_vertexset_specified){
-            *oss_ << "    NodeID s = blocked_vertexset_block_vertex_at(from_vertexset, i);\n"
-            "    int j = 0;\n";
+            *oss_ << "    NodeID s = from_vertexset->dense_vertex_set_[i];\n"
+                    "    int j = 0;\n";
             if (apply_expr_gen_frontier){
                 *oss_ <<  "    uintT offset = offsets[i];\n";
             }
@@ -181,16 +183,17 @@ namespace graphit {
             indent();
         }
 
-
         printIndent();
 
-        //TODO(Emily): will we support out_neigh() in our Graph library?
+        //TODO(Emily): can we pass the Graph type to our device code?
+        //            - if so, need to implement out_neigh(s) in our library
         *oss_ << "for(" << node_id_type << " d : g.out_neigh(s)){" << std::endl;
 
+
         //want to check that we're in the correct block of next frontier
-        indent();
-        printIndent();
-        *oss_ << "if(blocked_vertexset_block_of(next_frontier, d){" << std::endl;
+        // indent();
+        // printIndent();
+        // *oss_ << "if(blocked_vertexset_block_of(next_frontier, d){" << std::endl;
 
         // print the checks on filtering on sources s
         if (apply->to_func != "") {
@@ -236,7 +239,7 @@ namespace graphit {
             }
 
             indent();
-            //TODO(Emily): they're using this outEdges as a temp var to build the frontier, not sure we want this
+            //TODO(Emily): they're using this outEdges as a temp var to build the frontier, we don't want this
             //generate the code for adding destination to "next" frontier
             *oss_ << " ) { " << std::endl;
             printIndent();
@@ -245,6 +248,11 @@ namespace graphit {
             printIndent();
             *oss_ << "} else { outEdges[offset + j] = UINT_E_MAX; }" << std::endl;
 
+
+
+//            dedent();
+//            printIndent();
+//            *oss_ << "}" << std::endl;
         }
 
 
@@ -268,9 +276,9 @@ namespace graphit {
             *oss_ << "j++;" << std::endl;
         }
 
-        dedent();
-        printIndent();
-        *oss_ << "} //end of if statement to check if in current block" << std::endl;
+        // dedent();
+        // printIndent();
+        // *oss_ << "} //end of if statement to check if in current block" << std::endl;
 
         //end of for loop on the neighbors
         dedent();
@@ -288,14 +296,15 @@ namespace graphit {
         printIndent();
         *oss_ << "}" << std::endl;
 
-        dedent();
-        printIndent();
-        *oss_ << "}" << std::endl; //end of next frontier blocking
-
-        dedent();
-        printIndent();
-        *oss_ << "}" << std::endl; //end of current frontier blocking
-
+        // if(apply_expr_gen_frontier)
+        // {
+        //    dedent();
+        //    printIndent();
+        //    *oss_ << "}" << std::endl; //end of next frontier blocking
+        // }
+        // dedent();
+        // printIndent();
+        // *oss_ << "}" << std::endl; //end of current frontier blocking
 
         //TODO(Emily): this is generating new frontier to be returned
         //             we will want to modify this to be what we want before returning
@@ -303,18 +312,18 @@ namespace graphit {
         //return a new vertexset if no subset vertexset is returned
         if (apply_expr_gen_frontier) {
             *oss_ << "  uintE *nextIndices = newA(uintE, outEdgeCount);\n"
-            "  long nextM = sequence::filter(outEdges, nextIndices, outEdgeCount, nonMaxF());\n"
-            "  free(outEdges);\n"
-            "  free(degrees);\n"
-            "  next_frontier->num_vertices_ = nextM;\n"
-            "  next_frontier->dense_vertex_set_ = nextIndices;\n";
+                    "  long nextM = sequence::filter(outEdges, nextIndices, outEdgeCount, nonMaxF());\n"
+                    "  free(outEdges);\n"
+                    "  free(degrees);\n"
+                    "  next_frontier->num_vertices_ = nextM;\n"
+                    "  next_frontier->dense_vertex_set_ = nextIndices;\n";
 
             //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
             if (apply->enable_deduplication && from_vertexset_specified) {
                 //clear up the indices that are set
-                *oss_ << "  parallel_for(int i = 0; i < nextM; i++){\n"
-                "     g.flags_[nextIndices[i]] = 0;\n"
-                "  }\n";
+                    *oss_ << "  parallel_for(int i = 0; i < nextM; i++){\n"
+                            "     g.flags_[nextIndices[i]] = 0;\n"
+                            "  }\n";
             }
             *oss_ << "  return next_frontier;\n";
         }

@@ -290,6 +290,10 @@ namespace graphit {
                 stmt->accept(this);
             }
 
+            //get device instance
+            printIndent();
+            *oss << "Device::Ptr device = Device::GetInstance();" << std::endl;
+
             // Initialize graphSegments if necessary
             auto segment_map = mir_context_->edgeset_to_label_to_num_segment;
             for (auto edge_iter = segment_map.begin(); edge_iter != segment_map.end(); edge_iter++) {

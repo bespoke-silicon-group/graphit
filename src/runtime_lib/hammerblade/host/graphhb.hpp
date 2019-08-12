@@ -45,6 +45,17 @@ public:
         const Graph & getHostGraph() const {
                 return _host_g;
         }
+
+				int32_t out_degree(int v) const {
+					//return _host_g.out_degree(v);
+					if(v < _host_g.num_nodes() - 1){
+						return _host_g.out_index_[v+1] - _host_g.out_index_[v];
+					}
+					else{
+						return _host_g.num_edges_ - _host_g.out_index_[v];
+					}
+				}
+
 private:
 
 	static const hb_mc_eva_t DEVICE_NULLPTR = 0;

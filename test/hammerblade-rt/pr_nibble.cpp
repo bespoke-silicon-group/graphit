@@ -58,7 +58,7 @@ int main(int argc, char * argv[]){
                     edges.num_edges(),
                     edges.num_nodes()});
 
-  device->enqueueJob("kernel_init_out_degree"
+  device->enqueueJob("kernel_init_out_degree",
                     {out_degree.getAddr(),
                     edges.getOutIndicesAddr(),
                     edges.num_nodes(),
@@ -78,14 +78,14 @@ int main(int argc, char * argv[]){
 
   while ( (getFrontierSize(frontier) ) != ((0) ))
   {
-    device->enqueueJob("kernel_copy_r_to_rp"
+    device->enqueueJob("kernel_copy_r_to_rp",
                       {r.getAddr(),
                       r_p.getAddr(),
                       edges.num_nodes(),
                       edges.num_edges(),
                       edges.num_nodes()});
     device->runJobs();
-    device->enqueueJob("kernel_update_self"
+    device->enqueueJob("kernel_update_self",
                       {p.getAddr(),
                       r.getAddr(),
                       r_p.getAddr(),
@@ -97,7 +97,7 @@ int main(int argc, char * argv[]){
                       edges.num_nodes()});
     device->runJobs();
 
-    device->enqueueJob("kernel_update_neigh"
+    device->enqueueJob("kernel_update_neigh",
                       {frontier.getAddr(),
                       edges.getOutIndicesAddr(),
                       edges.getOutDegrees(),
@@ -110,7 +110,7 @@ int main(int argc, char * argv[]){
                       edges.num_nodes()});
     device->runJobs();
 
-    device->enqueueJob("kernel_copy_rp_to_r"
+    device->enqueueJob("kernel_copy_rp_to_r",
                       {r.getAddr(),
                       r_p.getAddr(),
                       edges.num_nodes(),
@@ -118,7 +118,7 @@ int main(int argc, char * argv[]){
                       edges.num_nodes()});
     device->runJobs();
 
-    device->enqueueJob("kernel_build_next_frontier"
+    device->enqueueJob("kernel_build_next_frontier",
                       {next_frontier.getAddr(),
                       r.getAddr(),
                       out_degree.getAddr(),

@@ -100,7 +100,7 @@ int main(int argc, char * argv[]){
     device->enqueueJob("kernel_update_neigh",
                       {frontier.getAddr(),
                       edges.getOutIndicesAddr(),
-                      edges.getOutDegrees(),
+                      edges.getOutNeighborsAddr(),
                       alpha,
                       r.getAddr(),
                       r_p.getAddr(),

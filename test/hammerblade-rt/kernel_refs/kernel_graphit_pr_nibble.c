@@ -40,7 +40,7 @@ kernel_init_r(float *r, int V, int E, int block_size_x) {
     int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);
     for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {
         if ((start_x + iter_x) < V) {
-	    r_generated_vector_op_apply_func_0(start_x + iter_x, r);
+	    r_generated_vector_op_apply_func_1(start_x + iter_x, r);
         }
 	else {
             break;
@@ -90,7 +90,7 @@ void __attribute__ ((noinline)) updateNeigh(int src, int dst, float alpha,
 }
 
 int __attribute__ ((noinline)) kernel_update_neigh(int * frontier, int *out_indices, int *out_neighbors,
-                                            float alpha, float * r, float * r_p, int * out_degree
+                                            float alpha, float * r, float * r_p, int * out_degree,
                                             int V, int E, int block_size_x)
 {
   int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);

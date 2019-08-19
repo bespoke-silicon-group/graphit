@@ -2,6 +2,7 @@
 #include <hammerblade/host/graphhb.hpp>
 #include <hammerblade/host/device.hpp>
 #include <hammerblade/host/error.hpp>
+#include <hammerblade/host/global_scalar.hpp>
 #include <fstream>
 #include <vector>
 #include <sys/stat.h>

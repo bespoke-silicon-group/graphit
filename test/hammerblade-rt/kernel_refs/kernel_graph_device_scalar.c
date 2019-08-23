@@ -8,8 +8,8 @@
 #include "bsg_tile_group_barrier.h"
 INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 
-int * parent;
-float epsilon;
+__attribute__((section(".dram"))) int * parent;
+__attribute__((section(".dram"))) float epsilon;
 
 int  __attribute__ ((noinline)) kernel_graph_device_scalar(int V, int block_size_x) {
 

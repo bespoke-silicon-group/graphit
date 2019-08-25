@@ -9,6 +9,8 @@ namespace graphit {
         genStructTypeDecls();
 
         //Processing the constants, generting declartions
+        //NOTE(Emily): we need to generate these in the device code file
+        //and initialize in the main method/host code
         for (auto constant : mir_context_->getLoweredConstants()) {
             if ((std::dynamic_pointer_cast<mir::VectorType>(constant->type)) != nullptr) {
                 mir::VectorType::Ptr type = std::dynamic_pointer_cast<mir::VectorType>(constant->type);
@@ -21,6 +23,7 @@ namespace graphit {
                 // currently, no code is generated
             } else {
                 // regular constant declaration
+                oss = &oss_device;
                 genScalarDecl(constant);
             }
         }
@@ -980,6 +983,7 @@ namespace graphit {
 
     void CodeGenHB::genScalarDecl(mir::VarDecl::Ptr var_decl){
         //the declaration and the value are separate. The value is generated as a separate assign statement in the main function
+        *oss << "__attribute__((section(\".dram\"))) ";
         var_decl->type->accept(this);
         *oss << var_decl->name << "; " << std::endl;
     }

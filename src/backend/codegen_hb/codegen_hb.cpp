@@ -16,6 +16,7 @@ namespace graphit {
                 mir::VectorType::Ptr type = std::dynamic_pointer_cast<mir::VectorType>(constant->type);
                 // if the constant decl is a field property of an element (system vector)
                 if (type->element_type != nullptr) {
+                    oss = &oss_device;
                     genPropertyArrayDecl(constant);
                 }
             } else if (std::dynamic_pointer_cast<mir::VertexSetType>(constant->type)) {
@@ -954,7 +955,7 @@ namespace graphit {
          oss << name;
          oss << ";" << std::endl;
          **/
-
+        *oss << "__attribute__((section(\".dram\"))) ";
         if (!mir::isa<mir::VectorType>(vector_element_type)){
             vector_element_type->accept(this);
             *oss << " * __restrict " << name << ";" << std::endl;

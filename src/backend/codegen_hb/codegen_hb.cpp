@@ -908,6 +908,7 @@ namespace graphit {
         *oss << "using hammerblade::Device;" << std::endl;
         *oss << "using hammerblade::Vector;" << std::endl;
         *oss << "using hammerblade::GraphHB;" << std::endl;
+        *oss << "using hammerblade::GlobalScalar;" <<std::endl;
 
 
         // *oss << "#include \"hammerblade-grt/printing.h\"" << std::endl;
@@ -959,6 +960,9 @@ namespace graphit {
         if (!mir::isa<mir::VectorType>(vector_element_type)){
             vector_element_type->accept(this);
             *oss << " * __restrict " << name << ";" << std::endl;
+
+            oss = &oss_host;
+            *oss << "GlobalScalar<hb_mc_eva_t> " << name << ";" << std::endl;
         } else if (mir::isa<mir::VectorType>(vector_element_type)) {
             //if each element is a vector
             auto vector_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
@@ -976,6 +980,9 @@ namespace graphit {
             //use the typedef defined type to declare a new pointer
             *oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
 
+            oss = &oss_host;
+            *oss << "GlobalScalar<hb_mc_eva_t> " << name << ";" << std::endl;
+
         } else {
             std::cout << "unsupported type for property: " << var_decl->name << std::endl;
             exit(0);
@@ -984,9 +991,16 @@ namespace graphit {
 
     void CodeGenHB::genScalarDecl(mir::VarDecl::Ptr var_decl){
         //the declaration and the value are separate. The value is generated as a separate assign statement in the main function
+        //decl in device file
         *oss << "__attribute__((section(\".dram\"))) ";
         var_decl->type->accept(this);
         *oss << var_decl->name << "; " << std::endl;
+        //decl in host file
+        oss = &oss_host;
+        *oss << "GlobalScalar<";
+        var_decl->type->accept(this);
+        *oss << "> " << var_decl->name << ";" <<std::endl;
+
     }
 
     void CodeGenHB::genScalarAlloc(mir::VarDecl::Ptr var_decl) {

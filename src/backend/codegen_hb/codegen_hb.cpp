@@ -290,6 +290,25 @@ namespace graphit {
             printIndent();
             *oss << "hammerblade::builtin_loadMicroCodeFromFile(ucode_path);" << std::endl;
 
+            //NOTE(Emily): initialize all global scalars here
+            for (auto constant : mir_context_->getLoweredConstants()) {
+                if ((std::dynamic_pointer_cast<mir::VectorType>(constant->type)) != nullptr) {
+                    mir::VectorType::Ptr type = std::dynamic_pointer_cast<mir::VectorType>(constant->type);
+                    // if the constant decl is a field property of an element (system vector)
+                    if (type->element_type != nullptr) {
+                        oss = &oss_host;
+                        genPropertyArrayInit(constant);
+                    }
+                } else if (std::dynamic_pointer_cast<mir::VertexSetType>(constant->type)) {
+                    // if the constant is a vertex set  decl
+                    // currently, no code is generated
+                } else {
+                    // regular constant declaration
+                    oss = &oss_host;
+                    genScalarInit(constant);
+                }
+            }
+
             for (auto stmt : mir_context_->edgeset_alloc_stmts) {
                 stmt->accept(this);
             }
@@ -962,7 +981,7 @@ namespace graphit {
             *oss << " * __restrict " << name << ";" << std::endl;
 
             oss = &oss_host;
-            *oss << "GlobalScalar<hb_mc_eva_t> " << name << ";" << std::endl;
+            *oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
         } else if (mir::isa<mir::VectorType>(vector_element_type)) {
             //if each element is a vector
             auto vector_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
@@ -981,7 +1000,31 @@ namespace graphit {
             *oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
 
             oss = &oss_host;
-            *oss << "GlobalScalar<hb_mc_eva_t> " << name << ";" << std::endl;
+            *oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
+
+        } else {
+            std::cout << "unsupported type for property: " << var_decl->name << std::endl;
+            exit(0);
+        }
+    }
+
+    void CodeGenHB::genPropertyArrayInit(mir::VarDecl::Ptr var_decl) {
+        printIndent();
+
+        // read the name of the array
+        const auto name = var_decl->name;
+
+        // read the type of the array
+        mir::VectorType::Ptr vector_type = std::dynamic_pointer_cast<mir::VectorType>(var_decl->type);
+        assert(vector_type != nullptr);
+        auto vector_element_type = vector_type->vector_element_type;
+        assert(vector_element_type != nullptr);
+
+
+        if (!mir::isa<mir::VectorType>(vector_element_type)){
+            *oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
+        } else if (mir::isa<mir::VectorType>(vector_element_type)) {
+            *oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
 
         } else {
             std::cout << "unsupported type for property: " << var_decl->name << std::endl;
@@ -999,7 +1042,15 @@ namespace graphit {
         oss = &oss_host;
         *oss << "GlobalScalar<";
         var_decl->type->accept(this);
-        *oss << "> " << var_decl->name << ";" <<std::endl;
+        *oss << "> " << var_decl->name << "_dev;" <<std::endl;
+
+    }
+
+    void CodeGenHB::genScalarInit(mir::VarDecl::Ptr var_decl){
+        printIndent();
+        *oss << var_decl->name << "_dev = GlobalScalar<";
+        var_decl->type->accept(this);
+        *oss << ">(\"" << var_decl->name << "\");" <<std::endl;
 
     }
 

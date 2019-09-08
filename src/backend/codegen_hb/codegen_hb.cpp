@@ -188,7 +188,8 @@ namespace graphit {
 
             assign_stmt->lhs->accept(this);
             *oss << "  = ____graphit_tmp_out; "  << std::endl;
-
+        //TODO(Emily): need to change this. we won't be returning a nextFrontier
+        // so we need to pass it in instead of doing an assign statement
         } else if (mir::isa<mir::EdgeSetApplyExpr>(assign_stmt->expr)) {
             printIndent();
             assign_stmt->lhs->accept(this);
@@ -644,21 +645,26 @@ namespace graphit {
             assert(associated_element_type);
             auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
             assert(associated_element_type_size);
-            std::string for_type = apply_expr->is_parallel ? "parallel_for" : "for";
-            *oss << for_type << " (int vertexsetapply_iter = 0; vertexsetapply_iter < ";
-            associated_element_type_size->accept(this);
-            *oss << "; vertexsetapply_iter++) {" << std::endl;
-            indent();
+            // std::string for_type = apply_expr->is_parallel ? "parallel_for" : "for";
+            // *oss << for_type << " (int vertexsetapply_iter = 0; vertexsetapply_iter < ";
+            // associated_element_type_size->accept(this);
+            // *oss << "; vertexsetapply_iter++) {" << std::endl;
+            // indent();
+            // printIndent();
+            // *oss << apply_expr->input_function_name << "()(vertexsetapply_iter);" << std::endl;
+            // dedent();
+            // printIndent();
+            // *oss << "}";
+            //TODO(Emily): need to add in the params for the apply expr here
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "\",{edges.num_nodes(), edges.num_edges(),edges.num_nodes()});" << std::endl;
             printIndent();
-            *oss << apply_expr->input_function_name << "()(vertexsetapply_iter);" << std::endl;
-            dedent();
-            printIndent();
-            *oss << "}";
+            *oss << "device->runJobs()";
         } else {
             // if this is a dynamically created vertexset
-            *oss << " builtin_vertexset_apply ( " << mir_var->var.getName() << ", ";
-            *oss << apply_expr->input_function_name << "() ); " << std::endl;
-
+            //TODO(Emily): need to add in the params for the apply expr here
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "\",{edges.num_nodes(), edges.num_edges(),edges.num_nodes()});" << std::endl;
+            printIndent();
+            *oss << "device->runJobs()";
 
         }
 
@@ -877,7 +883,6 @@ namespace graphit {
             var_decl->type->accept(this);
             *oss << var_decl->name << " = ";
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(var_decl->initVal);
-            //TODO(Emily): need to implement this
             genEdgesetApplyFunctionCall(edgeset_apply_expr);
         } else {
             printIndent();
@@ -1108,6 +1113,7 @@ namespace graphit {
         *oss << "];" << std::endl;
     }
 
+    //TODO(Emily): this needs to be changed for device kernel calls
     void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply) {
         // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
 

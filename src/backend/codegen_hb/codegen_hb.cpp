@@ -53,6 +53,8 @@ namespace graphit {
         oss = &oss_device;
 
         //TODO(Emily): need to modify these calls for manycore blocking
+        //TODO(Emily): we want to move this/modify this to directly after the call in main is generated
+        //             so that we can remove templating
         auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
         gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
 
@@ -638,6 +640,7 @@ namespace graphit {
     void CodeGenHB::visit(mir::VertexSetApplyExpr::Ptr apply_expr) {
         //vertexset apply
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply_expr->target);
+        std::string arg_list = "";
 
         if (mir_context_->isConstVertexSet(mir_var->var.getName())){
             //if the verstexset is a const / global vertexset, then we can get size easily
@@ -655,16 +658,21 @@ namespace graphit {
             // dedent();
             // printIndent();
             // *oss << "}";
-            //TODO(Emily): need to add in the params for the apply expr here
-            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "\",{edges.num_nodes(), edges.num_edges(),edges.num_nodes()});" << std::endl;
+            //TODO(Emily): need to figure out a way to generate the params for the apply expr here
+            arg_list = "edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
+
+            genVertexsetApplyKernel(apply_expr, arg_list);
         } else {
             // if this is a dynamically created vertexset
-            //TODO(Emily): need to add in the params for the apply expr here
-            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "\",{edges.num_nodes(), edges.num_edges(),edges.num_nodes()});" << std::endl;
+            //TODO(Emily): need to figure out a way to generate the params for the apply expr here
+            arg_list = "edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
+            genVertexsetApplyKernel(apply_expr, arg_list);
 
         }
 
@@ -1197,6 +1205,28 @@ namespace graphit {
             }
             *oss << "} " << struct_type_decl->name << ";" << std::endl;
         }
+    }
+
+    //NOTE(Emily): method to generate the kernel to call vertexset apply funcs on device
+    // want to figure out better way to indent (mid overall generation)
+    void CodeGenHB::genVertexsetApplyKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
+        oss = &oss_device;
+        *oss << "int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
+        *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
+        *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
+        *oss << "\t\t" << "if ((start_x + iter_x) < V) {" << std::endl;
+        *oss << "\t\t\t" << apply->input_function_name << "(start_x + iter_x);" << std::endl;
+        *oss << "\t\t" << "}" << std::endl;
+        *oss << "\t\t" << "else {" << std::endl;
+        *oss << "\t\t\t" << "break;" << std::endl;
+        *oss << "\t\t" << "}" << std::endl;
+        *oss << "\t" << "}" << std::endl;
+        *oss << "\t" << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        *oss << "\t" << "return 0;" << std::endl;
+        *oss << "}" << std::endl;
+
+        oss = &oss_host;
+
     }
 
 }

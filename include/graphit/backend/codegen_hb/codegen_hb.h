@@ -142,6 +142,8 @@ namespace graphit {
         void genScalarInit(mir::VarDecl::Ptr var_decl);
 
         void genScalarAlloc(mir::VarDecl::Ptr shared_ptr);
+
+        void genVertexsetApplyKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list);
     };
 }
 

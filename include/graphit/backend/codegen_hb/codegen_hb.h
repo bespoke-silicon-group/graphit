@@ -129,7 +129,7 @@ namespace graphit {
 
         void genStructTypeDecls();
 
-        void genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply);
+        void genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply, std::string return_arg, mir::Expr::Ptr lhs);
 
         void genPropertyArrayDecl(mir::VarDecl::Ptr shared_ptr);
 

@@ -170,7 +170,7 @@ namespace graphit {
         if (mir::isa<mir::EdgeSetApplyExpr>(expr_stmt->expr)) {
             printIndent();
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(expr_stmt->expr);
-            genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            genEdgesetApplyFunctionCall(edgeset_apply_expr, "", NULL);
         } else {
             printIndent();
             expr_stmt->expr->accept(this);
@@ -194,10 +194,12 @@ namespace graphit {
         // so we need to pass it in instead of doing an assign statement
         } else if (mir::isa<mir::EdgeSetApplyExpr>(assign_stmt->expr)) {
             printIndent();
-            assign_stmt->lhs->accept(this);
-            *oss << " = ";
+            //assign_stmt->lhs->accept(this);
+            //*oss << " = ";
+            //TODO(Emily): we need to confirm that this is always a next_frontier case
+            //            right now this will pass in frontier twice when we want to return a next frontier
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
-            genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            genEdgesetApplyFunctionCall(edgeset_apply_expr, "", assign_stmt->lhs );
 
         } else {
             printIndent();
@@ -892,9 +894,10 @@ namespace graphit {
         } else if (mir::isa<mir::EdgeSetApplyExpr>(var_decl->initVal)) {
             printIndent();
             var_decl->type->accept(this);
-            *oss << var_decl->name << " = ";
+            *oss << var_decl->name << std::endl;
+            printIndent();
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(var_decl->initVal);
-            genEdgesetApplyFunctionCall(edgeset_apply_expr);
+            genEdgesetApplyFunctionCall(edgeset_apply_expr, var_decl->name, NULL);
         } else {
             printIndent();
 
@@ -929,6 +932,7 @@ namespace graphit {
 
 
     //******END OF VISIT FUNCS****
+
     void CodeGenHB::genIncludeStmts() {
         oss = &oss_device;
 
@@ -1127,7 +1131,7 @@ namespace graphit {
     //TODO(Emily): this needs to be changed for device kernel calls
     // we want to keep the context here to get rid of templating elsewhere
     // NOTE(Emily): we can possibly use this to aid in arg generation for vertexsets
-    void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply) {
+    void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply, std::string return_arg, mir::Expr::Ptr lhs) {
         // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
 
         auto edgeset_apply_func_name = edgeset_apply_func_gen_->genFunctionName(apply);
@@ -1185,7 +1189,15 @@ namespace graphit {
         for (auto &arg : arguments) {
             *oss << ", " << arg;
         }
+        if(return_arg != ""){ *oss << ", " << return_arg; }
 
+        if(lhs != NULL){
+          *oss << ", ";
+          lhs->accept(this);
+        }
+
+        //TODO(Emily): need to confirm we always need these 3 args for kernel calls
+        *oss << ", edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
         *oss << "}); " << std::endl;
         printIndent();
         *oss << "device->runJobs();" << std::endl;

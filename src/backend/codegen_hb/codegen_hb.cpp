@@ -659,6 +659,8 @@ namespace graphit {
             // printIndent();
             // *oss << "}";
             //TODO(Emily): need to figure out a way to generate the params for the apply expr here
+            //            alternatively, these might always be global vars
+            //TODO(Emily): need to handle the idea that vertexset sizes are not always = edges.num_nodes()
             arg_list = "edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
             *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
             printIndent();
@@ -886,6 +888,7 @@ namespace graphit {
             var_decl->type->accept(this);
             *oss << var_decl->name << "  = ____graphit_tmp_out; " << std::endl;
 
+        //TODO(Emily): can't return from a kernel call, so need to handle this case
         } else if (mir::isa<mir::EdgeSetApplyExpr>(var_decl->initVal)) {
             printIndent();
             var_decl->type->accept(this);
@@ -1122,11 +1125,14 @@ namespace graphit {
     }
 
     //TODO(Emily): this needs to be changed for device kernel calls
+    // we want to keep the context here to get rid of templating elsewhere
+    // NOTE(Emily): we can possibly use this to aid in arg generation for vertexsets
     void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply) {
         // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
 
         auto edgeset_apply_func_name = edgeset_apply_func_gen_->genFunctionName(apply);
-        *oss << edgeset_apply_func_name << "(";
+        *oss << "device->enqueueJob(\"";
+        *oss << edgeset_apply_func_name << "\", {";
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
         std::vector<std::string> arguments = std::vector<std::string>();
 
@@ -1174,12 +1180,15 @@ namespace graphit {
          */
 
         // the edgeset that is being applied over (target)
+
         apply->target->accept(this);
         for (auto &arg : arguments) {
             *oss << ", " << arg;
         }
 
-        *oss << "); " << std::endl;
+        *oss << "}); " << std::endl;
+        printIndent();
+        *oss << "device->runJobs();" << std::endl;
     }
 
     /**

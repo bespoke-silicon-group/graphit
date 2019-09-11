@@ -42,6 +42,14 @@ namespace graphit {
         oss = &oss_device;
         *oss << std::endl;
 
+        //TODO(Emily): need to modify these calls for manycore blocking
+        //TODO(Emily): we want to move this/modify this to directly after the call in main is generated
+        //             so that we can remove templating
+        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
+        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
+
+        *oss << std::endl;
+
         //Processing the functions
         std::map<std::string, mir::FuncDecl::Ptr>::iterator it;
         std::vector<mir::FuncDecl::Ptr> functions = mir_context_->getFunctionList();
@@ -51,12 +59,6 @@ namespace graphit {
         }
 
         oss = &oss_device;
-
-        //TODO(Emily): need to modify these calls for manycore blocking
-        //TODO(Emily): we want to move this/modify this to directly after the call in main is generated
-        //             so that we can remove templating
-        auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
-        gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
 
         *oss << std::endl;
         return 0;
@@ -197,7 +199,6 @@ namespace graphit {
             //assign_stmt->lhs->accept(this);
             //*oss << " = ";
             //TODO(Emily): we need to confirm that this is always a next_frontier case
-            //            right now this will pass in frontier twice when we want to return a next frontier
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
             genEdgesetApplyFunctionCall(edgeset_apply_expr, "", assign_stmt->lhs );
 
@@ -230,14 +231,14 @@ namespace graphit {
             oss = &oss_device;
         } else {
             // Use functors for better compiler inlining
-            //func_decl->isFunctor = true;
-            //*oss << "struct " << func_decl->name << std::endl;
-            //printBeginIndent();
-            //indent();
-            //*oss << std::string(2 * indentLevel, ' ');
+            func_decl->isFunctor = true;
+            *oss << "struct " << func_decl->name << std::endl;
+            printBeginIndent();
+            indent();
+            *oss << std::string(2 * indentLevel, ' ');
 
             //NOTE(Emily): if we don't want to use functors, uncomment this
-            func_decl->isFunctor = false;
+            //func_decl->isFunctor = false;
 
             if (func_decl->result.isInitialized()) {
                 func_decl->result.getType()->accept(this);
@@ -256,9 +257,9 @@ namespace graphit {
             }
 
             //NOTE(Emily): this is for the HB device kernel code
-            *oss << "__attribute__ ((noinline)) ";
-            //*oss << "operator() (";
-            *oss << func_decl->name << "(";
+            //*oss << "__attribute__ ((noinline)) ";
+            *oss << "operator() (";
+            //*oss << func_decl->name << "(";
             bool printDelimiter = false;
             for (auto arg : func_decl->args) {
                 if (printDelimiter) {
@@ -893,6 +894,7 @@ namespace graphit {
         //TODO(Emily): can't return from a kernel call, so need to handle this case
         } else if (mir::isa<mir::EdgeSetApplyExpr>(var_decl->initVal)) {
             printIndent();
+            //TODO(Emily): need to check the type and might need to do more instantiate for device here
             var_decl->type->accept(this);
             *oss << var_decl->name << std::endl;
             printIndent();
@@ -1134,12 +1136,15 @@ namespace graphit {
     void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply, std::string return_arg, mir::Expr::Ptr lhs) {
         // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
 
+
         auto edgeset_apply_func_name = edgeset_apply_func_gen_->genFunctionName(apply);
-        *oss << "device->enqueueJob(\"";
-        *oss << edgeset_apply_func_name << "\", {";
+
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
         std::vector<std::string> arguments = std::vector<std::string>();
 
+        oss = &oss_device;
+        *oss << "extern \"C\" int __attribute__ ((noinline)) ";
+        *oss << edgeset_apply_func_name << "_call(";
 
         if (apply->from_func != "") {
             if (mir_context_->isFunction(apply->from_func)) {
@@ -1184,15 +1189,48 @@ namespace graphit {
          */
 
         // the edgeset that is being applied over (target)
+        apply->target->accept(this);
 
+
+        if(return_arg != ""){ *oss << ", " << return_arg; }
+
+        //TODO(Emily): this is a hack assuming the only time we pass this in
+        //              it will be the next frontier
+        if(lhs != NULL){
+          *oss << ", next_";
+          lhs->accept(this);
+        }
+
+        *oss << ") {" << std::endl;
+        *oss << "\t" << edgeset_apply_func_name << "(";
         apply->target->accept(this);
         for (auto &arg : arguments) {
-            *oss << ", " << arg;
+          *oss << ", " << arg;
         }
         if(return_arg != ""){ *oss << ", " << return_arg; }
 
+        //TODO(Emily): this is a hack assuming the only time we pass this in
+        //              it will be the next frontier
         if(lhs != NULL){
-          *oss << ", ";
+          *oss << ", next_";
+          lhs->accept(this);
+        }
+        *oss << ");" << std::endl;
+        *oss << "\t" << "return 0;" << std::endl;
+        *oss << "}" << std::endl;
+
+        oss = &oss_host;
+        *oss << "device->enqueueJob(\"";
+        *oss << edgeset_apply_func_name << "_call\", {";
+
+        apply->target->accept(this);
+        
+        if(return_arg != ""){ *oss << ", " << return_arg; }
+
+        //TODO(Emily): this is a hack assuming the only time we pass this in
+        //              it will be the next frontier
+        if(lhs != NULL){
+          *oss << ", next_";
           lhs->accept(this);
         }
 
@@ -1232,7 +1270,7 @@ namespace graphit {
     // want to figure out better way to indent (mid overall generation)
     void CodeGenHB::genVertexsetApplyKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
         oss = &oss_device;
-        *oss << "int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
+        *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
         *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
         *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
         *oss << "\t\t" << "if ((start_x + iter_x) < V) {" << std::endl;

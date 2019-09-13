@@ -96,7 +96,8 @@ namespace graphit {
 
     void CodeGenHB::visit(mir::ElementType::Ptr element_type) {
         //currently, we generate an index id into the vectors
-        *oss << "NodeID ";
+        //*oss << "NodeID ";
+        *oss << "int "; //NOTE(Emily): we're not using the NodeID type now
     }
 
     void CodeGenHB::visit(mir::ForStmt::Ptr for_stmt) {
@@ -474,7 +475,9 @@ namespace graphit {
         {
           printEndIndent();
         }
-        //*oss << ";"; //NOTE(Emily): I don't think we need this...?
+        if(func_decl->isFunctor){
+          *oss << ";";
+        }
         *oss << std::endl;
 
     };

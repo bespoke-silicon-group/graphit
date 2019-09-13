@@ -27,7 +27,7 @@ int getFrontierSize(Vector<int32_t> &frontier)
 
 int main(int argc, char * argv[]){
   hammerblade::builtin_loadMicroCodeFromFile(ucode_path);
-  parent_dev = GlobalScalar<hb_mc_eva_t>("parent");
+  //parent_dev = GlobalScalar<hb_mc_eva_t>("parent");
   edges = hammerblade::builtin_loadEdgesFromFileToHB ( argv[(1) ]) ;
   Device::Ptr device = Device::GetInstance();
 

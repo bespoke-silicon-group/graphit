@@ -7,7 +7,7 @@
 INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 //__attribute__((section(".dram"))) int  * __restrict parent;
 
-template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_apply_push_serial_from_vertexset_to_filter_func_with_frontier(int *out_indices, int*out_neighbors, int *frontier, int *next_frontier, int *parent, TO_FUNC to_func, APPLY_FUNC apply_func, int V, int E, int block_size_x)
+template <typename TO_FUNC , typename APPLY_FUNC> int edgeset_apply_push_serial_from_vertexset_to_filter_func_with_frontier(int *out_indices, int*out_neighbors, int *frontier, int *next_frontier, int *parent, TO_FUNC to_func, APPLY_FUNC apply_func, int V, int E, int block_size_x)
 {
   int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);
   for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {
@@ -43,14 +43,14 @@ template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_
 
 struct parent_generated_vector_op_apply_func_0
 {
-  void operator() (NodeID v, int *parent)
+  void operator() (int v, int *parent)
   {
     parent[v] =  -(1) ;
   };
 }
 struct updateEdge
 {
-  bool operator() (NodeID src, NodeID dst, int *parent)
+  bool operator() (int src, int dst, int *parent)
   {
     bool output1 ;
     parent[dst] = src;
@@ -60,7 +60,7 @@ struct updateEdge
 }
 struct toFilter
 {
-  bool operator() (NodeID v, int *parent)
+  bool operator() (int v, int *parent)
   {
     bool output ;
     output = (parent[v]) == ( -(1) );
@@ -69,7 +69,7 @@ struct toFilter
 }
 struct reset
 {
-  void operator() (NodeID v, int *parent)
+  void operator() (int v, int *parent)
   {
     parent[v] =  -(1) ;
   };
@@ -92,7 +92,7 @@ extern "C" int  __attribute__ ((noinline)) reset_kernel(int *parent, int V, int 
 	int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);
 	for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {
 		if ((start_x + iter_x) < V) {
-			reset(start_x + iter_x, parent);
+			reset()(start_x + iter_x, parent);
 		}
 		else {
 			break;
@@ -102,6 +102,6 @@ extern "C" int  __attribute__ ((noinline)) reset_kernel(int *parent, int V, int 
 	return 0;
 }
 extern "C" int __attribute__ ((noinline)) edgeset_apply_push_serial_from_vertexset_to_filter_func_with_frontier_call(int *out_indices, int*out_neighbors, int *frontier, int *next_frontier, int *parent, int V, int E, int block_size_x) {
-	edgeset_apply_push_serial_from_vertexset_to_filter_func_with_frontier(out_indices, out_neighbors, frontier, next_frontier, parent,  toFilter(), updateEdge(), V, E, block_size_x,);
+	edgeset_apply_push_serial_from_vertexset_to_filter_func_with_frontier(out_indices, out_neighbors, frontier, next_frontier, parent,  toFilter(), updateEdge(), V, E, block_size_x);
 	return 0;
 }

@@ -949,6 +949,12 @@ namespace graphit {
 
         *oss << "#include \"builtins_hammerblade.h\"" << std::endl;
         *oss << "#include <string.h> " << std::endl;
+
+        //TODO(Emily): need a better way of naming the ucode path based on the input program
+        *oss << "const std::string ucode_path = " << std::endl;
+        *oss << "\t\t \"/home/centos/bsg_bladerunner/bsg_manycore\"" << std::endl;
+        *oss << "\t\t \"/software/spmd/bsg_cuda_lite_runtime/graphit_kernel_code/main.riscv\"" << std::endl;
+
         *oss << "using hammerblade::Device;" << std::endl;
         *oss << "using hammerblade::Vector;" << std::endl;
         *oss << "using hammerblade::GraphHB;" << std::endl;
@@ -1224,7 +1230,7 @@ namespace graphit {
         *oss << edgeset_apply_func_name << "_call\", {";
 
         apply->target->accept(this);
-        
+
         if(return_arg != ""){ *oss << ", " << return_arg; }
 
         //TODO(Emily): this is a hack assuming the only time we pass this in
@@ -1274,7 +1280,7 @@ namespace graphit {
         *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
         *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
         *oss << "\t\t" << "if ((start_x + iter_x) < V) {" << std::endl;
-        *oss << "\t\t\t" << apply->input_function_name << "(start_x + iter_x);" << std::endl;
+        *oss << "\t\t\t" << apply->input_function_name << "()(start_x + iter_x);" << std::endl;
         *oss << "\t\t" << "}" << std::endl;
         *oss << "\t\t" << "else {" << std::endl;
         *oss << "\t\t\t" << "break;" << std::endl;

@@ -113,12 +113,11 @@ namespace graphit {
         }
 
         // If apply function has a return value, then we need to return a temporary vertexsubset
-        if (apply_expr_gen_frontier) {
+        //NOTE(Emily): we don't want to deal with this. so we will never generate this code
+        if(false) {
+        //if (apply_expr_gen_frontier) {
             // build an empty vertex subset if apply function returns
             //set up code for outputing frontier for push based edgeset apply operations
-            //TODO(Emily): need to update this code here to use our data types
-            //           + we want to load next frontier in blocks, so should have it fully initialized
-            //           + this most likely means having everything as dense, instead of switching from sparse to dense
             *oss_ <<
                  "    VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
                          "    if (numVertices != from_vertexset->getVerticesRange()) {\n"
@@ -140,7 +139,6 @@ namespace graphit {
         //             do we want to load in the distance blocked vertex like in example?
         //             how do we change the generation of distance to reflect src/dist
 
-
         //     printIndent();
         //     *oss_ << "bvs_block_t fbid, nbid;" << std::endl;
         //     *oss_ << "blocked_vertex_set_foreach_block(from_vertexset, fbid) {" << std::endl;
@@ -153,22 +151,27 @@ namespace graphit {
         // }
 
         std::string for_type = "for";
-        if (apply->is_parallel)
-            for_type = "parallel_for";
+        //if (apply->is_parallel)
+        //    for_type = "parallel_for";
 
-        std::string node_id_type = "NodeID";
+        std::string node_id_type = "int";
         if (apply->is_weighted) node_id_type = "WNode";
 
         //TODO(Emily): will we always assume from vertexset is specified?
         //             - also do we want to use vertex_t type? or just assume we will always index w/ long type
-        if (from_vertexset_specified)
-            *oss_ << for_type << " (long i=0; i < m; i++) {" << std::endl;
-        else
-            *oss_ << for_type << " (NodeID s=0; s < g.num_nodes(); s++) {" << std::endl;
 
+        *oss_ << for_type << " (int iter_x = __bsg_id; iter_x < block_size_x; iter_x++) {" << std::endl;
+        indent();
+        printIndent();
+        *oss_ << "if((start_x + iter_x) < V-1) {" << std::endl;
+        indent();
+        printIndent();
+        *oss_ << "if(from_vertexset[start_x + iter_x]) {" << std::endl;
         indent();
 
-        if (from_vertexset_specified){
+        //NOTE(Emily): more vars that we most likely won't need
+        //if (from_vertexset_specified){
+        if(false){
             *oss_ << "    NodeID s = from_vertexset->dense_vertex_set_[i];\n"
                     "    int j = 0;\n";
             if (apply_expr_gen_frontier){
@@ -179,7 +182,7 @@ namespace graphit {
 
         if (apply->from_func != "" && !from_vertexset_specified) {
             printIndent();
-            *oss_ << "if (from_func(s)){ " << std::endl;
+            *oss_ << "if (from_func(start_x + iter_x)){ " << std::endl;
             indent();
         }
 
@@ -187,7 +190,7 @@ namespace graphit {
 
         //TODO(Emily): can we pass the Graph type to our device code?
         //            - if so, need to implement out_neigh(s) in our library
-        *oss_ << "for(" << node_id_type << " d : g.out_neigh(s)){" << std::endl;
+        *oss_ << "for(int iter_n = out_indices[start_x + iter_x]; iter_n < out_indices[start_x + iter_x + 1]; iter_n++) { "<< std::endl;
 
 
         //want to check that we're in the correct block of next frontier
@@ -204,10 +207,11 @@ namespace graphit {
             //TODO: move this logic in to MIR at some point
             if (mir_context_->isFunction(apply->to_func)) {
                 //if the input expression is a function call
-                *oss_ << " (to_func(" << dst_type << ")";
+                *oss_ << " (to_func( out_neighbors[itern_n])";
 
             } else {
                 //the input expression is a vertex subset
+                //NOTE(Emily): we currently don't support this
                 *oss_ << " (to_vertexset->bool_map_[s] ";
             }
             *oss_ << ") { " << std::endl;
@@ -223,7 +227,7 @@ namespace graphit {
         if (apply->is_weighted) {
             *oss_ << apply_func_name << " ( s , d.v, d.w )";
         } else {
-            *oss_ << apply_func_name << " ( s , d  )";
+            *oss_ << apply_func_name << " ( (start_x + iter_x), out_neighbors[iter_n] )";
 
         }
 
@@ -243,11 +247,10 @@ namespace graphit {
             //generate the code for adding destination to "next" frontier
             *oss_ << " ) { " << std::endl;
             printIndent();
-            *oss_ << "outEdges[offset + j] = " << dst_type << "; " << std::endl;
+            *oss_ << "next_frontier[out_neighbors[iter_n]] = 1;" << std::endl;
             dedent();
             printIndent();
-            *oss_ << "} else { outEdges[offset + j] = UINT_E_MAX; }" << std::endl;
-
+            *oss_ << "}" << std::endl;
 
 
 //            dedent();
@@ -263,27 +266,127 @@ namespace graphit {
             printIndent();
             *oss_ << "} //end of to func" << std::endl;
 
-            if (apply_expr_gen_frontier){
-                printIndent();
-                *oss_ << " else { outEdges[offset + j] = UINT_E_MAX;  }" << std::endl;
-            }
 
         }
 
         //increment the index for each source vertex
-        if (apply_expr_gen_frontier){
-            printIndent();
-            *oss_ << "j++;" << std::endl;
-        }
 
         // dedent();
         // printIndent();
         // *oss_ << "} //end of if statement to check if in current block" << std::endl;
 
         //end of for loop on the neighbors
+
         dedent();
         printIndent();
         *oss_ << "} //end of for loop on neighbors" << std::endl;
+        dedent();
+        printIndent();
+        *oss_ << "}" << std::endl;
+        dedent();
+        printIndent();
+        *oss_ << "} //end of vertices < V-1" << std::endl;
+
+        printIndent();
+        *oss_ << "else if((start_x + iter_x) == V-1) {" << std::endl;
+        indent();
+        printIndent();
+        *oss_ << "if(from_vertexset[start_x + iter_x]) {" << std::endl;
+        indent();
+
+        //NOTE(Emily): more vars that we most likely won't need
+        //if (from_vertexset_specified){
+        if(false){
+            *oss_ << "    NodeID s = from_vertexset->dense_vertex_set_[i];\n"
+                    "    int j = 0;\n";
+            if (apply_expr_gen_frontier){
+                *oss_ <<  "    uintT offset = offsets[i];\n";
+            }
+        }
+
+
+        if (apply->from_func != "" && !from_vertexset_specified) {
+            printIndent();
+            *oss_ << "if (from_func(start_x + iter_x)){ " << std::endl;
+            indent();
+        }
+
+        printIndent();
+
+        //TODO(Emily): can we pass the Graph type to our device code?
+        //            - if so, need to implement out_neigh(s) in our library
+        *oss_ << "for(int iter_n = out_indices[start_x + iter_x]; iter_n < E; iter_n++) { "<< std::endl;
+
+        // print the checks on filtering on sources s
+        if (apply->to_func != "") {
+            indent();
+            printIndent();
+
+            *oss_ << "if";
+            //TODO: move this logic in to MIR at some point
+            if (mir_context_->isFunction(apply->to_func)) {
+                //if the input expression is a function call
+                *oss_ << " (to_func( out_neighbors[itern_n])";
+
+            } else {
+                //the input expression is a vertex subset
+                //NOTE(Emily): we currently don't support this
+                *oss_ << " (to_vertexset->bool_map_[s] ";
+            }
+            *oss_ << ") { " << std::endl;
+        }
+
+        indent();
+        printIndent();
+        if (apply_expr_gen_frontier) {
+            *oss_ << "if( ";
+        }
+
+        // generating the C++ code for the apply function call
+        if (apply->is_weighted) {
+            *oss_ << apply_func_name << " ( s , d.v, d.w )";
+        } else {
+            *oss_ << apply_func_name << " ( (start_x + iter_x), out_neighbors[iter_n] )";
+
+        }
+
+        if (!apply_expr_gen_frontier) {
+            *oss_ << ";" << std::endl;
+
+        } else {
+
+
+            indent();
+            //TODO(Emily): they're using this outEdges as a temp var to build the frontier, we don't want this
+            //generate the code for adding destination to "next" frontier
+            *oss_ << " ) { " << std::endl;
+            printIndent();
+            *oss_ << "next_frontier[out_neighbors[iter_n]] = 1;" << std::endl;
+            dedent();
+            printIndent();
+            *oss_ << "}" << std::endl;
+        }
+
+        // end of from filtering
+        if (apply->to_func != "") {
+            dedent();
+            printIndent();
+            *oss_ << "} //end of to func" << std::endl;
+
+
+        }
+
+        dedent();
+        printIndent();
+        *oss_ << "} //end of for loop on neighbors" << std::endl;
+        dedent();
+        printIndent();
+        *oss_ << "}" << std::endl;
+        dedent();
+        printIndent();
+        *oss_ << "} //end of vertices == V-1" << std::endl;
+
+
 
         if (apply->from_func != "" && !from_vertexset_specified) {
             dedent();
@@ -310,7 +413,8 @@ namespace graphit {
         //             we will want to modify this to be what we want before returning
 
         //return a new vertexset if no subset vertexset is returned
-        if (apply_expr_gen_frontier) {
+        //if (apply_expr_gen_frontier) {
+        if(false) {
             *oss_ << "  uintE *nextIndices = newA(uintE, outEdgeCount);\n"
                     "  long nextM = sequence::filter(outEdges, nextIndices, outEdgeCount, nonMaxF());\n"
                     "  free(outEdges);\n"
@@ -371,7 +475,8 @@ namespace graphit {
         bool from_vertexset_specified = false;
         string dst_type;
         setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
-        setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
+        //NOTE(Emily): instead of initializing global vars, we're passing them all in
+        //setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
         //TODO(Emily): this is the main algorithmic func that we need to change
         printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
     }
@@ -388,7 +493,9 @@ namespace graphit {
         if (apply->is_weighted) {
             arguments.push_back("WGraph & g");
         } else {
-            arguments.push_back("Graph & g");
+            //arguments.push_back("Graph & g");
+            arguments.push_back("int *out_indices");
+            arguments.push_back("int *out_neighbors");
         }
 
         if (apply->from_func != "") {
@@ -398,7 +505,7 @@ namespace graphit {
                 arguments.push_back("FROM_FUNC from_func");
             } else {
                 // the input is an input from vertexset
-                arguments.push_back("VertexSubset<NodeID>* from_vertexset");
+                arguments.push_back("int* from_vertexset");
             }
         }
 
@@ -409,13 +516,17 @@ namespace graphit {
                 arguments.push_back("TO_FUNC to_func");
             } else {
                 // the input is an input to vertexset
-                arguments.push_back("VertexSubset<NodeID>* to_vertexset");
+                arguments.push_back("int* to_vertexset");
             }
         }
 
 
         templates.push_back("typename APPLY_FUNC");
         arguments.push_back("APPLY_FUNC apply_func");
+
+        arguments.push_back("int V");
+        arguments.push_back("int E");
+        arguments.push_back("int block_size_x");
 
         *oss_ << "template <";
 
@@ -428,8 +539,10 @@ namespace graphit {
                 *oss_ << ", " << temp;
         }
         *oss_ << "> ";
-        *oss_ << (mir_context_->getFunction(apply->input_function_name)->result.isInitialized() ?
-                 "VertexSubset<NodeID>* " : "void ")  << func_name << "(";
+        //NOTE(Emily): we are always initializing funcs as void for now
+        //*oss_ << (mir_context_->getFunction(apply->input_function_name)->result.isInitialized() ?
+        //         "VertexSubset<NodeID>* " : "void ")  << func_name << "(";
+        *oss_ << "void " << func_name << "(";
 
         first = true;
         for (auto arg : arguments) {

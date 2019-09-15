@@ -150,6 +150,8 @@ namespace graphit {
         //     indent();
         // }
 
+        *oss_ << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
+        printIndent();
         std::string for_type = "for";
         //if (apply->is_parallel)
         //    for_type = "parallel_for";
@@ -160,7 +162,7 @@ namespace graphit {
         //TODO(Emily): will we always assume from vertexset is specified?
         //             - also do we want to use vertex_t type? or just assume we will always index w/ long type
 
-        *oss_ << for_type << " (int iter_x = __bsg_id; iter_x < block_size_x; iter_x++) {" << std::endl;
+        *oss_ << for_type << " (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
         indent();
         printIndent();
         *oss_ << "if((start_x + iter_x) < V-1) {" << std::endl;
@@ -431,6 +433,10 @@ namespace graphit {
             }
             *oss_ << "  return next_frontier;\n";
         }
+        printIndent();
+        *oss_ << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        printIndent();
+        *oss_ << "return 0;" << std::endl;
     }
 
 
@@ -539,10 +545,10 @@ namespace graphit {
                 *oss_ << ", " << temp;
         }
         *oss_ << "> ";
-        //NOTE(Emily): we are always initializing funcs as void for now
+        //NOTE(Emily): we are always initializing funcs as returning int for now
         //*oss_ << (mir_context_->getFunction(apply->input_function_name)->result.isInitialized() ?
         //         "VertexSubset<NodeID>* " : "void ")  << func_name << "(";
-        *oss_ << "void " << func_name << "(";
+        *oss_ << "int " << func_name << "(";
 
         first = true;
         for (auto arg : arguments) {

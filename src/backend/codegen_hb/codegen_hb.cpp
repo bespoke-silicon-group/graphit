@@ -647,6 +647,7 @@ namespace graphit {
         //vertexset apply
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply_expr->target);
         std::string arg_list = "";
+        std::string arg_def_list = "";
 
         if (mir_context_->isConstVertexSet(mir_var->var.getName())){
             //if the verstexset is a const / global vertexset, then we can get size easily
@@ -671,8 +672,8 @@ namespace graphit {
             *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
-
-            genVertexsetApplyKernel(apply_expr, arg_list);
+            arg_def_list = "int V, int E, int block_size_x";
+            genVertexsetApplyKernel(apply_expr, arg_def_list);
         } else {
             // if this is a dynamically created vertexset
             //TODO(Emily): need to figure out a way to generate the params for the apply expr here
@@ -680,7 +681,8 @@ namespace graphit {
             *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
-            genVertexsetApplyKernel(apply_expr, arg_list);
+            arg_def_list = "int V, int E, int block_size_x";
+            genVertexsetApplyKernel(apply_expr, arg_def_list);
 
         }
 

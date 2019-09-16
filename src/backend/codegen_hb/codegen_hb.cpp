@@ -1152,10 +1152,13 @@ namespace graphit {
 
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
         std::vector<std::string> arguments = std::vector<std::string>();
+        std::vector<std::string> arguments_def = std::vector<std::string>();
 
         oss = &oss_device;
         *oss << "extern \"C\" int __attribute__ ((noinline)) ";
         *oss << edgeset_apply_func_name << "_call(";
+
+        *oss << "int *out_indices, int *out_neighbors";
 
         if (apply->from_func != "") {
             if (mir_context_->isFunction(apply->from_func)) {
@@ -1165,6 +1168,9 @@ namespace graphit {
             } else {
                 // the input is an input from vertexset
                 arguments.push_back(apply->from_func);
+                arguments.push_back("next_frontier"); //NOTE(Emily): hacky, assuming always want next frontier
+                arguments_def.push_back("int *frontier");
+
             }
         }
 
@@ -1176,6 +1182,7 @@ namespace graphit {
             } else {
                 // the input is an input to vertexset
                 arguments.push_back(apply->to_func);
+                arguments_def.push_back("int *to_vertexset");
             }
         }
 
@@ -1200,32 +1207,36 @@ namespace graphit {
          */
 
         // the edgeset that is being applied over (target)
-        apply->target->accept(this);
+        //apply->target->accept(this);
 
+        for (auto &arg : arguments_def) {
+          *oss << ", " << arg;
+        }
 
         if(return_arg != ""){ *oss << ", " << return_arg; }
 
         //TODO(Emily): this is a hack assuming the only time we pass this in
         //              it will be the next frontier
         if(lhs != NULL){
-          *oss << ", next_";
+          *oss << ", int *next_";
           lhs->accept(this);
         }
 
+        *oss << ", int V, int E, int block_size_x";
+
         *oss << ") {" << std::endl;
         *oss << "\t" << edgeset_apply_func_name << "(";
-        apply->target->accept(this);
+
+        *oss << "out_indices, out_neighbors";
+
+        //apply->target->accept(this);
         for (auto &arg : arguments) {
           *oss << ", " << arg;
         }
         if(return_arg != ""){ *oss << ", " << return_arg; }
+        *oss << ", V, E, block_size_x";
 
-        //TODO(Emily): this is a hack assuming the only time we pass this in
-        //              it will be the next frontier
-        if(lhs != NULL){
-          *oss << ", next_";
-          lhs->accept(this);
-        }
+
         *oss << ");" << std::endl;
         *oss << "\t" << "return 0;" << std::endl;
         *oss << "}" << std::endl;

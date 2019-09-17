@@ -56,4 +56,22 @@ private:
         std::string _varname;
         Device::Ptr _device;
 };
+
+/**
+ * A function for doing buffered reads from a global pointer on the manycore.
+ * @param dst  A buffer on the host to load read data.
+ * @param src  A global pointer on the manycore - points to a manycore buffer from which to read.
+ * @param cnt  The number of elements to read.
+ */
+template <typename T>
+void read_global_buffer(T *dst, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc_eva_t cnt)
+{
+        // read the value of the pointer on the device
+        auto src = glbl_ptr.get();
+        auto device = Device::GetInstance();
+
+        // read from the device starting at the eva read
+        device->read(dst, src, cnt * sizeof(T));
+}
+
 }

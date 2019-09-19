@@ -76,4 +76,10 @@ int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
     return size;
 }
 
+static
+void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
+{
+  frontier.insert(pos, 1);
+}
+
 }

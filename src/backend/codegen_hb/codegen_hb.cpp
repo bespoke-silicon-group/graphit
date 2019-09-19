@@ -589,6 +589,20 @@ namespace graphit {
 
 
         }
+        else if(call_expr->name == "builtin_addVertex")
+        {
+          *oss << "hammerblade::builtin_addVertexHB(";
+          bool printDelimiter = false;
+
+          for (auto arg : call_expr->args) {
+              if (printDelimiter) {
+                  *oss << ", ";
+              }
+              arg->accept(this);
+              printDelimiter = true;
+          }
+          *oss << ")";
+        }
         else
         {
           *oss << call_expr->name;
@@ -640,14 +654,22 @@ namespace graphit {
     };
 
     void CodeGenHB::visit(mir::VertexSetAllocExpr::Ptr alloc_expr) {
-        *oss << "new VertexSubset<int> ( ";
-        //This is the current number of elements, but we need the range
-        //alloc_expr->size_expr->accept(this);
+        // *oss << "new VertexSubset<int> ( ";
+        // //This is the current number of elements, but we need the range
+        // //alloc_expr->size_expr->accept(this);
+        // const auto size_expr = mir_context_->getElementCount(alloc_expr->element_type);
+        // size_expr->accept(this);
+        // *oss << " , ";
+        // alloc_expr->size_expr->accept(this);
+        // *oss << ")";
+        *oss << "new Vector<int32_t> (";
         const auto size_expr = mir_context_->getElementCount(alloc_expr->element_type);
         size_expr->accept(this);
-        *oss << " , ";
-        alloc_expr->size_expr->accept(this);
+        //TODO(Emily): may want to modify vector class to more closely follow vertexsubset host class
+        //*oss << " , ";
+        //alloc_expr->size_expr->accept(this);
         *oss << ")";
+
     }
 
     void CodeGenHB::visit(mir::ListAllocExpr::Ptr alloc_expr) {
@@ -942,9 +964,9 @@ namespace graphit {
         }
     }
 
-    //TODO(Emily): probably need to change this - unless we keep these types (and vectors)
     void CodeGenHB::visit(mir::VertexSetType::Ptr vertexset_type) {
-        *oss << "VertexSubset<int> *  ";
+        //*oss << "VertexSubset<int> *  ";
+        *oss << "Vector<int32_t> ";
     }
 
     //TODO(Emily): need to change this if we don't keep vectors

@@ -571,34 +571,55 @@ namespace graphit {
     }
 
     void CodeGenHB::visit(mir::Call::Ptr call_expr) {
-        *oss << call_expr->name;
+
+        if(call_expr->name == "builtin_getVertexSetSize")
+        {
+          *oss << "hammerblade::builtin_getVertexSetSizeHB(";
+
+          bool printDelimiter = false;
+
+          for (auto arg : call_expr->args) {
+              if (printDelimiter) {
+                  *oss << ", ";
+              }
+              arg->accept(this);
+              printDelimiter = true;
+          }
+          *oss << ", edges.num_edges()) ";
 
 
-        if (call_expr->generic_type != nullptr) {
-            *oss << " < ";
-            call_expr->generic_type->accept(this);
-            *oss << " > ";
         }
+        else
+        {
+          *oss << call_expr->name;
 
-        if (mir_context_->isFunction(call_expr->name)) {
-            auto mir_func_decl = mir_context_->getFunction(call_expr->name);
-            if (mir_func_decl->isFunctor)
-                *oss << "()";
-        }
 
-        *oss << "(";
+          if (call_expr->generic_type != nullptr) {
+              *oss << " < ";
+              call_expr->generic_type->accept(this);
+              *oss << " > ";
+          }
 
-        bool printDelimiter = false;
+          if (mir_context_->isFunction(call_expr->name)) {
+              auto mir_func_decl = mir_context_->getFunction(call_expr->name);
+              if (mir_func_decl->isFunctor)
+                  *oss << "()";
+          }
 
-        for (auto arg : call_expr->args) {
-            if (printDelimiter) {
-                *oss << ", ";
-            }
-            arg->accept(this);
-            printDelimiter = true;
-        }
+          *oss << "(";
 
-        *oss << ") ";
+          bool printDelimiter = false;
+
+          for (auto arg : call_expr->args) {
+              if (printDelimiter) {
+                  *oss << ", ";
+              }
+              arg->accept(this);
+              printDelimiter = true;
+          }
+
+          *oss << ") ";
+      }
     };
 
     void CodeGenHB::visit(mir::TensorArrayReadExpr::Ptr expr) {

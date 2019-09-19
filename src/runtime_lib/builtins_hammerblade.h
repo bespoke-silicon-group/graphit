@@ -60,4 +60,20 @@ void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
         /* load micro code to device */
         builtin_loadMicroCodeFromSTDVectorRValue(std::move(ucode));
 }
+
+//TODO(Emily): ideally this computation would happen on the device
+//             so that we can avoid this unnecessary copy
+static
+int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
+    int size = 0;
+    int32_t temp[len];
+    frontier.copyToHost(temp, len);
+    for(auto i : temp) {
+      if(i == 1) {
+        size++;
+      }
+    }
+    return size;
+}
+
 }

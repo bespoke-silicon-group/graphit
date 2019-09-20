@@ -202,6 +202,29 @@ namespace graphit {
             //TODO(Emily): we need to confirm that this is always a next_frontier case
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
             genEdgesetApplyFunctionCall(edgeset_apply_expr, "", assign_stmt->lhs );
+            //NOTE(Emily): slightly hacky/suboptimal way of doing an assignment
+            // we likely will want to figure out a way to do this on device
+            *oss << std::endl;
+            printIndent();
+            assign_stmt->lhs->accept(this);
+            *oss << " = next_";
+            assign_stmt->lhs->accept(this);
+            *oss << ";" << std::endl;
+            printIndent();
+            *oss << "next_";
+            assign_stmt->lhs->accept(this);
+            *oss << ".assign(0, edges.num_nodes(), 0);" << std::endl;
+
+            // *oss << "int * temp;" << std::endl;
+            // printIndent();
+            // *oss << "next_";
+            // assign_stmt->lhs->accept(this);
+            // *oss << '.copyToHost(temp, edges.num_edges());'
+            // *oss << std::endl;
+            // printIndent();
+            // assign_stmt->lhs->accept(this);
+            // *oss <<  ".copyToDevice(temp, edges.num_edges());";
+
 
         } else {
             printIndent();
@@ -364,8 +387,9 @@ namespace graphit {
                     if (type->element_type != nullptr) {
                         //genPropertyArrayImplementationWithInitialization(constant);
                         //genPropertyArrayDecl(constant);
-                        if (constant->needs_allocation)
-                            genPropertyArrayAlloc(constant);
+                        //if (constant->needs_allocation)
+                            //NOTE(Emily): need to ensure this won't cause problems later
+                            //genPropertyArrayAlloc(constant);
                     }
                 } else if (std::dynamic_pointer_cast<mir::VertexSetType>(constant->type)) {
                     // if the constant is a vertex set  decl
@@ -585,7 +609,7 @@ namespace graphit {
               arg->accept(this);
               printDelimiter = true;
           }
-          *oss << ", edges.num_edges()) ";
+          *oss << ", edges.num_nodes()) ";
 
 
         }
@@ -600,6 +624,19 @@ namespace graphit {
               }
               arg->accept(this);
               printDelimiter = true;
+          }
+          *oss << ")";
+        }
+        else if(call_expr->name == "builtin_getVertices")
+        {
+          *oss << "hammerblade::builtin_getVerticesHB(";
+          bool printDelimiter = false;
+          for(auto arg : call_expr->args) {
+            if (printDelimiter) {
+                *oss << ", ";
+            }
+            arg->accept(this);
+            printDelimiter = true;
           }
           *oss << ")";
         }
@@ -662,13 +699,13 @@ namespace graphit {
         // *oss << " , ";
         // alloc_expr->size_expr->accept(this);
         // *oss << ")";
-        *oss << "new Vector<int32_t> (";
+        *oss << "new Vector<int32_t>(";
         const auto size_expr = mir_context_->getElementCount(alloc_expr->element_type);
         size_expr->accept(this);
         //TODO(Emily): may want to modify vector class to more closely follow vertexsubset host class
         //*oss << " , ";
         //alloc_expr->size_expr->accept(this);
-        *oss << ")";
+        *oss << ", 0)"; //NOTE(Emily): always initializing all values to 0
 
     }
 
@@ -1289,14 +1326,22 @@ namespace graphit {
         *oss << edgeset_apply_func_name << "_call\", {";
 
         apply->target->accept(this);
+        *oss << ".getOutIndicesAddr()";
+        *oss << " , ";
+        apply->target->accept(this);
+        *oss << ".getOutNeighborsAddr()";
 
-        if(return_arg != ""){ *oss << ", " << return_arg; }
+        if(return_arg != ""){ *oss << ", " << return_arg << ".getAddr()"; }
 
         //TODO(Emily): this is a hack assuming the only time we pass this in
-        //              it will be the next frontier
+        //              it will be the next frontier (and also that we want to pass in frontier)
         if(lhs != NULL){
+          *oss << ", ";
+          lhs->accept(this);
+          *oss <<".getAddr()";
           *oss << ", next_";
           lhs->accept(this);
+          *oss << ".getAddr()";
         }
 
         //TODO(Emily): need to confirm we always need these 3 args for kernel calls

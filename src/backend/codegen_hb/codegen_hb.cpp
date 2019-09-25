@@ -182,7 +182,7 @@ namespace graphit {
     }
 
     void CodeGenHB::visit(mir::AssignStmt::Ptr assign_stmt) {
-
+      //TODO(Emily): we don't want to allow this case - need to handle differently
         if (mir::isa<mir::VertexSetWhereExpr>(assign_stmt->expr)) {
             // declaring a new vertexset as output from where expression
             printIndent();
@@ -768,7 +768,6 @@ namespace graphit {
 
 
     }
-
     void CodeGenHB::visit(mir::VertexSetWhereExpr::Ptr vertexset_where_expr) {
 
 
@@ -779,7 +778,8 @@ namespace graphit {
             assert(associated_element_type);
             auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
             assert(associated_element_type_size);
-            *oss << "auto ____graphit_tmp_out = new VertexSubset <NodeID> ( ";
+            //*oss << "auto ____graphit_tmp_out = new VertexSubset <NodeID> ( ";
+            *oss << "Vector<int32_t> ____graphit_tmp_out = new Vector<int32_t> ( ";
 
             //get the total number of vertices in the vertex set
             auto vertex_type = mir_context_->getElementTypeFromVectorOrSetName(vertexset_where_expr->target);
@@ -791,31 +791,48 @@ namespace graphit {
             // the output vertexset is initially set to 0
             *oss << "0";
             *oss << " );" << std::endl;
+            printIndent();
             std::string next_bool_map_name = "next" + mir_context_->getUniqueNameCounterString();
-            *oss << "bool * " << next_bool_map_name << " = newA(bool, ";
-            vertices_range_expr->accept(this);
-            *oss << ");\n";
+            *oss << "GlobalScalar<hb_mc_eva_t> " << next_bool_map_name << "_dev = GlobalScalar<hb_mc_eva_t>(\" " << next_bool_map_name << "\");" << std::endl;
+            oss = &oss_device;
+            *oss << "__attribute__ ((section(\".dram\"))) bool * __restrict " << next_bool_map_name << ";" << std::endl;
+            oss = &oss_host;
             printIndent();
-            *oss << "parallel_for (int v = 0; v < ";
+            *oss << next_bool_map_name <<"_dev.set(device->malloc(" << next_bool_map_name << "_dev.scalar_size() * ";
+            vertices_range_expr->accept(this);
+            *oss << "));\n";
+            oss = &oss_device;
+            *oss << "extern \"C\" int __attribute__ ((noinline)) " << vertexset_where_expr->input_func << "_where_call(int V, int block_size_x) { " << std::endl;
+            *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
+            *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
+            *oss << "\t\t" << "if (iter_x < V) {" << std::endl;
+            *oss << "\t\t\t" << next_bool_map_name << "[iter_x] = 0;" << std::endl;
+            *oss << "\t\t\t" << "if ( " << vertexset_where_expr->input_func << "()( iter_x ) )" << std::endl;
+            *oss << "\t\t\t\t" << next_bool_map_name << "[iter_x] = 1;" << std::endl;
+            *oss << "\t\t" << "}" << std::endl;
+            *oss << "\t\t" << "else { break; }" << std::endl;
+            *oss << "\t" << "} //end of loop\n";
+            *oss << "\t" << "return 0;" << std::endl;
+            *oss << "}" << std::endl;
+            oss = &oss_host;
+            printIndent();
+            *oss << "device->enqueueJob(\"" << vertexset_where_expr->input_func << "_where_call\", {";
             associated_element_type_size->accept(this);
-            *oss << "; v++) {" << std::endl;
-            indent();
+            *oss << ", edges.num_nodes()});" << std::endl;
             printIndent();
-            *oss << next_bool_map_name << "[v] = 0;" << std::endl;
-            *oss << "if ( " << vertexset_where_expr->input_func << "()( v ) )" << std::endl;
-            indent();
+            *oss << "device->runJobs();" << std::endl;
             printIndent();
-            *oss << next_bool_map_name << "[v] = 1;" << std::endl;
-            dedent();
-            dedent();
+            *oss << "int32_t temp_buf[";
+            associated_element_type_size->accept(this);
+            *oss << "];" << std::endl;
             printIndent();
-            *oss << "} //end of loop\n";
-            *oss << "____graphit_tmp_out->num_vertices_ = sequence::sum( "
-            <<  next_bool_map_name << ", " ;
-            vertices_range_expr->accept(this);
-            *oss << " );\n"
-            "____graphit_tmp_out->bool_map_ = ";
-            *oss << next_bool_map_name << ";\n";
+            *oss << "hammerblade::read_global_buffer(temp_buf, " << next_bool_map_name << "_dev, ";
+            associated_element_type_size->accept(this);
+            *oss << ");" <<std::endl;
+            printIndent();
+            *oss << "____graphit_tmp_out.copyToDevice(temp_buf, ";
+            associated_element_type_size->accept(this);
+            *oss << ");" << std::endl;
         }
 
     }

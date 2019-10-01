@@ -83,7 +83,7 @@ void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 }
 
 static
-int hammerblade::builtin_getVerticesHB(GraphHB &g)
+int builtin_getVerticesHB(GraphHB &g)
 {
   return g.num_nodes();
 }

@@ -3,7 +3,7 @@
 
 const std::string ucode_path =
         "/home/centos/bsg_bladerunner/bsg_manycore"
-        "/software/spmd/bsg_cuda_lite_runtime/graphit_bfs_templated/main.riscv";
+        "/software/spmd/bsg_cuda_lite_runtime/graphit_bfs_parallel/main.riscv";
 
 using hammerblade::Device;
 using hammerblade::Vector;
@@ -58,7 +58,7 @@ int main(int argc, char * argv[]){
 
   size_t cores = 2;
 
-  Vector<int32_t> parent = new Vector<int32_t>(hammerblade::builtin_getVertices(edges), cores, -1);
+  Vector<int32_t> parent = new Vector<int32_t>(hammerblade::builtin_getVerticesHB(edges), cores, -1);
 
   //device->enqueueJob("parent_generated_vector_op_apply_func_0_kernel",{edges.num_nodes(), edges.num_edges(),edges.num_nodes()});
   //device->runJobs();

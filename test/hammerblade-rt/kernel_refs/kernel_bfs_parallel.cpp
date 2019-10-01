@@ -7,10 +7,12 @@
 INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 //__attribute__((section(".dram"))) int  * __restrict parent;
 
+int threads = 2; //NOTE(Emily): hacky -- need to figure out a way to figure this out on device otherwise need to pass in as argument
+
 template <typename TO_FUNC , typename APPLY_FUNC> int edgeset_apply_push_serial_from_vertexset_to_filter_func_with_frontier(int *out_indices, int*out_neighbors, int *frontier, int *next_frontier, int *parent, TO_FUNC to_func, APPLY_FUNC apply_func, int V, int E, int block_size_x)
 {
   int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);
-  int threads = 2; //NOTE(Emily): hacky -- need to figure out a way to figure this out on device otherwise need to pass in as argument
+
   for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {
     if ((start_x + iter_x) < V-1) {  //in bounds (and not last)
        if(frontier[start_x + iter_x]) { //in frontier
@@ -24,7 +26,7 @@ template <typename TO_FUNC , typename APPLY_FUNC> int edgeset_apply_push_serial_
         }
 
     }
-    else if ((start_x + iter) == V-1) {
+    else if ((start_x + iter_x) == V-1) {
       if(frontier[start_x + iter_x]) {
         for(int iter_n = out_indices[start_x + iter_x]; iter_n < E; iter_n++) {
           if(to_func(out_neighbors[iter_n], parent)) {
@@ -48,7 +50,7 @@ struct parent_generated_vector_op_apply_func_0
   {
     parent[__bsg_id * threads + v] =  -(1) ;
   };
-}
+};
 struct updateEdge
 {
   bool operator() (int src, int dst, int *parent)
@@ -58,7 +60,7 @@ struct updateEdge
     output1 = (bool) 1;
     return output1;
   };
-}
+};
 struct toFilter
 {
   bool operator() (int v, int *parent)
@@ -67,14 +69,14 @@ struct toFilter
     output = (parent[v]) == ( -(1) );
     return output;
   };
-}
+};
 struct reset
 {
   void operator() (int v, int *parent)
   {
     parent[v] =  -(1) ;
   };
-}
+};
 
 extern "C" int  __attribute__ ((noinline)) parent_generated_vector_op_apply_func_0_kernel(int *parent, int V, int E, int block_size_x) {
 	int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);

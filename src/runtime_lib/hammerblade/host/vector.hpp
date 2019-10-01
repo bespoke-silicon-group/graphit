@@ -139,7 +139,7 @@ private:
         void moveFrom(Vector &other) {
                 _mem    = other._mem;
                 _length = other._length;
-                _cores  = other._cores
+                _cores  = other._cores;
                 other._mem = 0;
                 other._length = 0;
                 other._cores = 1;

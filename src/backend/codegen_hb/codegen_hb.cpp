@@ -640,6 +640,11 @@ namespace graphit {
           }
           *oss << ")";
         }
+        else if (call_expr->name == "deleteObject")
+        {
+          //do nothing - we don't want to generate this
+          //TODO(Emily): now we need to handle the extra ; on an empty line
+        }
         else
         {
           *oss << call_expr->name;

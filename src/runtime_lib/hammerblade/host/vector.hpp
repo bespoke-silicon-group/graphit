@@ -39,10 +39,6 @@ public:
                       _cores = cores;
                       init();
               }
-        Vector(size_t length, T val) :
-                Vector(length) {
-                assign(0, length, val);
-        }
 
         Vector(size_t length, size_t cores, T val) :
                 Vector(length, cores) {

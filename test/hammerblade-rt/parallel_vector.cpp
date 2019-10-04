@@ -3,7 +3,7 @@
 
 const std::string ucode_path =
         "/home/centos/bsg_bladerunner/bsg_manycore"
-        "/software/spmd/bsg_cuda_lite_runtime/kernel_parallel_vector/main.riscv";
+        "/software/spmd/bsg_cuda_lite_runtime/graphit_parallel_vector/main.riscv";
 
 using hammerblade::Device;
 using hammerblade::Vector;
@@ -18,7 +18,7 @@ int main(int argc, char * argv[]){
   size_t cores = 2;
   size_t len = 24;
 
-  Vector<int32_t> test = new Vector<int32_t>(len, cores, 0);
+  Vector<int32_t> test(len, cores, 0);
 
 
   test.insert(8, 8);
@@ -29,7 +29,7 @@ int main(int argc, char * argv[]){
                      len,
                      (len / cores)});
   device->runJobs();
-  int * test_host
+  int * test_host;
   test.copyToHost(test_host, len * cores);
 
   std::cout << "Results of Test" << std::endl;

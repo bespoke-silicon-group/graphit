@@ -63,12 +63,11 @@ void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 
 //TODO(Emily): ideally this computation would happen on the device
 //             so that we can avoid this unnecessary copy
-//             it seems like the copy to host only works if we read the entire parallel vector
 static
 int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
     int size = 0;
-    int32_t temp[len * frontier.getCores()];
-    frontier.copyToHost(temp, len * frontier.getCores());
+    int32_t temp[len];
+    frontier.copyToHost(temp, len);
     for(auto i : temp) {
       if(i == 1) {
         size++;
@@ -84,7 +83,7 @@ void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 }
 
 static
-int builtin_getVerticesHB(GraphHB &g)
+int hammerblade::builtin_getVerticesHB(GraphHB &g)
 {
   return g.num_nodes();
 }

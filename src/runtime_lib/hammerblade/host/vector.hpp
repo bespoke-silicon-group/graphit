@@ -5,7 +5,6 @@
 #include <sstream>
 
 namespace hammerblade {
-
 template <typename T>
 class Vector {
 public:
@@ -24,7 +23,6 @@ public:
         Vector () :
                 _mem(0),
                 _length(0),
-                _cores(1),
                 _device(Device::GetInstance()) {
                 init();
         }
@@ -33,15 +31,8 @@ public:
                 _length = length;
                 init();
         }
-        Vector(size_t length, size_t cores) :
-      		Vector() {
-                      _length = length;
-                      _cores = cores;
-                      init();
-              }
-
-        Vector(size_t length, size_t cores, T val) :
-                Vector(length, cores) {
+        Vector(size_t length, T val) :
+                Vector(length) {
                 assign(0, length, val);
         }
 
@@ -67,9 +58,6 @@ public:
         /* accessors for getting the length of the vector */
 	hb_mc_eva_t getLength() const { return _length; }
 
-  hb_mc_eva_t getCores() const { return _cores; }
-
-
         /**/
         void assign(size_t start, size_t end, const T &val) {
                 if (start >= getLength())
@@ -94,29 +82,25 @@ public:
 
         /**
          * Write a value at #pos.
-         * need to write this to every value
          */
         void insert(size_t pos, const T & val) {
                 if (pos >= _length)
                         throw Vector::out_of_bounds(pos, _length);
-                for(auto i = 0; i < _cores; i++) {
-                  getDevice()->write(_mem + (((i * _length) + pos) * sizeof(T)), (const void*)&val, sizeof(T));
-                }
 
+                getDevice()->write(_mem + (pos * sizeof(T)), (const void*)&val, sizeof(T));
         }
 
         /* array copy from hammerblade to the host */
         void copyToHost(T * host, size_t n) const {
-                if (n > _length * _cores)
+                if (n > _length)
                         throw Vector::out_of_bounds(n, _length);
 
                 getDevice()->read((void*)host, _mem, n * sizeof(T));
         }
 
         /* array copy to hammerblade memory */
-
         void copyToDevice(const T *host, size_t n) {
-                if (n > _length * _cores)
+                if (n > _length)
                         throw Vector::out_of_bounds(n, _length);
 
                 getDevice()->write(_mem, (const void*)host, n * sizeof(T));
@@ -128,17 +112,14 @@ private:
                 std::swap(other._mem, _mem);
                 std::swap(other._length, _length);
                 std::swap(other._device, _device);
-                std::swap(other._cores, _cores);
         }
 
         /* common code for implementing move semantics in operator= and move constructor */
         void moveFrom(Vector &other) {
                 _mem    = other._mem;
                 _length = other._length;
-                _cores  = other._cores;
                 other._mem = 0;
                 other._length = 0;
-                other._cores = 1;
         }
 
         /* initialize the vector's memory on HammerBlade hardware */
@@ -146,14 +127,14 @@ private:
 		if (sizeof(T) != 4)
 			throw hammerblade::runtime_error("Only Vectors of 4 byte words supported");
 
-		if (_length != 0 && _cores != 0) {
-			_mem = getDevice()->malloc(_cores * _length * sizeof(void *));
+		if (_length != 0) {
+			_mem = getDevice()->malloc(_length * sizeof(T));
 		}
 	}
         /* cleanup the vector's memory */
 	void exit(void) {
 		if (_length != 0) {
-       getDevice()->free(_mem);
+                        getDevice()->free(_mem);
 		}
 	}
 
@@ -164,6 +145,5 @@ private:
         Device::Ptr _device; //!< HammerBlade hardware controller
 	hb_mc_eva_t _mem;    //!< the base address of this vector (HammerBlade U-Processor virtual address)
 	size_t      _length; //!< the length of this vector (number of T values)
-  size_t      _cores; //!< the number of parallel cores
 };
 };

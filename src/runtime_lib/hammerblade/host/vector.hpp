@@ -100,7 +100,7 @@ public:
                 if (pos >= _length)
                         throw Vector::out_of_bounds(pos, _length);
                 for(auto i = 0; i < _cores; i++) {
-                  getDevice()->write(_mem + (_cores * _length) + (pos * sizeof(T)), (const void*)&val, sizeof(T));
+                  getDevice()->write(_mem + (((i * _length) + pos) * sizeof(T)), (const void*)&val, sizeof(T));
                 }
 
         }

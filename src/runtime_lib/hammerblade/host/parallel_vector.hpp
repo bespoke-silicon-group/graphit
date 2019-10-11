@@ -10,6 +10,18 @@ template <typename T>
 class ParVector {
 
 public:
+  class out_of_bounds : public hammerblade::runtime_error {
+  public:
+          explicit out_of_bounds(size_t pos, size_t n) :
+                  hammerblade::runtime_error(
+                          //lambda -- because string formatting in C++ is not a one-liner
+                          [=](){
+                                  std::stringstream ss;
+                                  ss << pos << " exceeds vector size " << n;
+                                  return ss.str();
+                          }()) {}
+  };
+
   ParVector () :
           _blocks(1),
           _length(0) {
@@ -48,36 +60,36 @@ public:
 
   void assign(size_t start, size_t end, const T &val) {
           if (start >= getLength())
-                  throw Vector<T>::out_of_bounds(start, getLength());
+                  throw ParVector::out_of_bounds(start, getLength());
           if (end > getLength())
-                  throw Vector<T>::out_of_bounds(end, getLength());
+                  throw ParVector::out_of_bounds(end, getLength());
 
           _vec.assign(start, end, val);
   }
 
   T at(size_t pos) const {
           if (pos >= _length)
-                  throw Vector<T>::out_of_bounds(pos, _length);
+                  throw ParVector::out_of_bounds(pos, _length);
 
           return(_vec.at(pos));
   }
 
   void insert(size_t pos, const T & val) {
           if(pos >= _length)
-                  throw Vector<T>::out_of_bounds(pos, _length);
+                  throw ParVector::out_of_bounds(pos, _length);
           //NOTE(Emily): do we want to insert for every thread's replication?
           _vec.insert(pos, val);
   }
 
   void copyToHost(T * host, size_t n) const {
           if(n > (_length * _blocks))
-                  throw Vector<T>::out_of_bounds(n, (_length * _blocks));
+                  throw ParVector::out_of_bounds(n, (_length * _blocks));
           _vec.copyToHost(host, n);
   }
 
   void copyToDevice(const T * host, size_t n) {
           if(n > (_length * _blocks))
-                  throw Vector<T>::out_of_bounds(n, (_length * _blocks));
+                  throw ParVector::out_of_bounds(n, (_length * _blocks));
           _vec.copyToDevice(host, n);
   }
 

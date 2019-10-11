@@ -77,6 +77,21 @@ int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
     return size;
 }
 
+//TODO(Emily): ideally this computation would happen on the device
+//             so that we can avoid this unnecessary copy
+static
+int builtin_getVertexSetSizeHB(ParVector<int32_t> &frontier, int len){
+    int size = 0;
+    int32_t temp[len];
+    frontier.copyToHost(temp, len);
+    for(auto i : temp) {
+      if(i == 1) {
+        size++;
+      }
+    }
+    return size;
+}
+
 static
 void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 {

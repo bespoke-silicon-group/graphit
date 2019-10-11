@@ -19,7 +19,7 @@ public:
   ParVector (size_t length, size_t blocks) :
           _blocks(blocks),
           _length(length) {
-            _vec(length * threads);
+            _vec(length * blocks);
           }
 
   ParVector (size_t length, size_t blocks, T val) :
@@ -48,36 +48,36 @@ public:
 
   void assign(size_t start, size_t end, const T &val) {
           if (start >= getLength())
-                  throw Vector::out_of_bounds(start, getLength());
+                  throw Vector<T>::out_of_bounds(start, getLength());
           if (end > getLength())
-                  throw Vector::out_of_bounds(end, getLength());
+                  throw Vector<T>::out_of_bounds(end, getLength());
 
           _vec.assign(start, end, val);
   }
 
   T at(size_t pos) const {
           if (pos >= _length)
-                  throw Vector::out_of_bounds(pos, _length);
+                  throw Vector<T>::out_of_bounds(pos, _length);
 
           return(_vec.at(pos));
   }
 
   void insert(size_t pos, const T & val) {
           if(pos >= _length)
-                  throw Vector::out_of_bounds(pos, _length);
+                  throw Vector<T>::out_of_bounds(pos, _length);
           //NOTE(Emily): do we want to insert for every thread's replication?
           _vec.insert(pos, val);
   }
 
   void copyToHost(T * host, size_t n) const {
           if(n > (_length * _blocks))
-                  throw Vector::out_of_bounds(n, (_length * _blocks));
+                  throw Vector<T>::out_of_bounds(n, (_length * _blocks));
           _vec.copyToHost(host, n);
   }
 
   void copyToDevice(const T * host, size_t n) {
           if(n > (_length * _blocks))
-                  throw Vector::out_of_bounds(n, (_length * _blocks));
+                  throw Vector<T>::out_of_bounds(n, (_length * _blocks));
           _vec.copyToDevice(host, n);
   }
 

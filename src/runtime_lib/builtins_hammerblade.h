@@ -3,6 +3,7 @@
 #include <hammerblade/host/device.hpp>
 #include <hammerblade/host/error.hpp>
 #include <hammerblade/host/global_scalar.hpp>
+#include <hammerblade/host/parallel_vector.hpp>
 #include <fstream>
 #include <vector>
 #include <sys/stat.h>
@@ -83,7 +84,7 @@ void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 }
 
 static
-int hammerblade::builtin_getVerticesHB(GraphHB &g)
+int builtin_getVerticesHB(GraphHB &g)
 {
   return g.num_nodes();
 }

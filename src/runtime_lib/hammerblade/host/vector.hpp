@@ -141,8 +141,16 @@ private:
 	}
 
         /* accessors for the device */
-        Device::Ptr & getDevice() { return _device; }
-        const Device::Ptr & getDevice() const { return _device; }
+        Device::Ptr & getDevice() {
+          if (_device == nullptr)
+            _device = Device::GetInstance();
+          return _device; 
+        }
+        const Device::Ptr & getDevice() const {
+          if (_device == nullptr)
+            _device = Device::GetInstance();
+          return _device;
+        }
 
         Device::Ptr _device; //!< HammerBlade hardware controller
 	hb_mc_eva_t _mem;    //!< the base address of this vector (HammerBlade U-Processor virtual address)

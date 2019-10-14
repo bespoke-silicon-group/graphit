@@ -17,8 +17,12 @@ public:
         /**
          * Empty constructor.
         */
+#if !defined(COSIM)
         GlobalScalar() : GlobalScalar("") {}
-        /**
+#else
+        GlobalScalar() {}
+#endif
+        /*
          * Constructor from std::string.
          * param[in] varname is the name of the global on the device.
          */
@@ -72,6 +76,16 @@ void read_global_buffer(T *dst, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc
 
         // read from the device starting at the eva read
         device->read(dst, src, cnt * sizeof(T));
+}
+
+//method to insert a value to a global scalar
+template <typename T>
+void insert_val(size_t pos, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)
+{
+  auto src = glbl_ptr.get();
+  auto device = Device::GetInstance();
+
+  device->write(src + (pos * sizeof(T)), (const void *)&val, sizeof(T));
 }
 
 }

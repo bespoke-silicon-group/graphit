@@ -20,15 +20,17 @@ public:
                                 }()) {}
         };
 
-        Vector () :
-                _mem(0),
-                _length(0),
-                _device(Device::GetInstance()) {
-                init();
-        }
-	Vector(size_t length) :
-		Vector() {
-                _length = length;
+#if !defined(COSIM)
+        Vector () : Vector(0) {}
+#else
+        Vector() {}
+#endif
+
+
+      	Vector(size_t length) :
+          _mem(0),
+          _length(length),
+          _device(Device::GetInstance()) {
                 init();
         }
         Vector(size_t length, T val) :

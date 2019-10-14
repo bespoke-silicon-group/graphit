@@ -23,7 +23,7 @@ public:
 #if !defined(COSIM)
         Vector () : Vector(0) {}
 #else
-        Vector() {}
+        Vector() : _mem(0), _length(0), _device(nullptr){}
 #endif
 
 

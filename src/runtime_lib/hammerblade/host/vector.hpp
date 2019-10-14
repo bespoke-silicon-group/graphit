@@ -144,11 +144,9 @@ private:
         Device::Ptr & getDevice() {
           if (_device == nullptr)
             _device = Device::GetInstance();
-          return _device; 
+          return _device;
         }
         const Device::Ptr & getDevice() const {
-          if (_device == nullptr)
-            _device = Device::GetInstance();
           return _device;
         }
 

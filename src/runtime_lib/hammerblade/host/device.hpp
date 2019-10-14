@@ -19,8 +19,14 @@ namespace hammerblade {
 class Device {
 public:
 	/* Singleton object with automatic reference counting */
-	typedef std::shared_ptr<Device>       Ptr;
+#if !defined(COSIM)
+	typedef std::shared_ptr<Device>      Ptr;
 	typedef std::shared_ptr<const Device> ConstPtr;
+#else
+	typedef Device* Ptr;
+	typedef const Device* ConstPtr;
+#endif
+
 	/* no copy; no move */
 	Device(Device && d)      = delete;
 	Device(const Device & d) = delete;
@@ -28,7 +34,11 @@ public:
 	static Device::Ptr GetInstance() {
 		static Device::Ptr instance = nullptr;
 		if (!instance)
+#if !defined(COSIM)
 			instance = Device::Ptr(new Device);
+#else
+			instance = new Device;
+#endif
 		return instance;
 	}
 

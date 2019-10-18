@@ -7,7 +7,7 @@
 
 namespace hammerblade {
 template <typename T>
-class ParVector {
+class ParallelVector {
 
 public:
   class out_of_bounds : public hammerblade::runtime_error {
@@ -22,36 +22,36 @@ public:
                           }()) {}
   };
 
-  ParVector () :
+  ParallelVector () :
           _blocks(1),
           _length(0) {
           _vec = new Vector<T>();
   }
 
-  ParVector (size_t length, size_t blocks) :
+  ParallelVector (size_t length, size_t blocks) :
           _blocks(blocks),
           _length(length) {
             _vec = new Vector<T>(length * blocks);
           }
 
-  ParVector (size_t length, size_t blocks, T val) :
+  ParallelVector (size_t length, size_t blocks, T val) :
           _length(length),
           _blocks(blocks) {
           _vec = new Vector<T>((length * blocks), val);
           }
 
-  ParVector (ParVector &&other) {
+  ParallelVector (ParallelVector &&other) {
     moveFrom(other);
   }
 
-  ParVector(const ParVector &other) = delete;
+  ParallelVector(const ParallelVector &other) = delete;
 
-  ParVector & operator=(ParVector && other) {
+  ParallelVector & operator=(ParallelVector && other) {
           moveFrom(other);
           return *this;
   }
 
-  ~ParVector() { exit(); }
+  ~ParallelVector() { exit(); }
 
   hb_mc_eva_t getAddr()   const { return _vec->getBase(); }
   hb_mc_eva_t getBase()   const { return _vec->getBase(); }
@@ -60,48 +60,48 @@ public:
 
   void assign(size_t start, size_t end, const T &val) {
           if (start >= getLength())
-                  throw ParVector::out_of_bounds(start, getLength());
+                  throw ParallelVector::out_of_bounds(start, getLength());
           if (end > getLength())
-                  throw ParVector::out_of_bounds(end, getLength());
+                  throw ParallelVector::out_of_bounds(end, getLength());
 
           _vec->assign(start, end, val);
   }
 
   T at(size_t pos) const {
           if (pos >= _length)
-                  throw ParVector::out_of_bounds(pos, _length);
+                  throw ParallelVector::out_of_bounds(pos, _length);
 
           return(_vec->at(pos));
   }
 
   void insert(size_t pos, const T & val) {
           if(pos >= _length)
-                  throw ParVector::out_of_bounds(pos, _length);
+                  throw ParallelVector::out_of_bounds(pos, _length);
           //NOTE(Emily): do we want to insert for every thread's replication?
           _vec->insert(pos, val);
   }
 
   void copyToHost(T * host, size_t n) const {
           if(n > (_length * _blocks))
-                  throw ParVector::out_of_bounds(n, (_length * _blocks));
+                  throw ParallelVector::out_of_bounds(n, (_length * _blocks));
           _vec->copyToHost(host, n);
   }
 
   void copyToDevice(const T * host, size_t n) {
           if(n > (_length * _blocks))
-                  throw ParVector::out_of_bounds(n, (_length * _blocks));
+                  throw ParallelVector::out_of_bounds(n, (_length * _blocks));
           _vec->copyToDevice(host, n);
   }
 
 private:
 
-  void swap(const ParVector &other) {
+  void swap(const ParallelVector &other) {
     std::swap(other._blocks, _blocks);
     std::swap(other._length, _length);
     _vec->swap(other._vec);
   }
 
-  void moveFrom(ParVector &other) {
+  void moveFrom(ParallelVector &other) {
     _blocks = other._blocks;
     _length = other._length;
     _vec->moveFrom(other._vec);

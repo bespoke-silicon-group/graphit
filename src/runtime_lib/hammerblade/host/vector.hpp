@@ -108,6 +108,13 @@ public:
                 getDevice()->write(_mem, (const void*)host, n * sizeof(T));
         }
 
+        //making public to allow teardown of parvector type
+        void exit(void) {
+      		if (_length != 0) {
+                              getDevice()->free(_mem);
+      		}
+      	}
+
 private:
         /* swap the contents of two vectors */
         void swap(const Vector &other) {
@@ -134,11 +141,7 @@ private:
 		}
 	}
         /* cleanup the vector's memory */
-	void exit(void) {
-		if (_length != 0) {
-                        getDevice()->free(_mem);
-		}
-	}
+
 
         /* accessors for the device */
         Device::Ptr & getDevice() {

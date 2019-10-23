@@ -1,0 +1,11 @@
+*~
+\#*
+*.pdf
+*.synctex
+*.aux
+*.log
+*.bbl
+*.blg
+*.png
+*.out
+*.gz

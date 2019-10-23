@@ -1,0 +1,20 @@
+% !TEX root = paper.tex
+
+\section{Introduction} \label{sec:intro}
+ 
+ In recent years, graph workloads handling input graphs with billions of vertices and trillions of edges have emerged in a number of domains including social networking, genomics, and machine learning. Complex algorithms designed to extract information from these large-scale graphs are often by nature irregular and difficult to optimize. 
+ 
+Because it is difficult to optimize performance and efficiency of graph algorithms, high-performance graph processing has been an active area of research in recent years. Two different approaches include the design of domain specific languages (DSLs) and custom hardware for graph processing. 
+
+Graph algorithms often have a large amount of simple computation, but this computation is not always obviously parallel. Further, memory accesses in graph algorithms are irregular, making memory and cache optimizations difficult. As a result, mapping graph algorithms to highly parallel architectures while maintaining performance has remained an interesting and hard to solve problem. 
+
+In this work, we present a hybrid approach; we design a compiler for a graph processing DSL that targets a manycore architecture. With our compiler, we are able to compile and run complex graph workloads on our manycore architecture while improving performance and energy efficiency over baseline CPU implementations. 
+
+
+The rest of the paper is organized as follows. 
+First, we will provide background on graph processing and manycore architectures in Section~\ref{sec:background}.
+Next, in Section~\ref{sec:hbarch} we will introduce and describe the HammerBlade manycore architecture. 
+In Section~\ref{sec:method}, we will describe how we compile graph programs to the HammerBlade architecture, and discuss the various forms of parallel execution that we explore. 
+We will present the energy and performance results of our compiled graph workloads on the HammerBlade architecture in Section~\ref{sec:eval}. 
+A discussion of these results will follow in Section~\ref{sec:related}. 
+Finally, we conclude with some thoughts on future work for our graph compiler in Section~\ref{sec:conclusion}. 

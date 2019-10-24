@@ -6,29 +6,53 @@
 
 \subsection{Host Side Coordination}
 
+\begin{figure}[t]
+	\centering
+	\subfloat[][bfs]{\includegraphics[width=0.3\textwidth]{direction-speedup.pdf}\label{direction-bfs}}
+	\subfloat[][cc]{\includegraphics[width=0.3\textwidth]{direction-speedup.pdf}\label{direction-cc}}
+	\subfloat[][pr-nibble]{\includegraphics[width=0.3\textwidth]{direction-speedup.pdf}\label{direction-pr}}
+	\caption{This figure shows the speedup for various graph traversal directions on several different input graphs. Speedup is show over the sparse push direction.}
+	\label{fig:direction-plot}
+\end{figure}
+
 \subsection{Device Side Coordination}
 
 \subsection{Parallel Model Comparison}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 	\centering
-	\includegraphics[width=\linewidth]{figures/speedup_comp.pdf}
-	\caption{Speedup comparison between the host side and device side coordination parallel execution models. Figure shows speedup over increasing number of active threads.}
-    \label{fig:speedup_comp}
-\end{figure}
+	\subfloat[][bfs]{\includegraphics[width=0.3\textwidth]{speedup_comp.pdf}\label{speedup-bfs}}
+	\subfloat[][cc]{\includegraphics[width=0.3\textwidth]{speedup_comp.pdf}\label{speedup-cc}}
+	\subfloat[][pr-nibble]{\includegraphics[width=0.3\textwidth]{speedup_comp.pdf}\label{speedup-pr}}
+	\label{speedup-methods}
+    \caption{Speedup comparison between the host side and device side coordination parallel execution models. Figure shows speedup over increasing number of active threads on three different graph benchmarks.}
+\end{figure*}
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width=\linewidth]{figures/energy_comp.pdf}
+	\subfloat[][bfs]{\includegraphics[width=0.3\textwidth]{energy_comp.pdf}\label{energy-bfs}}
+	\subfloat[][cc]{\includegraphics[width=0.3\textwidth]{energy_comp.pdf}\label{energy-cc}}
+	\subfloat[][pr-nibble]{\includegraphics[width=0.3\textwidth]{energy_comp.pdf}\label{energy-pr}}
 	\caption{Energy comparison between the host side and device side coordination parallel execution models. Figure shows ops/watt achieved across increasing graph sizes.}
 	\label{fig:energy_comp}
 \end{figure}
 
 \begin{figure}[t]
 	\centering
-	\includegraphics[width=\linewidth]{figures/io_reduction.pdf}
+	\subfloat[][bfs]{\includegraphics[width=0.3\textwidth]{io_reduction.pdf}\label{io-bfs}}
+	\subfloat[][cc]{\includegraphics[width=0.3\textwidth]{io_reduction.pdf}\label{io-cc}}
+	\subfloat[][pr-nibble]{\includegraphics[width=0.3\textwidth]{io_reduction.pdf}\label{io-pr}}
 	\caption{This figure shows IO savings of device side coordination model over host side coordination model over increasing graph sizes.}
 	\label{fig:ioreduction}
+\end{figure}
+
+\begin{figure}[t]
+	\centering
+	\subfloat[][bfs]{\includegraphics[width=0.3\textwidth]{graph-stalls.pdf}\label{stalls-bfs}}
+	\subfloat[][cc]{\includegraphics[width=0.3\textwidth]{graph-stalls.pdf}\label{stalls-cc}}
+	\subfloat[][pr-nibble]{\includegraphics[width=0.3\textwidth]{graph-stalls.pdf}\label{stalls-pr}}
+	\caption{This figure shows the breakdown of stall cycles in the device side and host side coordination models over various benchmarks.}
+	\label{fig:stalls}
 \end{figure}
 
 

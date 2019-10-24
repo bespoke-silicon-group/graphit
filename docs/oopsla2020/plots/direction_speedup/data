@@ -1,0 +1,4 @@
+Input Graph, LJ, TW, WB, RD, FT
+SparsePush, 1, 1, 1, 1, 1
+DensePull, 2.0, 3.0, 1.8, 1.2, 9.0
+Hybrid, 4, 6.0, 2.3, 1.2, 10.2 

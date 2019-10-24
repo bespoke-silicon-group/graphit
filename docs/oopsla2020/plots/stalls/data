@@ -1,0 +1,3 @@
+StallType, IFetchWait, ICacheLoad, RemoteLoad, LocalLoad, Depend
+HostCoord, 2394, 4539, 1231, 4363, 3422 
+DeviceCoord, 2394, 4539, 234, 1009, 3422 

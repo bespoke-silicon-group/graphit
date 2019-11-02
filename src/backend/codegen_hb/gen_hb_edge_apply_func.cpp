@@ -466,7 +466,7 @@ namespace graphit {
           indent();
           printIndent();
 
-          *oss << "if";
+          *oss_ << "if";
           std::string src_type = "s";
 
           if(mir_context_->isFunction(apply->from_func)) {
@@ -759,7 +759,7 @@ namespace graphit {
         printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
     }
 
-    void EdgesetApplyFunctionDeclGenerator::genEdgePullApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
+    void HBEdgesetApplyFunctionGenerator::genEdgePullApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
         bool apply_expr_gen_frontier = false;
         bool from_vertexset_specified = false;
         string dst_type;

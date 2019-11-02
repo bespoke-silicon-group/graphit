@@ -17,7 +17,7 @@ namespace graphit {
 
         virtual void visit (mir::PushEdgeSetApplyExpr::Ptr push_apply);
         //TODO(Emily): implement these directions later, starting with just push for now
-        //virtual void visit (mir::PullEdgeSetApplyExpr::Ptr pull_apply);
+        virtual void visit (mir::PullEdgeSetApplyExpr::Ptr pull_apply);
         //virtual void visit (mir::HybridDenseEdgeSetApplyExpr::Ptr hybrid_dense_apply);
         //virtual void visit (mir::HybridDenseForwardEdgeSetApplyExpr::Ptr hybrid_dense_forward_apply);
 
@@ -56,7 +56,7 @@ namespace graphit {
         void printEndIndent() { *oss_ << std::string(2 * indentLevel, ' ') << "}" << std::endl; }
         unsigned      indentLevel;
 
-        //void genEdgePullApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply);
+        void genEdgePullApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply);
         void genEdgePushApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply);
         //void genEdgeHybridDenseApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply);
         //void genEdgeHybridDenseForwardApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply);
@@ -74,13 +74,13 @@ namespace graphit {
                                                   std::string dst_type,
                                                   std::string apply_func_name = "apply_func");
 
-        /*
+
         void printPullEdgeTraversalReturnFrontier(mir::EdgeSetApplyExpr::Ptr apply,
                                                   bool from_vertexset_specified,
                                                   bool apply_expr_gen_frontier,
                                                   std::string dst_type,
                                                   std::string apply_func_name = "apply_func");
-
+/*
         void printHybridDenseEdgeTraversalReturnFrontier(mir::EdgeSetApplyExpr::Ptr apply,
                                                          bool from_vertexset_specified,
                                                          bool apply_expr_gen_frontier,
@@ -98,7 +98,7 @@ namespace graphit {
          */
 
         //prints the inner loop on in neighbors for pull based direction
-        /*
+
         void printPullEdgeTraversalInnerNeighborLoop(mir::EdgeSetApplyExpr::Ptr apply,
                                                      bool from_vertexset_specified,
                                                      bool apply_expr_gen_frontier,
@@ -106,7 +106,7 @@ namespace graphit {
                                                      std::string apply_func_name,
                                                      bool cache,
                                                      bool numa_aware);
-         */
+         
 
         void printNumaMerge(mir::EdgeSetApplyExpr::Ptr apply);
 

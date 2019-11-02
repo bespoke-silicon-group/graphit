@@ -7,6 +7,10 @@ namespace graphit {
         genEdgeApplyFunctionDeclaration(push_apply);
     }
 
+    void HBEdgesetApplyFunctionGenerator::visit(mir::PullEdgeSetApplyExpr::Ptr pull_apply) {
+        genEdgeApplyFunctionDeclaration(pull_apply);
+    }
+
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclaration(mir::EdgeSetApplyExpr::Ptr apply) {
         auto func_name = genFunctionName(apply);
 
@@ -16,7 +20,6 @@ namespace graphit {
             return;
         }
 
-        //TODO(Emily): if we don't want to allow templates this is where we would need to change the code
         genEdgeApplyFunctionSignature(apply);
         *oss_ << "{ " << endl; //the end of the function declaration
         //TODO(Emily): this func call is what we need to change to fit our execution model
@@ -27,14 +30,14 @@ namespace graphit {
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
-        //TODO(Emily): implement other directions
-        /*if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+        if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
             genEdgePullApplyFunctionDeclBody(apply);
-        }*/
+        }
 
         if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
             genEdgePushApplyFunctionDeclBody(apply);
         }
+        //TODO(Emily): implement other directions
         /*
         if (mir::isa<mir::HybridDenseEdgeSetApplyExpr>(apply)) {
             genEdgeHybridDenseApplyFunctionDeclBody(apply);
@@ -439,6 +442,91 @@ namespace graphit {
         *oss_ << "return 0;" << std::endl;
     }
 
+    void EdgesetApplyFunctionDeclGenerator::printPullEdgeTraversalInnerNeighborLoop(
+            mir::EdgeSetApplyExpr::Ptr apply,
+            bool from_vertexset_specified,
+            bool apply_expr_gen_frontier,
+            std::string dst_type,
+            std::string apply_func_name,
+            bool cache_aware,
+            bool numa_aware) {
+
+        if (apply->to_func != "") {
+            printIndent();
+            oss_ << "if (to_func(d)){ " << std::endl;
+            indent();
+        }
+
+        std::string node_id_type = "int";
+        printIndent();
+
+        *oss_ << "for(int iter_n = out_indices[d]; iter_n < out_indices[d+1]; iter_n++) {" <<std::endl;
+
+        if(apply->from_func != "") {
+          indent();
+          printIndent();
+
+          *oss << "if";
+          std::string src_type = "s";
+
+          if(mir_context_->isFunction(apply->from_func)) {
+            *oss_ << " (from_func(" src_type << ")";
+          }
+          else {
+            //TODO(Emily): using a vertex subset, need to determine what form we use
+            // if (! apply->use_pull_frontier_bitvector){
+            //     oss_ << " (from_vertexset->bool_map_[" << src_type <<  "] ";
+            // } else {
+            //     oss_ << " (bitmap.get_bit(" << src_type << ")";
+            // }
+          }
+          *oss_ << ") {" << std::endl;
+        }
+
+        indent();
+        printIndent();
+        if(apply_expr_gen_frontier) {
+          *oss_ << "if( ";
+        }
+
+        *oss_ << apply_func_name << "( s, d )";
+
+        if(!apply_expr_gen_frontier) {
+          *oss_ << ";" << std::endl;
+        }
+        else {
+          indent();
+          *oss_ << ") { " << std::endl;
+          printIndent();
+          *oss_ << "next[d] = 1; " << sed::endl;
+
+          if(apply->to_func != "") {
+            printIndent();
+            *oss_ << "if(!to_func(d)) break; " << std::endl;
+          }
+          dedent();
+          printIndent();
+          *oss_ << "}" << std::endl;
+        }
+
+        if(apply->from_func != "") {
+          dedent();
+          printIndent();
+          *oss_ << "}" <<std::endl;
+        }
+
+        dedent();
+        printIndent();
+        *oss_ << "} //end of loop on in neighbors" << std::endl;
+
+        if(apply->from_func != "") {
+          dedent();
+          printIndent();
+          *oss_ << "} //end of to filtering" <<std::endl;
+        }
+
+    }
+
 
     // Iterate through per-socket local buffers and merge the result into the global buffer
     //NOTE(Emily): we will probably want to leverage code like this for our own memory system
@@ -474,6 +562,190 @@ namespace graphit {
         *oss_ << "    }\n  }\n";
     }
 
+    void HBEdgesetApplyFunctionGenerator::printPullEdgeTraversalReturnFrontier(
+            mir::EdgeSetApplyExpr::Ptr apply,
+            bool from_vertexset_specified,
+            bool apply_expr_gen_frontier,
+            std::string dst_type,
+            std::string apply_func_name) {
+        // If apply function has a return value, then we need to return a temporary vertexsubset
+        if (apply_expr_gen_frontier) {
+            // build an empty vertex subset if apply function returns
+            apply_expr_gen_frontier = true;
+
+            //        "  long numVertices = g.num_nodes(), numEdges = g.num_edges();\n"
+            //        "  long m = from_vertexset->size();\n"
+
+            oss_ << "  VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
+                    "  bool * next = newA(bool, g.num_nodes());\n"
+                    "  parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;\n";
+        }
+
+        indent();
+
+
+        if (apply->from_func != "") {
+            if (!mir_context_->isFunction(apply->from_func)) {
+                printIndent();
+                oss_ << "from_vertexset->toDense();" << std::endl;
+            }
+        }
+
+        //generate a bitvector from the dense vertexset (bool map)
+        if (from_vertexset_specified && apply->use_pull_frontier_bitvector){
+            oss_ << "  Bitmap bitmap(numVertices);\n"
+                    "  bitmap.reset();\n"
+                    "  parallel_for(int i = 0; i < numVertices; i+=64){\n"
+                    "     int start = i;\n"
+                    "     int end = (((i + 64) < numVertices)? (i+64):numVertices);\n"
+                    "     for(int j = start; j < end; j++){\n"
+                    "        if (from_vertexset->bool_map_[j])\n"
+                    "          bitmap.set_bit(j);\n"
+                    "     }\n"
+                    "  }" << std::endl;
+        }
+
+        printIndent();
+
+        // Setup flag for cache_awareness: use cache optimization if the data modified by this apply is segemented
+        bool cache_aware = false;
+        auto segment_map = mir_context_->edgeset_to_label_to_num_segment;
+        for (auto edge_iter = segment_map.begin(); edge_iter != segment_map.end(); edge_iter++) {
+            for (auto label_iter = (*edge_iter).second.begin();
+            label_iter != (*edge_iter).second.end();
+            label_iter++) {
+                if ((*label_iter).first == apply->scope_label_name)
+                    cache_aware = true;
+            }
+        }
+
+        // Setup flag for numa_awareness: use numa optimization if the numa flag is set in the merge_reduce data structure
+        bool numa_aware = false;
+        for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
+            for (auto inner_iter : iter.second) {
+                if (mir::to<mir::VarExpr>(apply->target)->var.getName() == iter.first
+                    && inner_iter.second->numa_aware)
+                    numa_aware = true;
+            }
+        }
+
+        if (numa_aware) {
+            printNumaScatter(apply);
+        }
+
+        std::string outer_end = "g.num_nodes()";
+        std::string iter = "d";
+
+        if (numa_aware || cache_aware) {
+            if (numa_aware) {
+                std::string num_segment_str = "g.getNumSegments(\"" + apply->scope_label_name + "\");";
+                oss_ << "  int numPlaces = omp_get_num_places();\n";
+                oss_ << "    int numSegments = g.getNumSegments(\"" + apply->scope_label_name + "\");\n";
+		oss_ << "    int segmentsPerSocket = (numSegments + numPlaces - 1) / numPlaces;\n";
+                oss_ << "#pragma omp parallel num_threads(numPlaces) proc_bind(spread)\n{\n";
+                oss_ << "    int socketId = omp_get_place_num();\n";
+                oss_ << "    for (int i = 0; i < segmentsPerSocket; i++) {\n";
+                oss_ << "      int segmentId = socketId + i * numPlaces;\n";
+                oss_ << "      if (segmentId >= numSegments) break;\n";
+            } else {
+                oss_ << "  for (int segmentId = 0; segmentId < g.getNumSegments(\"" << apply->scope_label_name
+                     << "\"); segmentId++) {\n";
+            }
+            oss_ << "      auto sg = g.getSegmentedGraph(std::string(\"" << apply->scope_label_name << "\"), segmentId);\n";
+            outer_end = "sg->numVertices";
+            iter = "localId";
+        }
+
+        //genearte the outer for loop
+        if (! apply->use_pull_edge_based_load_balance) {
+            std::string for_type = "for";
+            if (numa_aware) {
+                oss_ << "#pragma omp parallel num_threads(omp_get_place_num_procs(socketId)) proc_bind(close)\n{\n";
+                oss_ << "#pragma omp for schedule(dynamic, 1024)\n";
+            } else if (apply->is_parallel) {
+                for_type = "parallel_for";
+            }
+
+            //printIndent();
+            oss_ << for_type << " ( NodeID " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
+            indent();
+            if (cache_aware) {
+                printIndent();
+                oss_ << "NodeID d = sg->graphId[localId];" << std::endl;
+            }
+        } else {
+            // use edge based load balance
+            // recursive load balance scheme
+
+            //set up the edge index (in in edge array) for estimating number of edges
+            oss_ << "  if (g.offsets_ == nullptr) g.SetUpOffsets(true);\n"
+                    "  SGOffset * edge_in_index = g.offsets_;\n";
+
+            oss_ << "    std::function<void(int,int,int)> recursive_lambda = \n"
+                    "    [" << (apply->to_func != "" ?  "&to_func, " : "")
+                 << "&apply_func, &g,  &recursive_lambda, edge_in_index" << (cache_aware ? ", sg" : "");
+            // capture bitmap and next frontier if needed
+            if (from_vertexset_specified) {
+                if(apply->use_pull_frontier_bitvector) oss_ << ", &bitmap ";
+                else oss_ << ", &from_vertexset";
+            }
+            if (apply_expr_gen_frontier) oss_ << ", &next ";
+            oss_ <<"  ]\n"
+                    "    (NodeID start, NodeID end, int grain_size){\n";
+            if (cache_aware)
+                oss_ << "         if ((start == end-1) || ((sg->vertexArray[end] - sg->vertexArray[start]) < grain_size)){\n"
+                        "  for (NodeID localId = start; localId < end; localId++){\n"
+                        "    NodeID d = sg->graphId[localId];\n";
+            else
+                oss_ << "         if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){\n"
+                        "  for (NodeID d = start; d < end; d++){\n";
+            indent();
+
+        }
+
+        //print the code for inner loop on in neighbors
+        printPullEdgeTraversalInnerNeighborLoop(apply, from_vertexset_specified, apply_expr_gen_frontier,
+            dst_type, apply_func_name, cache_aware, numa_aware);
+
+
+        if (! apply->use_pull_edge_based_load_balance) {
+            //end of outer for loop
+            dedent();
+            printIndent();
+            oss_ << "} //end of outer for loop" << std::endl;
+        } else {
+            dedent();
+            printIndent();
+            oss_ << " } //end of outer for loop" << std::endl;
+            oss_ << "        } else { // end of if statement on grain size, recursive case next\n"
+                    "                 cilk_spawn recursive_lambda(start, start + ((end-start) >> 1), grain_size);\n"
+                    "                  recursive_lambda(start + ((end-start)>>1), end, grain_size);\n"
+                    "        } \n"
+                    "    }; //end of lambda function\n";
+            oss_ << "    recursive_lambda(0, " << (cache_aware ? "sg->" : "") << "numVertices, "  <<  apply->pull_edge_based_load_balance_grain_size << ");\n"
+                    "    cilk_sync; \n";
+        }
+
+        if (numa_aware) {
+          oss_ << "} // end of per-socket parallel_for\n";
+        }
+        if (cache_aware) {
+            oss_ << "    } // end of segment for loop\n";
+        }
+
+        if (numa_aware) {
+            printNumaMerge(apply);
+        }
+
+        //return a new vertexset if no subset vertexset is returned
+        if (apply_expr_gen_frontier) {
+            oss_ << "  next_frontier->num_vertices_ = sequence::sum(next, numVertices);\n"
+                    "  next_frontier->bool_map_ = next;\n"
+                    "  next_frontier->is_dense = true;\n"
+                    "  return next_frontier;\n";
+        }
+
+    }
 
     // Generate the code for pushed based program
     void HBEdgesetApplyFunctionGenerator::genEdgePushApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
@@ -485,6 +757,15 @@ namespace graphit {
         //setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
         //TODO(Emily): this is the main algorithmic func that we need to change
         printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+    }
+
+    void EdgesetApplyFunctionDeclGenerator::genEdgePullApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
+        bool apply_expr_gen_frontier = false;
+        bool from_vertexset_specified = false;
+        string dst_type;
+        setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
+        setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
+        printPullEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
     }
 
     //TODO(Emily): we want to get rid of the templating here - need to track the params passed to call in main

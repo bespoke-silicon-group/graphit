@@ -442,7 +442,7 @@ namespace graphit {
         *oss_ << "return 0;" << std::endl;
     }
 
-    void EdgesetApplyFunctionDeclGenerator::printPullEdgeTraversalInnerNeighborLoop(
+    void HBEdgesetApplyFunctionGenerator::printPullEdgeTraversalInnerNeighborLoop(
             mir::EdgeSetApplyExpr::Ptr apply,
             bool from_vertexset_specified,
             bool apply_expr_gen_frontier,
@@ -453,7 +453,7 @@ namespace graphit {
 
         if (apply->to_func != "") {
             printIndent();
-            oss_ << "if (to_func(d)){ " << std::endl;
+            *oss_ << "if (to_func(d)){ " << std::endl;
             indent();
         }
 
@@ -470,7 +470,7 @@ namespace graphit {
           std::string src_type = "s";
 
           if(mir_context_->isFunction(apply->from_func)) {
-            *oss_ << " (from_func(" src_type << ")";
+            *oss_ << " (from_func(" << src_type << ")";
           }
           else {
             //TODO(Emily): using a vertex subset, need to determine what form we use
@@ -498,7 +498,7 @@ namespace graphit {
           indent();
           *oss_ << ") { " << std::endl;
           printIndent();
-          *oss_ << "next[d] = 1; " << sed::endl;
+          *oss_ << "next[d] = 1; " << std::endl;
 
           if(apply->to_func != "") {
             printIndent();
@@ -576,7 +576,7 @@ namespace graphit {
             //        "  long numVertices = g.num_nodes(), numEdges = g.num_edges();\n"
             //        "  long m = from_vertexset->size();\n"
 
-            oss_ << "  VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
+            *oss_ << "  VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
                     "  bool * next = newA(bool, g.num_nodes());\n"
                     "  parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;\n";
         }
@@ -587,13 +587,13 @@ namespace graphit {
         if (apply->from_func != "") {
             if (!mir_context_->isFunction(apply->from_func)) {
                 printIndent();
-                oss_ << "from_vertexset->toDense();" << std::endl;
+                *oss_ << "from_vertexset->toDense();" << std::endl;
             }
         }
 
         //generate a bitvector from the dense vertexset (bool map)
         if (from_vertexset_specified && apply->use_pull_frontier_bitvector){
-            oss_ << "  Bitmap bitmap(numVertices);\n"
+            *oss_ << "  Bitmap bitmap(numVertices);\n"
                     "  bitmap.reset();\n"
                     "  parallel_for(int i = 0; i < numVertices; i+=64){\n"
                     "     int start = i;\n"
@@ -639,19 +639,19 @@ namespace graphit {
         if (numa_aware || cache_aware) {
             if (numa_aware) {
                 std::string num_segment_str = "g.getNumSegments(\"" + apply->scope_label_name + "\");";
-                oss_ << "  int numPlaces = omp_get_num_places();\n";
-                oss_ << "    int numSegments = g.getNumSegments(\"" + apply->scope_label_name + "\");\n";
-		oss_ << "    int segmentsPerSocket = (numSegments + numPlaces - 1) / numPlaces;\n";
-                oss_ << "#pragma omp parallel num_threads(numPlaces) proc_bind(spread)\n{\n";
-                oss_ << "    int socketId = omp_get_place_num();\n";
-                oss_ << "    for (int i = 0; i < segmentsPerSocket; i++) {\n";
-                oss_ << "      int segmentId = socketId + i * numPlaces;\n";
-                oss_ << "      if (segmentId >= numSegments) break;\n";
+                *oss_ << "  int numPlaces = omp_get_num_places();\n";
+                *oss_ << "    int numSegments = g.getNumSegments(\"" + apply->scope_label_name + "\");\n";
+		*oss_ << "    int segmentsPerSocket = (numSegments + numPlaces - 1) / numPlaces;\n";
+                *oss_ << "#pragma omp parallel num_threads(numPlaces) proc_bind(spread)\n{\n";
+                *oss_ << "    int socketId = omp_get_place_num();\n";
+                *oss_ << "    for (int i = 0; i < segmentsPerSocket; i++) {\n";
+                *oss_ << "      int segmentId = socketId + i * numPlaces;\n";
+                *oss_ << "      if (segmentId >= numSegments) break;\n";
             } else {
-                oss_ << "  for (int segmentId = 0; segmentId < g.getNumSegments(\"" << apply->scope_label_name
+                *oss_ << "  for (int segmentId = 0; segmentId < g.getNumSegments(\"" << apply->scope_label_name
                      << "\"); segmentId++) {\n";
             }
-            oss_ << "      auto sg = g.getSegmentedGraph(std::string(\"" << apply->scope_label_name << "\"), segmentId);\n";
+            *oss_ << "      auto sg = g.getSegmentedGraph(std::string(\"" << apply->scope_label_name << "\"), segmentId);\n";
             outer_end = "sg->numVertices";
             iter = "localId";
         }
@@ -660,44 +660,44 @@ namespace graphit {
         if (! apply->use_pull_edge_based_load_balance) {
             std::string for_type = "for";
             if (numa_aware) {
-                oss_ << "#pragma omp parallel num_threads(omp_get_place_num_procs(socketId)) proc_bind(close)\n{\n";
-                oss_ << "#pragma omp for schedule(dynamic, 1024)\n";
+                *oss_ << "#pragma omp parallel num_threads(omp_get_place_num_procs(socketId)) proc_bind(close)\n{\n";
+                *oss_ << "#pragma omp for schedule(dynamic, 1024)\n";
             } else if (apply->is_parallel) {
                 for_type = "parallel_for";
             }
 
             //printIndent();
-            oss_ << for_type << " ( NodeID " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
+            *oss_ << for_type << " ( NodeID " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
             indent();
             if (cache_aware) {
                 printIndent();
-                oss_ << "NodeID d = sg->graphId[localId];" << std::endl;
+                *oss_ << "NodeID d = sg->graphId[localId];" << std::endl;
             }
         } else {
             // use edge based load balance
             // recursive load balance scheme
 
             //set up the edge index (in in edge array) for estimating number of edges
-            oss_ << "  if (g.offsets_ == nullptr) g.SetUpOffsets(true);\n"
+            *oss_ << "  if (g.offsets_ == nullptr) g.SetUpOffsets(true);\n"
                     "  SGOffset * edge_in_index = g.offsets_;\n";
 
-            oss_ << "    std::function<void(int,int,int)> recursive_lambda = \n"
+            *oss_ << "    std::function<void(int,int,int)> recursive_lambda = \n"
                     "    [" << (apply->to_func != "" ?  "&to_func, " : "")
                  << "&apply_func, &g,  &recursive_lambda, edge_in_index" << (cache_aware ? ", sg" : "");
             // capture bitmap and next frontier if needed
             if (from_vertexset_specified) {
-                if(apply->use_pull_frontier_bitvector) oss_ << ", &bitmap ";
-                else oss_ << ", &from_vertexset";
+                if(apply->use_pull_frontier_bitvector) *oss_ << ", &bitmap ";
+                else *oss_ << ", &from_vertexset";
             }
-            if (apply_expr_gen_frontier) oss_ << ", &next ";
-            oss_ <<"  ]\n"
+            if (apply_expr_gen_frontier) *oss_ << ", &next ";
+            *oss_ <<"  ]\n"
                     "    (NodeID start, NodeID end, int grain_size){\n";
             if (cache_aware)
-                oss_ << "         if ((start == end-1) || ((sg->vertexArray[end] - sg->vertexArray[start]) < grain_size)){\n"
+                *oss_ << "         if ((start == end-1) || ((sg->vertexArray[end] - sg->vertexArray[start]) < grain_size)){\n"
                         "  for (NodeID localId = start; localId < end; localId++){\n"
                         "    NodeID d = sg->graphId[localId];\n";
             else
-                oss_ << "         if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){\n"
+                *oss_ << "         if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){\n"
                         "  for (NodeID d = start; d < end; d++){\n";
             indent();
 
@@ -712,25 +712,25 @@ namespace graphit {
             //end of outer for loop
             dedent();
             printIndent();
-            oss_ << "} //end of outer for loop" << std::endl;
+            *oss_ << "} //end of outer for loop" << std::endl;
         } else {
             dedent();
             printIndent();
-            oss_ << " } //end of outer for loop" << std::endl;
-            oss_ << "        } else { // end of if statement on grain size, recursive case next\n"
+            *oss_ << " } //end of outer for loop" << std::endl;
+            *oss_ << "        } else { // end of if statement on grain size, recursive case next\n"
                     "                 cilk_spawn recursive_lambda(start, start + ((end-start) >> 1), grain_size);\n"
                     "                  recursive_lambda(start + ((end-start)>>1), end, grain_size);\n"
                     "        } \n"
                     "    }; //end of lambda function\n";
-            oss_ << "    recursive_lambda(0, " << (cache_aware ? "sg->" : "") << "numVertices, "  <<  apply->pull_edge_based_load_balance_grain_size << ");\n"
+            *oss_ << "    recursive_lambda(0, " << (cache_aware ? "sg->" : "") << "numVertices, "  <<  apply->pull_edge_based_load_balance_grain_size << ");\n"
                     "    cilk_sync; \n";
         }
 
         if (numa_aware) {
-          oss_ << "} // end of per-socket parallel_for\n";
+          *oss_ << "} // end of per-socket parallel_for\n";
         }
         if (cache_aware) {
-            oss_ << "    } // end of segment for loop\n";
+            *oss_ << "    } // end of segment for loop\n";
         }
 
         if (numa_aware) {
@@ -739,7 +739,7 @@ namespace graphit {
 
         //return a new vertexset if no subset vertexset is returned
         if (apply_expr_gen_frontier) {
-            oss_ << "  next_frontier->num_vertices_ = sequence::sum(next, numVertices);\n"
+            *oss_ << "  next_frontier->num_vertices_ = sequence::sum(next, numVertices);\n"
                     "  next_frontier->bool_map_ = next;\n"
                     "  next_frontier->is_dense = true;\n"
                     "  return next_frontier;\n";

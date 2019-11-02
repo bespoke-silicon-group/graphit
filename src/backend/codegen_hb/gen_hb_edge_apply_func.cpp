@@ -585,6 +585,7 @@ namespace graphit {
         printIndent();
         if(apply->is_parallel) {
             *oss_ << "int start, end;" << std::endl;
+            printIndent();
             *oss_ << "local_range(V, &start, &end);" << std::endl;
         }
 

@@ -576,130 +576,143 @@ namespace graphit {
             //        "  long numVertices = g.num_nodes(), numEdges = g.num_edges();\n"
             //        "  long m = from_vertexset->size();\n"
 
-            *oss_ << "  VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
-                    "  bool * next = newA(bool, g.num_nodes());\n"
-                    "  parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;\n";
+            // *oss_ << "  VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);\n"
+            //         "  bool * next = newA(bool, g.num_nodes());\n"
+            //         "  parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;\n";
+        }
+
+        if(apply->is_parallel) {
+            *oss_ << "int start, end;" << std::endl;
+            *oss_ << "local_range(V, &start, &end);" << std::endl;
         }
 
         indent();
 
+        //TODO(Emily): implement a vertexset device runtime library
+        //              to allow dense/sparse transformations
 
-        if (apply->from_func != "") {
-            if (!mir_context_->isFunction(apply->from_func)) {
-                printIndent();
-                *oss_ << "from_vertexset->toDense();" << std::endl;
-            }
-        }
+        // if (apply->from_func != "") {
+        //     if (!mir_context_->isFunction(apply->from_func)) {
+        //         printIndent();
+        //         *oss_ << "from_vertexset->toDense();" << std::endl;
+        //     }
+        // }
 
         //generate a bitvector from the dense vertexset (bool map)
-        if (from_vertexset_specified && apply->use_pull_frontier_bitvector){
-            *oss_ << "  Bitmap bitmap(numVertices);\n"
-                    "  bitmap.reset();\n"
-                    "  parallel_for(int i = 0; i < numVertices; i+=64){\n"
-                    "     int start = i;\n"
-                    "     int end = (((i + 64) < numVertices)? (i+64):numVertices);\n"
-                    "     for(int j = start; j < end; j++){\n"
-                    "        if (from_vertexset->bool_map_[j])\n"
-                    "          bitmap.set_bit(j);\n"
-                    "     }\n"
-                    "  }" << std::endl;
-        }
+        // if (from_vertexset_specified && apply->use_pull_frontier_bitvector){
+        //     *oss_ << "  Bitmap bitmap(numVertices);\n"
+        //             "  bitmap.reset();\n"
+        //             "  parallel_for(int i = 0; i < numVertices; i+=64){\n"
+        //             "     int start = i;\n"
+        //             "     int end = (((i + 64) < numVertices)? (i+64):numVertices);\n"
+        //             "     for(int j = start; j < end; j++){\n"
+        //             "        if (from_vertexset->bool_map_[j])\n"
+        //             "          bitmap.set_bit(j);\n"
+        //             "     }\n"
+        //             "  }" << std::endl;
+        // }
 
         printIndent();
 
         // Setup flag for cache_awareness: use cache optimization if the data modified by this apply is segemented
-        bool cache_aware = false;
-        auto segment_map = mir_context_->edgeset_to_label_to_num_segment;
-        for (auto edge_iter = segment_map.begin(); edge_iter != segment_map.end(); edge_iter++) {
-            for (auto label_iter = (*edge_iter).second.begin();
-            label_iter != (*edge_iter).second.end();
-            label_iter++) {
-                if ((*label_iter).first == apply->scope_label_name)
-                    cache_aware = true;
-            }
-        }
+        // bool cache_aware = false;
+        // auto segment_map = mir_context_->edgeset_to_label_to_num_segment;
+        // for (auto edge_iter = segment_map.begin(); edge_iter != segment_map.end(); edge_iter++) {
+        //     for (auto label_iter = (*edge_iter).second.begin();
+        //     label_iter != (*edge_iter).second.end();
+        //     label_iter++) {
+        //         if ((*label_iter).first == apply->scope_label_name)
+        //             cache_aware = true;
+        //     }
+        // }
 
         // Setup flag for numa_awareness: use numa optimization if the numa flag is set in the merge_reduce data structure
-        bool numa_aware = false;
-        for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
-            for (auto inner_iter : iter.second) {
-                if (mir::to<mir::VarExpr>(apply->target)->var.getName() == iter.first
-                    && inner_iter.second->numa_aware)
-                    numa_aware = true;
-            }
-        }
+        // bool numa_aware = false;
+        // for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
+        //     for (auto inner_iter : iter.second) {
+        //         if (mir::to<mir::VarExpr>(apply->target)->var.getName() == iter.first
+        //             && inner_iter.second->numa_aware)
+        //             numa_aware = true;
+        //     }
+        // }
+        //
+        // if (numa_aware) {
+        //     printNumaScatter(apply);
+        // }
 
-        if (numa_aware) {
-            printNumaScatter(apply);
-        }
-
-        std::string outer_end = "g.num_nodes()";
+        std::string outer_end = "V";
         std::string iter = "d";
 
-        if (numa_aware || cache_aware) {
-            if (numa_aware) {
-                std::string num_segment_str = "g.getNumSegments(\"" + apply->scope_label_name + "\");";
-                *oss_ << "  int numPlaces = omp_get_num_places();\n";
-                *oss_ << "    int numSegments = g.getNumSegments(\"" + apply->scope_label_name + "\");\n";
-		*oss_ << "    int segmentsPerSocket = (numSegments + numPlaces - 1) / numPlaces;\n";
-                *oss_ << "#pragma omp parallel num_threads(numPlaces) proc_bind(spread)\n{\n";
-                *oss_ << "    int socketId = omp_get_place_num();\n";
-                *oss_ << "    for (int i = 0; i < segmentsPerSocket; i++) {\n";
-                *oss_ << "      int segmentId = socketId + i * numPlaces;\n";
-                *oss_ << "      if (segmentId >= numSegments) break;\n";
-            } else {
-                *oss_ << "  for (int segmentId = 0; segmentId < g.getNumSegments(\"" << apply->scope_label_name
-                     << "\"); segmentId++) {\n";
-            }
-            *oss_ << "      auto sg = g.getSegmentedGraph(std::string(\"" << apply->scope_label_name << "\"), segmentId);\n";
-            outer_end = "sg->numVertices";
-            iter = "localId";
-        }
+    //     if (numa_aware || cache_aware) {
+    //         if (numa_aware) {
+    //             std::string num_segment_str = "g.getNumSegments(\"" + apply->scope_label_name + "\");";
+    //             *oss_ << "  int numPlaces = omp_get_num_places();\n";
+    //             *oss_ << "    int numSegments = g.getNumSegments(\"" + apply->scope_label_name + "\");\n";
+		// *oss_ << "    int segmentsPerSocket = (numSegments + numPlaces - 1) / numPlaces;\n";
+    //             *oss_ << "#pragma omp parallel num_threads(numPlaces) proc_bind(spread)\n{\n";
+    //             *oss_ << "    int socketId = omp_get_place_num();\n";
+    //             *oss_ << "    for (int i = 0; i < segmentsPerSocket; i++) {\n";
+    //             *oss_ << "      int segmentId = socketId + i * numPlaces;\n";
+    //             *oss_ << "      if (segmentId >= numSegments) break;\n";
+    //         } else {
+    //             *oss_ << "  for (int segmentId = 0; segmentId < g.getNumSegments(\"" << apply->scope_label_name
+    //                  << "\"); segmentId++) {\n";
+    //         }
+    //         *oss_ << "      auto sg = g.getSegmentedGraph(std::string(\"" << apply->scope_label_name << "\"), segmentId);\n";
+    //         outer_end = "sg->numVertices";
+    //         iter = "localId";
+    //     }
 
         //genearte the outer for loop
         if (! apply->use_pull_edge_based_load_balance) {
             std::string for_type = "for";
             if (numa_aware) {
-                *oss_ << "#pragma omp parallel num_threads(omp_get_place_num_procs(socketId)) proc_bind(close)\n{\n";
-                *oss_ << "#pragma omp for schedule(dynamic, 1024)\n";
+                // *oss_ << "#pragma omp parallel num_threads(omp_get_place_num_procs(socketId)) proc_bind(close)\n{\n";
+                // *oss_ << "#pragma omp for schedule(dynamic, 1024)\n";
             } else if (apply->is_parallel) {
-                for_type = "parallel_for";
+                for_type = "for";
             }
 
             //printIndent();
-            *oss_ << for_type << " ( NodeID " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
-            indent();
-            if (cache_aware) {
-                printIndent();
-                *oss_ << "NodeID d = sg->graphId[localId];" << std::endl;
+            if(apply->is_parallel) {
+              *oss_ << for_type << " ( int " << iter << " = start; " << iter << " < end; " << iter << "++) {" << std::endl;
             }
+            else {
+              *oss_ << for_type << " ( int " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
+            }
+            indent();
+            // if (cache_aware) {
+            //     printIndent();
+            //     *oss_ << "int d = sg->graphId[localId];" << std::endl;
+            // }
         } else {
             // use edge based load balance
             // recursive load balance scheme
+            //TODO(Emily): implement a more advanced load balancing
 
             //set up the edge index (in in edge array) for estimating number of edges
-            *oss_ << "  if (g.offsets_ == nullptr) g.SetUpOffsets(true);\n"
-                    "  SGOffset * edge_in_index = g.offsets_;\n";
-
-            *oss_ << "    std::function<void(int,int,int)> recursive_lambda = \n"
-                    "    [" << (apply->to_func != "" ?  "&to_func, " : "")
-                 << "&apply_func, &g,  &recursive_lambda, edge_in_index" << (cache_aware ? ", sg" : "");
-            // capture bitmap and next frontier if needed
-            if (from_vertexset_specified) {
-                if(apply->use_pull_frontier_bitvector) *oss_ << ", &bitmap ";
-                else *oss_ << ", &from_vertexset";
-            }
-            if (apply_expr_gen_frontier) *oss_ << ", &next ";
-            *oss_ <<"  ]\n"
-                    "    (NodeID start, NodeID end, int grain_size){\n";
-            if (cache_aware)
-                *oss_ << "         if ((start == end-1) || ((sg->vertexArray[end] - sg->vertexArray[start]) < grain_size)){\n"
-                        "  for (NodeID localId = start; localId < end; localId++){\n"
-                        "    NodeID d = sg->graphId[localId];\n";
-            else
-                *oss_ << "         if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){\n"
-                        "  for (NodeID d = start; d < end; d++){\n";
-            indent();
+            // *oss_ << "  if (g.offsets_ == nullptr) g.SetUpOffsets(true);\n"
+            //         "  SGOffset * edge_in_index = g.offsets_;\n";
+            //
+            // *oss_ << "    std::function<void(int,int,int)> recursive_lambda = \n"
+            //         "    [" << (apply->to_func != "" ?  "&to_func, " : "")
+            //      << "&apply_func, &g,  &recursive_lambda, edge_in_index" << (cache_aware ? ", sg" : "");
+            // // capture bitmap and next frontier if needed
+            // if (from_vertexset_specified) {
+            //     if(apply->use_pull_frontier_bitvector) *oss_ << ", &bitmap ";
+            //     else *oss_ << ", &from_vertexset";
+            // }
+            // if (apply_expr_gen_frontier) *oss_ << ", &next ";
+            // *oss_ <<"  ]\n"
+            //         "    (NodeID start, NodeID end, int grain_size){\n";
+            // if (cache_aware)
+            //     *oss_ << "         if ((start == end-1) || ((sg->vertexArray[end] - sg->vertexArray[start]) < grain_size)){\n"
+            //             "  for (NodeID localId = start; localId < end; localId++){\n"
+            //             "    NodeID d = sg->graphId[localId];\n";
+            // else
+            //     *oss_ << "         if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){\n"
+            //             "  for (NodeID d = start; d < end; d++){\n";
+            // indent();
 
         }
 
@@ -714,36 +727,36 @@ namespace graphit {
             printIndent();
             *oss_ << "} //end of outer for loop" << std::endl;
         } else {
-            dedent();
-            printIndent();
-            *oss_ << " } //end of outer for loop" << std::endl;
-            *oss_ << "        } else { // end of if statement on grain size, recursive case next\n"
-                    "                 cilk_spawn recursive_lambda(start, start + ((end-start) >> 1), grain_size);\n"
-                    "                  recursive_lambda(start + ((end-start)>>1), end, grain_size);\n"
-                    "        } \n"
-                    "    }; //end of lambda function\n";
-            *oss_ << "    recursive_lambda(0, " << (cache_aware ? "sg->" : "") << "numVertices, "  <<  apply->pull_edge_based_load_balance_grain_size << ");\n"
-                    "    cilk_sync; \n";
+            // dedent();
+            // printIndent();
+            // *oss_ << " } //end of outer for loop" << std::endl;
+            // *oss_ << "        } else { // end of if statement on grain size, recursive case next\n"
+            //         "                 cilk_spawn recursive_lambda(start, start + ((end-start) >> 1), grain_size);\n"
+            //         "                  recursive_lambda(start + ((end-start)>>1), end, grain_size);\n"
+            //         "        } \n"
+            //         "    }; //end of lambda function\n";
+            // *oss_ << "    recursive_lambda(0, " << (cache_aware ? "sg->" : "") << "numVertices, "  <<  apply->pull_edge_based_load_balance_grain_size << ");\n"
+            //         "    cilk_sync; \n";
         }
 
-        if (numa_aware) {
-          *oss_ << "} // end of per-socket parallel_for\n";
-        }
-        if (cache_aware) {
-            *oss_ << "    } // end of segment for loop\n";
-        }
+        // if (numa_aware) {
+        //   *oss_ << "} // end of per-socket parallel_for\n";
+        // }
+        // if (cache_aware) {
+        //     *oss_ << "    } // end of segment for loop\n";
+        // }
 
-        if (numa_aware) {
-            printNumaMerge(apply);
-        }
+        // if (numa_aware) {
+        //     printNumaMerge(apply);
+        // }
 
         //return a new vertexset if no subset vertexset is returned
-        if (apply_expr_gen_frontier) {
-            *oss_ << "  next_frontier->num_vertices_ = sequence::sum(next, numVertices);\n"
-                    "  next_frontier->bool_map_ = next;\n"
-                    "  next_frontier->is_dense = true;\n"
-                    "  return next_frontier;\n";
-        }
+        // if (apply_expr_gen_frontier) {
+        //     *oss_ << "  next_frontier->num_vertices_ = sequence::sum(next, numVertices);\n"
+        //             "  next_frontier->bool_map_ = next;\n"
+        //             "  next_frontier->is_dense = true;\n"
+        //             "  return next_frontier;\n";
+        // }
 
     }
 

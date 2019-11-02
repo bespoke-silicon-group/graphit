@@ -1046,7 +1046,8 @@ namespace graphit {
         *oss << "#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y" << std::endl;
         *oss << "#include \"bsg_tile_group_barrier.h\"" << std::endl;
         *oss << "INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);" << std::endl;
-
+        //NOTE(Emily): include device runtime libraries here:
+        *oss << "#include <local_range.h>" << std::endl;
         oss = &oss_host;
 
         *oss << "#include \"builtins_hammerblade.h\"" << std::endl;

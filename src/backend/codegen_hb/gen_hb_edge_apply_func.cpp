@@ -615,7 +615,7 @@ namespace graphit {
         printIndent();
 
         // Setup flag for cache_awareness: use cache optimization if the data modified by this apply is segemented
-        // bool cache_aware = false;
+         bool cache_aware = false;
         // auto segment_map = mir_context_->edgeset_to_label_to_num_segment;
         // for (auto edge_iter = segment_map.begin(); edge_iter != segment_map.end(); edge_iter++) {
         //     for (auto label_iter = (*edge_iter).second.begin();
@@ -627,7 +627,7 @@ namespace graphit {
         // }
 
         // Setup flag for numa_awareness: use numa optimization if the numa flag is set in the merge_reduce data structure
-        // bool numa_aware = false;
+         bool numa_aware = false;
         // for (auto iter : mir_context_->edgeset_to_label_to_merge_reduce) {
         //     for (auto inner_iter : iter.second) {
         //         if (mir::to<mir::VarExpr>(apply->target)->var.getName() == iter.first

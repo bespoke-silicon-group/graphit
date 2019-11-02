@@ -460,7 +460,7 @@ namespace graphit {
         std::string node_id_type = "int";
         printIndent();
 
-        *oss_ << "for(int iter_n = out_indices[d]; iter_n < out_indices[d+1]; iter_n++) {" <<std::endl;
+        *oss_ << "for(int s = in_indices[d]; s < in_indices[d+1]; iter_n++) {" <<std::endl;
 
         if(apply->from_func != "") {
           indent();
@@ -473,6 +473,7 @@ namespace graphit {
             *oss_ << " (from_func(" << src_type << ")";
           }
           else {
+            *oss_ << "(true";
             //TODO(Emily): using a vertex subset, need to determine what form we use
             // if (! apply->use_pull_frontier_bitvector){
             //     oss_ << " (from_vertexset->bool_map_[" << src_type <<  "] ";
@@ -489,7 +490,7 @@ namespace graphit {
           *oss_ << "if( ";
         }
 
-        *oss_ << apply_func_name << "( s, d )";
+        *oss_ << apply_func_name << "( in_neighbors[s], d )";
 
         if(!apply_expr_gen_frontier) {
           *oss_ << ";" << std::endl;
@@ -580,13 +581,15 @@ namespace graphit {
             //         "  bool * next = newA(bool, g.num_nodes());\n"
             //         "  parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;\n";
         }
-
+        indent();
+        printIndent();
         if(apply->is_parallel) {
             *oss_ << "int start, end;" << std::endl;
             *oss_ << "local_range(V, &start, &end);" << std::endl;
         }
 
-        indent();
+
+
 
         //TODO(Emily): implement a vertexset device runtime library
         //              to allow dense/sparse transformations
@@ -777,7 +780,7 @@ namespace graphit {
         bool from_vertexset_specified = false;
         string dst_type;
         setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
-        setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
+        //setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
         printPullEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
     }
 
@@ -794,8 +797,17 @@ namespace graphit {
             arguments.push_back("WGraph & g");
         } else {
             //arguments.push_back("Graph & g");
-            arguments.push_back("int *out_indices");
-            arguments.push_back("int *out_neighbors");
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("int *out_indices");
+              arguments.push_back("int *out_neighbors");
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("int *in_indices");
+              arguments.push_back("int *in_neighbors");
+            }
+            else {
+              //TODO(Emily): implement other directions
+            }
+
         }
 
         if (apply->from_func != "") {

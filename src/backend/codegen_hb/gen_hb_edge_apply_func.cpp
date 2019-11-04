@@ -460,7 +460,7 @@ namespace graphit {
         std::string node_id_type = "int";
         printIndent();
 
-        *oss_ << "for(int s = in_indices[d]; s < in_indices[d+1]; iter_n++) {" <<std::endl;
+        *oss_ << "for(int s = in_indices[d]; s < in_indices[d+1]; s++) {" <<std::endl;
 
         if(apply->from_func != "") {
           indent();
@@ -820,6 +820,12 @@ namespace graphit {
                 // the input is an input from vertexset
                 arguments.push_back("int* from_vertexset");
             }
+        }
+
+        auto apply_func = mir_context_->getFunction(apply->input_function_name);
+        if (apply_func->result.isInitialized()) {
+            // build an empty vertex subset if apply function returns
+            arguments.push_back("int * next_frontier");
         }
 
         if (apply->to_func != "") {

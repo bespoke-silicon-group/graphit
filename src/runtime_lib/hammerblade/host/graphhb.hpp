@@ -42,6 +42,13 @@ public:
                 return _out_neighbors.getBase();
         }
 
+				decltype(Vec().getBase()) getInIndicesAddr() const {
+                return _in_index.getBase();
+        }
+        decltype(Vec().getBase()) getInNeighborsAddr() const {
+                return _in_neighbors.getBase();
+        }
+
         const Graph & getHostGraph() const {
                 return _host_g;
         }

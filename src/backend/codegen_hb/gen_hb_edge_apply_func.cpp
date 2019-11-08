@@ -526,9 +526,6 @@ namespace graphit {
           *oss_ << "} //end of to filtering" <<std::endl;
         }
 
-        printIndent();
-        *oss_ << "return 0;" << std::endl;
-
     }
 
 
@@ -745,6 +742,11 @@ namespace graphit {
             // *oss_ << "    recursive_lambda(0, " << (cache_aware ? "sg->" : "") << "numVertices, "  <<  apply->pull_edge_based_load_balance_grain_size << ");\n"
             //         "    cilk_sync; \n";
         }
+
+        printIndent();
+        *oss_ << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        printIndent();
+        *oss_ << "return 0;" << std::endl;
 
         // if (numa_aware) {
         //   *oss_ << "} // end of per-socket parallel_for\n";

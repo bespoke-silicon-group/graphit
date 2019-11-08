@@ -501,10 +501,10 @@ namespace graphit {
           printIndent();
           *oss_ << "next[d] = 1; " << std::endl;
 
-          if(apply->to_func != "") {
-            printIndent();
-            *oss_ << "if(!to_func(d)) break; " << std::endl;
-          }
+          // if(apply->to_func != "") {
+          //   printIndent();
+          //   *oss_ << "if(!to_func(d)) break; " << std::endl;
+          // }
           dedent();
           printIndent();
           *oss_ << "}" << std::endl;
@@ -525,6 +525,9 @@ namespace graphit {
           printIndent();
           *oss_ << "} //end of to filtering" <<std::endl;
         }
+
+        printIndent();
+        *oss_ << "return 0;" << std::endl;
 
     }
 

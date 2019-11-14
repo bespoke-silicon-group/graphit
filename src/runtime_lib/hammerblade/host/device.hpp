@@ -64,7 +64,7 @@ public:
 		 */
 		_argv_saves.push_back(std::move(argv));
 
-		err = hb_mc_application_init(_device,
+		err = hb_mc_kernel_enqueue(_device,
 				      hb_mc_dimension(1,1), /* grid of tile groups  */
 				      hb_mc_dimension(4,4), /* tile group dimension */
 				       // TODO: cast is required because of bug in CUDA-lite

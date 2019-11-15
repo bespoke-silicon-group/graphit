@@ -96,7 +96,7 @@ void init_global_array(const GlobalScalar<hb_mc_eva_t>& glbl_ptr, int size)
   auto mem = glbl_ptr.get();
   auto device = Device::GetInstance();
 
-  hb_mc_device_malloc(_device, (size * sizeof(T)), &mem);
+  hb_mc_device_malloc(device, (size * sizeof(T)), &mem);
 }
 //method to insert a value to a global scalar
 template <typename T>

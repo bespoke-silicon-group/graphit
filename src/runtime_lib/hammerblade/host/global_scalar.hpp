@@ -67,6 +67,7 @@ private:
  * @param src  A global pointer on the manycore - points to a manycore buffer from which to read.
  * @param cnt  The number of elements to read.
  */
+
 template <typename T>
 void read_global_buffer(T *dst, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc_eva_t cnt)
 {
@@ -89,6 +90,14 @@ void write_global_buffer(T *host, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_
         device->write(dst, (const void*)host, cnt * sizeof(T));
 }
 
+template <typename T>
+void init_global_array(const GlobalScalar<hb_mc_eva_t>& glbl_ptr, int size)
+{
+  auto mem = glbl_ptr.get();
+  auto device = Device::GetInstance();
+
+  hb_mc_device_malloc(_device, size, &mem);
+}
 //method to insert a value to a global scalar
 template <typename T>
 void insert_val(size_t pos, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)

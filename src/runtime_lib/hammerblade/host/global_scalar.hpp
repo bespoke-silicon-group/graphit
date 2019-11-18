@@ -90,6 +90,16 @@ void write_global_buffer(T *host, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_
         device->write(dst, (const void*)host, cnt * sizeof(T));
 }
 
+template <typename T>
+void init_global_array(size_t len, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)
+{
+  hb_mc_eva_t mem;
+  auto device = Device::GetInstance();
+
+  mem = device->malloc(len * sizeof(T));
+  glbl_ptr->set(mem);
+}
+
 //method to insert a value to a global scalar
 template <typename T>
 void insert_val(size_t pos, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)

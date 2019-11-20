@@ -453,7 +453,12 @@ namespace graphit {
 
         if (apply->to_func != "") {
             printIndent();
-            *oss_ << "if (to_func(d)){ " << std::endl;
+            if(from_vertexset_specified) {
+              *oss_ << "if (to_func(d) && from_vertexset[d] == 1){ " << std::endl;
+            }
+            else {
+              *oss_ << "if (to_func(d)){" << std::endl;
+            }
             indent();
         }
 

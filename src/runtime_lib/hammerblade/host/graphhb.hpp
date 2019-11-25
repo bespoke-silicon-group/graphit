@@ -49,7 +49,7 @@ public:
                 return _in_neighbors.getBase();
         }
 
-        const Graph & getHostGraph() const {
+        Graph & getHostGraph() {
                 return _host_g;
         }
 

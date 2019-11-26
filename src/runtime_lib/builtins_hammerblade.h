@@ -20,6 +20,12 @@ GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file)
 }
 
 static
+GraphHB builtin_transposeHB(GraphHB & graph)
+{
+        return GraphHB(builtin_transpose(graph.getHostGraph()));
+}
+
+static
 void builtin_loadMicroCodeFromSTDVectorRValue(std::vector<unsigned char> &&ucode)
 {
         Device::Ptr device = Device::GetInstance();

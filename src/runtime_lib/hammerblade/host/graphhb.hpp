@@ -49,7 +49,7 @@ public:
                 return _in_neighbors.getBase();
         }
 
-        const Graph & getHostGraph() const {
+        Graph & getHostGraph() {
                 return _host_g;
         }
 
@@ -64,8 +64,8 @@ private:
 	void init() { initGraphOnDevice(); }
 
 	void initGraphOnDevice() {
-                if (isTranspose()) {
-                        throw hammerblade::runtime_error("transpose not supported");
+                if (true) {
+                        //throw hammerblade::runtime_error("transpose not supported");
                         // convert
                         std::vector<int32_t> index(num_nodes());
 

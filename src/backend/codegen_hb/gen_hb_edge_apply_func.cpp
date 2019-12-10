@@ -31,9 +31,10 @@ namespace graphit {
 
     }
 
-    void genGlobalDecls(mir::EdgeSetApplyExpr::Ptr apply) {
+    void HBEdgesetApplyFunctionGenerator::genGlobalDecls(mir::EdgeSetApplyExpr::Ptr apply) {
       //TODO(Emily):
       //we might want to declare the current frontier here too?
+      auto apply_func = mir_context_->getFunction(apply->input_function_name);
       if(apply_func->result.isInitialized()) {
         *oss << "__attribute__((section(\".dram\"))) int  * __restrict next_frontier;" << endl;
       }

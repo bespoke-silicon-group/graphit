@@ -4,10 +4,12 @@ namespace graphit {
     using namespace std;
 
     void HBEdgesetApplyFunctionGenerator::visit(mir::PushEdgeSetApplyExpr::Ptr push_apply) {
+        genGlobalDecls(push_apply);
         genEdgeApplyFunctionDeclaration(push_apply);
     }
 
     void HBEdgesetApplyFunctionGenerator::visit(mir::PullEdgeSetApplyExpr::Ptr pull_apply) {
+        genGlobalDecls(pull_apply);
         genEdgeApplyFunctionDeclaration(pull_apply);
     }
 
@@ -27,6 +29,14 @@ namespace graphit {
         *oss_ << "} //end of edgeset apply function " << endl; //the end of the function declaration
         *oss_ << endl; //NOTE(Emily): want separation of functions for readability
 
+    }
+
+    void genGlobalDecls(mir::EdgeSetApplyExpr::Ptr apply) {
+      //TODO(Emily):
+      //we might want to declare the current frontier here too?
+      if(apply_func->result.isInitialized()) {
+        *oss << "__attribute__((section(\".dram\"))) int  * __restrict next_frontier;" << endl;
+      }
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
@@ -454,7 +464,7 @@ namespace graphit {
         if (apply->to_func != "") {
             printIndent();
             if(from_vertexset_specified) {
-              *oss_ << "if (to_func(d) && from_vertexset[d] == 1){ " << std::endl;
+              *oss_ << "if (to_func(d) && " << from_vertexset << "[d] == 1){ " << std::endl;
             }
             else {
               *oss_ << "if (to_func(d)){" << std::endl;
@@ -835,7 +845,7 @@ namespace graphit {
         auto apply_func = mir_context_->getFunction(apply->input_function_name);
         if (apply_func->result.isInitialized()) {
             // build an empty vertex subset if apply function returns
-            arguments.push_back("int * next_frontier");
+            //arguments.push_back("int * next_frontier");
         }
 
         if (apply->to_func != "") {

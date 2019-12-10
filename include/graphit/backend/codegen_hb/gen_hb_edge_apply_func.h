@@ -48,6 +48,7 @@ namespace graphit {
         void genEdgeApplyFunctionSignature(mir::EdgeSetApplyExpr::Ptr apply);
         void genEdgeApplyFunctionDeclaration(mir::EdgeSetApplyExpr::Ptr apply);
         void genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply);
+        void genGlobalDecls(mir::EdgeSetApplyExpr::Ptr apply);
 
         void indent() { ++indentLevel; }
         void dedent() { --indentLevel; }
@@ -106,7 +107,7 @@ namespace graphit {
                                                      std::string apply_func_name,
                                                      bool cache,
                                                      bool numa_aware);
-         
+
 
         void printNumaMerge(mir::EdgeSetApplyExpr::Ptr apply);
 

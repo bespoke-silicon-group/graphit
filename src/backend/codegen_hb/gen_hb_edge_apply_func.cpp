@@ -36,7 +36,7 @@ namespace graphit {
       //we might want to declare the current frontier here too?
       auto apply_func = mir_context_->getFunction(apply->input_function_name);
       if(apply_func->result.isInitialized()) {
-        *oss << "__attribute__((section(\".dram\"))) int  * __restrict next_frontier;" << endl;
+        *oss_ << "__attribute__((section(\".dram\"))) int  * __restrict next_frontier;" << endl;
       }
     }
 
@@ -465,7 +465,7 @@ namespace graphit {
         if (apply->to_func != "") {
             printIndent();
             if(from_vertexset_specified) {
-              *oss_ << "if (to_func(d) && " << from_vertexset << "[d] == 1){ " << std::endl;
+              *oss_ << "if (to_func(d) && from_vertexset[d] == 1){ " << std::endl;
             }
             else {
               *oss_ << "if (to_func(d)){" << std::endl;

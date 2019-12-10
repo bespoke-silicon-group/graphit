@@ -1266,7 +1266,6 @@ namespace graphit {
             } else {
                 // the input is an input from vertexset
                 arguments.push_back(apply->from_func);
-                arguments.push_back("next_frontier"); //NOTE(Emily): hacky, assuming always want next frontier
                 arguments_def.push_back("int *frontier");
 
             }
@@ -1313,12 +1312,6 @@ namespace graphit {
 
         if(return_arg != ""){ *oss << ", " << return_arg; }
 
-        //TODO(Emily): this is a hack assuming the only time we pass this in
-        //              it will be the next frontier
-        if(lhs != NULL){
-          *oss << ", int *next_";
-          lhs->accept(this);
-        }
 
         *oss << ", int V, int E, int block_size_x";
 
@@ -1351,15 +1344,10 @@ namespace graphit {
 
         if(return_arg != ""){ *oss << ", " << return_arg << ".getAddr()"; }
 
-        //TODO(Emily): this is a hack assuming the only time we pass this in
-        //              it will be the next frontier (and also that we want to pass in frontier)
         if(lhs != NULL){
           *oss << ", ";
           lhs->accept(this);
-          *oss <<".getAddr()";
-          *oss << ", next_";
-          lhs->accept(this);
-          *oss << ".getAddr()";
+          *oss <<".getAddr()";;
         }
 
         //TODO(Emily): need to confirm we always need these 3 args for kernel calls

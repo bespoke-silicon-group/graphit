@@ -1,6 +1,7 @@
 #pragma once
 #include <bsg_manycore.h>
 #include <bsg_set_tile_x_y.h>
+#include <bsg_manycore_atomic.h>
 #ifdef __cplusplus
 extern "C" {
 #endif

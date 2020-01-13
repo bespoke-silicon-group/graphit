@@ -56,10 +56,21 @@ public:
     return sparse_vertexset;
   }
 
+  HashedSparseVertexset &operator=(HashedSparseVertexset &&other) {
+          moveFrom(other);
+          return *this;
+  }
+
 
 private:
 
   int * indices;
   int ** sparse_vertexset;
+
+  void moveFrom(HashedSparseVertexset & other) {
+          //TODO(Emily): not sure if we can use std::move on device
+          indices = std::move(other.indices);
+          sparse_vertexset = std::move(other.sparse_vertexset);
+  }
 
 };

@@ -20,7 +20,10 @@ public:
         temp_data[i][j] = -1;
       }
     }
-    sparse_vertexset = temp_data;
+    //sparse_vertexset = temp_data;
+    for(int i = 0; i < n; i++) {
+      sparse_vertexset[i] = temp_data[i];
+    }
 
   }
 
@@ -30,11 +33,11 @@ public:
   }
 
   //TODO(Emily): need to implement locking mechanisms for safe writes to data
-  bool aquire_lock(array_idx) {
+  bool aquire_lock(int array_idx) {
     return true;
   }
 
-  void release_lock(array_idx) {
+  void release_lock(int array_idx) {
 
   }
 
@@ -68,9 +71,9 @@ private:
   int ** sparse_vertexset;
 
   void moveFrom(HashedSparseVertexset & other) {
-          //TODO(Emily): not sure if we can use std::move on device
-          indices = std::move(other.indices);
-          sparse_vertexset = std::move(other.sparse_vertexset);
+          //TODO(Emily): we can't use std::move on device, so need to implement swap
+          //indices = std::move(other.indices);
+          //sparse_vertexset = std::move(other.sparse_vertexset);
   }
 
 };

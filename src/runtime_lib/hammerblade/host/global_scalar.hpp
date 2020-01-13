@@ -119,4 +119,14 @@ void assign_val(size_t start, size_t end, const T & val, const GlobalScalar<hb_m
     device->write(dst + (i * sizeof(T)), (const void *)&val, sizeof(T));
 }
 
+template <typename T>
+void swap_global_arrays(GlobalScalar<hb_mc_eva_t> src, GlobalScalar<hb_mc_eva_t>& dst)
+{
+  auto dst_val = dst.get();
+  auto src_val = src.get();
+  dst.set(src_val);
+  src.set(src_val);
+}
+
+
 }

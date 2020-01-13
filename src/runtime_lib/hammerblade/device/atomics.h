@@ -15,7 +15,7 @@ static inline void atomic_update_val_lock(int * ptr, int pos, int val, int * loc
 
 //TODO(Emily): is this all we want to do with amoswap? just atomically update the value and dump the old val?
 static inline void atomic_update(int * array, int pos, int val) {
-  int result = bsg_amoswap(&array[pos], val);
+  int result = bsg_amoswap(&array[pos], val); //should this be bsg_amoswap_aqrl()? based on riscv manual note
 }
 #ifdef __cplusplus
 }

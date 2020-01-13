@@ -1,9 +1,7 @@
 #pragma once
-#include <bsg_manycore_errno.h>
 #include <bsg_manycore.h>
-#include <bsg_manycore_loader.h>
-#include <bsg_manycore_cuda.h>
-#include <hammerblade/host/error.hpp>
+#include <bsg_set_tile_x_y.h>
+//#include <bsg_manycore_atomic.h>
 
 class HashedSparseVertexset {
 public:

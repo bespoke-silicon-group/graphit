@@ -5,9 +5,11 @@
 #include <hammerblade/host/global_scalar.hpp>
 #include <hammerblade/host/parallel_vector.hpp>
 #include <fstream>
+#include <iostream>
 #include <vector>
 #include <sys/stat.h>
 #include "intrinsics.h"
+#include <string>
 namespace hammerblade {
 
 static
@@ -17,6 +19,22 @@ GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file)
                 throw std::runtime_error("bad graph file: did you pass a graph argument?");
 
         return GraphHB(builtin_loadEdgesFromFile(graph_file));
+}
+
+static
+int * builtin_loadFrontierFromFile(const char *frontier_file)
+{
+        std::vector<int> file_vals;
+        std::string   line;
+        ifstream myfile (frontier_file);
+        while(std::getline(file, line))
+        {
+          file_vals.push_back(std::stoi(line));
+        }
+        int * arr = new int[file_vals.size()];
+        std::copy(file_vals.begin(), file_vals.end(), arr);
+        return arr;
+
 }
 
 static

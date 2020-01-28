@@ -26,7 +26,7 @@ int * builtin_loadFrontierFromFile(const char *frontier_file)
 {
         std::vector<int> file_vals;
         std::string   line;
-        ifstream myfile (frontier_file);
+        ifstream file (frontier_file);
         while(std::getline(file, line))
         {
           file_vals.push_back(std::stoi(line));

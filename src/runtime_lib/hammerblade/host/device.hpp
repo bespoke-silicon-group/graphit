@@ -78,6 +78,35 @@ public:
 
 	}
 
+	/* void enqueue a CUDA task on a 1x1 tile group */
+	/* should only be called after the micro code has been set */
+	void enqueueSerialJob(const std::string &kernel_name,
+			std::vector<uint32_t> argv) {
+		int err;
+
+		if (_ucode.empty())
+			throw noUCodeError();
+		/*
+		 * this is necessary because of a bug in CUDA-lite
+		 * where argv is not saved as a deep copy but as
+		 * a pointer
+		 */
+		_argv_saves.push_back(std::move(argv));
+
+		err = hb_mc_kernel_enqueue(_device,
+				      hb_mc_dimension(1,1), /* grid of tile groups  */
+				      hb_mc_dimension(1,1), /* tile group dimension */
+				       // TODO: cast is required because of bug in CUDA-lite
+				      (char*)kernel_name.c_str(),
+				      _argv_saves.back().size(),
+				      _argv_saves.back().data());
+
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
+
+
+	}
+
 	/*
 	 * run enqueued jobs
 	 */

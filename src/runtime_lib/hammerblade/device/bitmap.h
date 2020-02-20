@@ -16,17 +16,20 @@ Parallel bitmap that is thread-safe
  - Can set bits in parallel (set_bit_atomic) unlike std::vector<bool>
 */
 
-
+//TODO(Emily): need to remove references to delete and new for device
+// need to come up with better delete function
 class Bitmap {
  public:
   explicit Bitmap(size_t size) {
     num_words_ = (size + kBitsPerWord - 1) / kBitsPerWord;
-    start_ = new uint64_t[num_words_];
+    uint64_t temp[num_words_];
+    start_ = temp;
+    //start_ = new uint64_t[num_words_];
     end_ = start_ + num_words_;
   }
 
   ~Bitmap() {
-    delete[] start_;
+    //delete[] start_;
   }
 
   void reset() {

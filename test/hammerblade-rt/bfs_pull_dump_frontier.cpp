@@ -36,6 +36,7 @@ void write_frontier_to_file(VertexSubset<NodeID>* frontier) {
 template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_apply_pull_serial_from_vertexset_to_filter_func_with_frontier(Graph & g , VertexSubset<NodeID>* from_vertexset, TO_FUNC to_func, APPLY_FUNC apply_func)
 {
   int64_t numVertices = g.num_nodes(), numEdges = g.num_edges();
+  int traversed = 0;
   VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);
   bool * next = newA(bool, g.num_nodes());
   parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;
@@ -54,6 +55,7 @@ template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_
       } //end of loop on in neighbors
     } //end of to filtering
   } //end of outer for loop
+  std::cout << "traversed edges for this iteration: " << traversed << std::endl;
   next_frontier->num_vertices_ = sequence::sum(next, numVertices);
   next_frontier->bool_map_ = next;
   next_frontier->is_dense = true;
@@ -122,10 +124,12 @@ int main(int argc, char * argv[])
     std::cout << "size of frontier/total nodes: " << percentage << std::endl;
     if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/10)){
       //write_frontier_to_file(frontier);
+      std::cout << "writing frontier to file" << std::endl;
       ofstream file("frontier.txt");
       ofstream file2("parent.txt");
       if(file.is_open()){
         for ( NodeID d=0; d < edges.num_nodes(); d++) {
+          par_file << parent[d] << "\n";
           if (frontier->bool_map_[d] ) {
             file << "1\n";
           }
@@ -149,9 +153,5 @@ int main(int argc, char * argv[])
  //   }
  // }
  // std::cout << "loaded file and counted size: " << sum << std::endl;
-  //need to dump frontier here
   deleteObject(frontier) ;
-  // parallel_for (int vertexsetapply_iter = 0; vertexsetapply_iter < builtin_getVertices(edges) ; vertexsetapply_iter++) {
-  //   printParent()(vertexsetapply_iter);
-  // };
 };

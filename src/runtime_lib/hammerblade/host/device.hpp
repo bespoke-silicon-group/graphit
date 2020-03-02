@@ -158,12 +158,22 @@ public:
 	void write(hb_mc_eva_t dst, const void *src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
-
-		int err = hb_mc_device_memcpy(_device,
-					      (void*)dst,
-					      src,
-					      sz,
-					      HB_MC_MEMCPY_TO_DEVICE);
+		int err;
+		if (!hb_mc_manycore_supports_dma_write(_device->mc)) {
+			err = hb_mc_device_memcpy(_device,
+						      (void*)dst,
+						      src,
+						      sz,
+						      HB_MC_MEMCPY_TO_DEVICE);
+		}
+		else {
+			hb_mc_dma_htod_t htod_job = {
+            .d_addr = dst,
+            .h_addr = src,
+            .size   = sz
+        };
+			err = hb_mc_device_dma_to_device(_device, &htod_job, 1);
+		}
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
 	}
@@ -174,12 +184,22 @@ public:
 	void read(void *dst, hb_mc_eva_t src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
-
-		int err = hb_mc_device_memcpy(_device,
-					      dst,
-					      (const void*)src,
-					      sz,
-					      HB_MC_MEMCPY_TO_HOST);
+		int err;
+		if (!hb_mc_manycore_supports_dma_read(_device->mc)) {
+			err = hb_mc_device_memcpy(_device,
+						      dst,
+						      (const void*)src,
+						      sz,
+						      HB_MC_MEMCPY_TO_HOST);
+		}
+		else {
+			hb_mc_dma_dtoh_t dtoh_job = {
+                .d_addr = src,
+                .h_addr = dst,
+                .size   = sz
+        };
+			err = hb_mc_device_dma_to_host(_device, &dtoh_job, 1);
+		}
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
 

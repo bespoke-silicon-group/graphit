@@ -97,7 +97,7 @@ public:
                 if (n > _length)
                         throw Vector::out_of_bounds(n, _length);
 
-                getDevice()->read((void*)host, _mem, n * sizeof(T));
+                getDevice()->enqueue_read_task((void*)host, _mem, n * sizeof(T));
         }
 
         /* array copy to hammerblade memory */
@@ -105,7 +105,7 @@ public:
                 if (n > _length)
                         throw Vector::out_of_bounds(n, _length);
 
-                getDevice()->write(_mem, (const void*)host, n * sizeof(T));
+                getDevice()->enqueue_write_task(_mem, (const void*)host, n * sizeof(T));
         }
 
         //making public to allow teardown of parvector type

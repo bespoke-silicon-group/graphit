@@ -188,7 +188,6 @@ public:
 		_write_jobs.clear();
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
-		}
 	}
 
 	/*
@@ -228,7 +227,6 @@ public:
 		_read_jobs.clear();
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
-		}
 	}
 
 private:

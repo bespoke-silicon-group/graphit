@@ -80,6 +80,17 @@ void read_global_buffer(T *dst, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc
 }
 
 template <typename T>
+void read_global_buffer_dma(T *dst, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc_eva_t cnt)
+{
+        // read the value of the pointer on the device
+        auto src = glbl_ptr.get();
+        auto device = Device::GetInstance();
+
+        // read from the device starting at the eva read
+        device->enqueue_read_task(dst, src, cnt * sizeof(T));
+}
+
+template <typename T>
 void write_global_buffer(T *host, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc_eva_t cnt)
 {
         // read the value of the pointer on the device
@@ -88,6 +99,17 @@ void write_global_buffer(T *host, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_
 
         // read from the device starting at the eva read
         device->write(dst, (const void*)host, cnt * sizeof(T));
+}
+
+template <typename T>
+void write_global_buffer_dma(T *host, const GlobalScalar<hb_mc_eva_t>& glbl_ptr, hb_mc_eva_t cnt)
+{
+        // read the value of the pointer on the device
+        auto dst = glbl_ptr.get();
+        auto device = Device::GetInstance();
+
+        // read from the device starting at the eva read
+        device->enqueue_write_task(dst, (const void*)host, cnt * sizeof(T));
 }
 
 template <typename T>
@@ -111,12 +133,30 @@ void insert_val(size_t pos, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl
 }
 
 template <typename T>
+void insert_val_dma(size_t pos, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)
+{
+  auto dst = glbl_ptr.get();
+  auto device = Device::GetInstance();
+
+  device->enqueue_write_task(dst + (pos * sizeof(T)), (const void *)&val, sizeof(T));
+}
+
+template <typename T>
 void assign_val(size_t start, size_t end, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)
 {
   auto dst = glbl_ptr.get();
   auto device = Device::GetInstance();
   for (size_t i = start; i < end; i++)
     device->write(dst + (i * sizeof(T)), (const void *)&val, sizeof(T));
+}
+
+template <typename T>
+void assign_val_dma(size_t start, size_t end, const T & val, const GlobalScalar<hb_mc_eva_t>& glbl_ptr)
+{
+  auto dst = glbl_ptr.get();
+  auto device = Device::GetInstance();
+  for (size_t i = start; i < end; i++)
+    device->enqueue_write_task(dst + (i * sizeof(T)), (const void *)&val, sizeof(T));
 }
 
 template <typename T>

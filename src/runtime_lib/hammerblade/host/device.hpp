@@ -158,12 +158,34 @@ public:
 	void write(hb_mc_eva_t dst, const void *src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
-
 		int err = hb_mc_device_memcpy(_device,
-					      (void*)dst,
-					      src,
-					      sz,
-					      HB_MC_MEMCPY_TO_DEVICE);
+						      (void*)dst,
+						      src,
+						      sz,
+						      HB_MC_MEMCPY_TO_DEVICE);
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
+	}
+
+	void enqueue_write_task(hb_mc_eva_t dst, const void *src, hb_mc_eva_t sz) {
+		if (_ucode.empty())
+			throw noUCodeError();
+		if (!hb_mc_manycore_supports_dma_write(_device->mc)) {
+			std::cerr << "dma not supported" << std::endl;
+			write(dst, src, sz);
+			return;
+		}
+		hb_mc_dma_htod_t htod_job = {
+			.d_addr = dst,
+			.h_addr = src,
+			.size   = sz
+		};
+		_write_jobs.push_back(htod_job);
+	}
+
+	void write_dma() {
+		int err = hb_mc_device_dma_to_device(_device, &_write_jobs[0], _write_jobs.size());
+		_write_jobs.clear();
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
 	}
@@ -174,7 +196,6 @@ public:
 	void read(void *dst, hb_mc_eva_t src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
-
 		int err = hb_mc_device_memcpy(_device,
 					      dst,
 					      (const void*)src,
@@ -183,6 +204,29 @@ public:
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
 
+	}
+
+	void enqueue_read_task(void *dst, hb_mc_eva_t src, hb_mc_eva_t sz) {
+		if (_ucode.empty())
+			throw noUCodeError();
+		if (!hb_mc_manycore_supports_dma_read(_device->mc)) {
+			std::cerr << "dma not supported" << std::endl;
+			read(dst, src, sz);
+			return;
+		}
+		hb_mc_dma_dtoh_t dtoh_job = {
+			.d_addr = src,
+			.h_addr = dst,
+			.size   = sz
+		};
+		_read_jobs.push_back(dtoh_job);
+	}
+
+	void read_dma() {
+		int err = hb_mc_device_dma_to_host(_device, &_read_jobs[0], _read_jobs.size());
+		_read_jobs.clear();
+		if (err != HB_MC_SUCCESS)
+			throw hammerblade::manycore_runtime_error(err);
 	}
 
 private:
@@ -283,5 +327,7 @@ private:
 	std::vector< std::vector <uint32_t> > _argv_saves;
 	std::vector<unsigned char> _ucode;
 	hb_mc_device_t * _device;
+	std::vector<hb_mc_dma_htod_t> _write_jobs;
+	std::vector<hb_mc_dma_dtoh_t> _read_jobs;
 };
 }

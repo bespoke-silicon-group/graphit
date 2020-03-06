@@ -40,9 +40,11 @@ template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_
   bool * next = newA(bool, g.num_nodes());
   parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;
   from_vertexset->toDense();
+  int traversed = 0;
   for ( NodeID d=0; d < g.num_nodes(); d++) {
     if (to_func(d)){
       for(NodeID s : g.in_neigh(d)){
+        traversed++;
         if (from_vertexset->bool_map_[s] ) {
           if( apply_func ( s , d ) ) {
             next[d] = 1;
@@ -55,6 +57,7 @@ template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_
   next_frontier->num_vertices_ = sequence::sum(next, numVertices);
   next_frontier->bool_map_ = next;
   next_frontier->is_dense = true;
+  std::cout << "traversed edges: " << traversed << std::endl;
   return next_frontier;
 } //end of edgeset apply function
 struct parent_generated_vector_op_apply_func_0
@@ -116,9 +119,10 @@ int main(int argc, char * argv[])
     iter_c++;
     double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
     std::cout << "size of frontier/total nodes: " << percentage << std::endl;
-    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/4)){
+    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/25)){
       //write_frontier_to_file(frontier);
       ofstream file("frontier.txt");
+      ofstream file2("parent.txt");
       if(file.is_open()){
         for ( NodeID d=0; d < edges.num_nodes(); d++) {
           if (frontier->bool_map_[d] ) {
@@ -127,20 +131,23 @@ int main(int argc, char * argv[])
           else {
             file << "0\n";
           }
+          file2 << parent[d] << std::endl;
         }
         file.close();
+        file2.close();
       }
-      break;
+      std::cout << "frontier written to file" << std::endl;
+      //break;
     }
   }
-  int * temp = builtin_loadFrontierFromFile("frontier.txt");
-  int sum = 0;
-  for(int i = 0; i < edges.num_nodes(); i++) {
-    if(temp[i] == 1) {
-      sum++;
-    }
-  }
-  std::cout << "loaded file and counted size: " << sum << std::endl;
+ // int * temp = builtin_loadFrontierFromFile("frontier.txt");
+ // int sum = 0;
+ // for(int i = 0; i < edges.num_nodes(); i++) {
+ //   if(temp[i] == 1) {
+ //     sum++;
+ //   }
+ // }
+ // std::cout << "loaded file and counted size: " << sum << std::endl;
   //need to dump frontier here
   deleteObject(frontier) ;
   // parallel_for (int vertexsetapply_iter = 0; vertexsetapply_iter < builtin_getVertices(edges) ; vertexsetapply_iter++) {

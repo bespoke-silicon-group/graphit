@@ -97,7 +97,8 @@ int main(int argc, char * argv[])
 {
   //int root = (int) argv[2];
   //int root = 524287; //this is the max vertex for graph500.19.16.el
-  int root = 65535; //this is the max vertex for graph500.16.16.el
+  //int root = 65535; //this is the max vertex for graph500.16.16.el
+  int root = 262143; //this is the max vertex for graph500.18.16.el
   edges = builtin_loadEdgesFromFile ( argv[(1) ]) ;
   parent = new int [ builtin_getVertices(edges) ];
   parallel_for (int vertexsetapply_iter = 0; vertexsetapply_iter < builtin_getVertices(edges) ; vertexsetapply_iter++) {
@@ -119,7 +120,7 @@ int main(int argc, char * argv[])
     iter_c++;
     double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
     std::cout << "size of frontier/total nodes: " << percentage << std::endl;
-    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/25)){
+    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/10)){
       //write_frontier_to_file(frontier);
       ofstream file("frontier.txt");
       ofstream file2("parent.txt");

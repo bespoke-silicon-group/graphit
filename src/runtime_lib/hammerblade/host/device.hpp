@@ -276,7 +276,7 @@ protected:
 		/* allocate and initialize CUDA-lite handles */
 		_device = new hb_mc_device_t;
 
-		err = hb_mc_device_init(_device, CUDA_DEVICE_NAME(), 0);
+		err = hb_mc_device_init_custom_dimensions(_device, CUDA_DEVICE_NAME(), 0, hb_mc_dimension(4,4));
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
 

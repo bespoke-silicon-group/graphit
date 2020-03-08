@@ -1,15 +1,8 @@
 #ifndef _BLOCKED_ARRAY_HPP_
 #define _BLOCKED_ARRAY_HPP_
-#include <printing.hpp>
 #include <vector>
 #include <cstdint>
 #include <string>
-#include <sstream>
-#include <iostream>
-#include <direct_mapped_cache.hpp>
-#include <cache.hpp>
-
-using Cache = direct_mapped_cache;
 
 template <typename array_type, const size_t block_size, const size_t window_size = 0> class blocked_array {
     int64_t     current_block;
@@ -26,21 +19,9 @@ template <typename array_type, const size_t block_size, const size_t window_size
     std::vector<int64_t>  block_flushes;
     std::string name;
 
-    Cache::ptr cache;
     int64_t array_offset;
 
 public:
-    std::string stats_csv_header() const {
-        return "block_size,block_bytes,reads,flushes";
-    }
-    std::string stats_csv() const {
-        std::stringstream ss;
-        ss << block_size   << ","
-           << block_size * sizeof(array_type) << ","
-           << reads        << ","
-           << flushes      << "";
-        return ss.str();
-    }
 
     std::vector<array_type>   &data;
     typedef std::vector<int64_t>::const_iterator block_read_iter;
@@ -74,7 +55,6 @@ public:
     void set_debug(bool dbg) { debug = dbg; }
     blocked_array(std::vector<array_type> &d,
                   std::string name = "",
-		  Cache::ptr cachep = nullptr,
 		  int64_t array_offset = 0) :
 
         data(d),
@@ -94,17 +74,10 @@ public:
         else
             windowed_mode = false;
 
-	/* set the cache */
-	if (cachep) {
-	    cache = cachep;
-	} else {
-	    cache = Cache::make(1, block_size * sizeof(array_type));
-	}
 
         reset();
     }
 
-    Cache::ptr get_cache() { return cache; }
 
     // core calculations
     int64_t size_of() { return data.size(); }
@@ -134,11 +107,6 @@ public:
         if (current_block != block_of(offset)) {
             if (potentially_dirty)
                 flush_block();
-
-            if (debug)
-                std::cerr << name
-                          << ": reading block " << block_of(offset)
-                          << " for offset " << offset << std::endl;
 
             ++block_reads[block_of(offset)];
             ++reads;
@@ -199,7 +167,6 @@ public:
     // Accessors
     array_type operator [] (int64_t index) const {
         check_access(index);
-	cache->check_read_multi(array_offset + index*sizeof(array_type), sizeof(array_type));
         return data[index];
     }
     array_type & operator [] (int64_t index) {
@@ -208,7 +175,6 @@ public:
             potentially_dirty = true;
         else
             potentially_dirty_window[block_of(index)] = true;
-	cache->check_write_multi(array_offset + index*sizeof(array_type), sizeof(array_type));
         return data[index];
     }
 };

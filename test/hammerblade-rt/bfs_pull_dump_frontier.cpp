@@ -9,34 +9,9 @@
 Graph edges;
 int  * __restrict parent;
 
-void write_frontier_to_file(VertexSubset<NodeID>* frontier) {
-  frontier->printDenseSet();
-  frontier->toDense();
-  unsigned int * frontier_dense = frontier->dense_vertex_set_;
-  //ofstream file("frontier.txt");
-  //if (file.is_open())
-  if(true)
-  {
-    for ( NodeID d=0; d < edges.num_nodes(); d++) {
-      if (frontier->bool_map_[d] ) {
-        std::cout << d << std::endl;
-      }
-    }
-
-    // for(int i = 0; i < frontier->num_vertices_; i++) {
-    //   std::cout << "temp: " << frontier_dense[i] << std::endl;
-    //   int temp = frontier_dense[i];
-    //   std::cout << temp << " ";
-    // }
-    //file.close();
-  }
-
-}
-
 template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_apply_pull_serial_from_vertexset_to_filter_func_with_frontier(Graph & g , VertexSubset<NodeID>* from_vertexset, TO_FUNC to_func, APPLY_FUNC apply_func)
 {
   int64_t numVertices = g.num_nodes(), numEdges = g.num_edges();
-  int traversed = 0;
   VertexSubset<NodeID> *next_frontier = new VertexSubset<NodeID>(g.num_nodes(), 0);
   bool * next = newA(bool, g.num_nodes());
   parallel_for (int i = 0; i < numVertices; i++)next[i] = 0;
@@ -99,8 +74,10 @@ int main(int argc, char * argv[])
 {
   //int root = (int) argv[2];
   //int root = 524287; //this is the max vertex for graph500.19.16.el
+  //int root = 1048572; //this is the max vertex for graph500.20.16.el
   //int root = 65535; //this is the max vertex for graph500.16.16.el
-  int root = 262143; //this is the max vertex for graph500.18.16.el
+  //int root = 262143; //this is the max vertex for graph500.18.16.el
+  int root = 0;
   edges = builtin_loadEdgesFromFile ( argv[(1) ]) ;
   parent = new int [ builtin_getVertices(edges) ];
   parallel_for (int vertexsetapply_iter = 0; vertexsetapply_iter < builtin_getVertices(edges) ; vertexsetapply_iter++) {
@@ -123,13 +100,11 @@ int main(int argc, char * argv[])
     double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
     std::cout << "size of frontier/total nodes: " << percentage << std::endl;
     if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/10)){
-      //write_frontier_to_file(frontier);
       std::cout << "writing frontier to file" << std::endl;
       ofstream file("frontier.txt");
       ofstream file2("parent.txt");
       if(file.is_open()){
         for ( NodeID d=0; d < edges.num_nodes(); d++) {
-          par_file << parent[d] << "\n";
           if (frontier->bool_map_[d] ) {
             file << "1\n";
           }
@@ -145,13 +120,5 @@ int main(int argc, char * argv[])
       //break;
     }
   }
- // int * temp = builtin_loadFrontierFromFile("frontier.txt");
- // int sum = 0;
- // for(int i = 0; i < edges.num_nodes(); i++) {
- //   if(temp[i] == 1) {
- //     sum++;
- //   }
- // }
- // std::cout << "loaded file and counted size: " << sum << std::endl;
   deleteObject(frontier) ;
 };

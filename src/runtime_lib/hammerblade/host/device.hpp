@@ -51,7 +51,7 @@ public:
 
 	/* void enqueue a CUDA task */
 	/* should only be called after the micro code has been set */
-	void enqueueJob(const std::string &kernel_name,
+	void enqueueJob(const std::string &kernel_name, hb_mc_dimension_t tile_dims,
 			std::vector<uint32_t> argv) {
 		int err;
 
@@ -66,7 +66,7 @@ public:
 
 		err = hb_mc_kernel_enqueue(_device,
 				      hb_mc_dimension(1,1), /* grid of tile groups  */
-				      hb_mc_dimension(4,4), /* tile group dimension */
+				      tile_dims, /* tile group dimension */
 				       // TODO: cast is required because of bug in CUDA-lite
 				      (char*)kernel_name.c_str(),
 				      _argv_saves.back().size(),

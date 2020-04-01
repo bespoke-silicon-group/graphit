@@ -80,7 +80,7 @@ int main(int argc, char * argv[])
   }
   std::string input_graph = parser.getCmdOption("-f");
   int root = 0;
-  root = std::stoi(parser.getCmdOption("-r"));
+  if(parser.cmdOptionExists("-r")) root = std::stoi(parser.getCmdOption("-r"));
   //int root = 524287; //this is the max vertex for graph500.19.16.el
   //int root = 1048572; //this is the max vertex for graph500.20.16.el
   //int root = 65535; //this is the max vertex for graph500.16.16.el

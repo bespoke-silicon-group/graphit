@@ -18,7 +18,7 @@ class InputParser{
             return empty_string;
         }
 
-	const std::string& getRISCVFile() const{
+        const std::string& getRISCVFile() const{
             for(int i = 0; i < tokens.size(); i++) {
               if(tokens[i].find(".riscv") != std::string::npos) {
 	        return tokens[i];
@@ -26,7 +26,7 @@ class InputParser{
             }
             static const std::string empty_string("");
             return empty_string;
-            
+
 	}
 
         bool cmdOptionExists(const std::string &option) const{

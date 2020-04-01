@@ -2,6 +2,7 @@
 #include <vector>
 #include <algorithm>
 #include "intrinsics.h"
+#include "hammerblade/host/arg_parser.hpp"
 #include <stdlib.h>
 #include <fstream>
 #include <string>
@@ -31,10 +32,10 @@ template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_
     } //end of to filtering
   } //end of outer for loop
   std::cout << "traversed edges for this iteration: " << traversed << std::endl;
+  std::cout << std::endl;
   next_frontier->num_vertices_ = sequence::sum(next, numVertices);
   next_frontier->bool_map_ = next;
   next_frontier->is_dense = true;
-  std::cout << "traversed edges: " << traversed << std::endl;
   return next_frontier;
 } //end of edgeset apply function
 struct parent_generated_vector_op_apply_func_0
@@ -72,13 +73,19 @@ struct printParent
 };
 int main(int argc, char * argv[])
 {
-  //int root = (int) argv[2];
+  InputParser parser(argc, argv);
+  if(!parser.cmdOptionExists("-f")){
+    std::cerr << "Usage: " << argv[0] << " -f [input graph edge list file] -r [root vertex]" << std::endl;
+    return 0;
+  }
+  std::string input_graph = parser.getCmdOption("-f");
+  int root = 0;
+  root = std::stoi(parser.getCmdOption("-r"));
   //int root = 524287; //this is the max vertex for graph500.19.16.el
   //int root = 1048572; //this is the max vertex for graph500.20.16.el
-  int root = 65535; //this is the max vertex for graph500.16.16.el
+  //int root = 65535; //this is the max vertex for graph500.16.16.el
   //int root = 262143; //this is the max vertex for graph500.18.16.el
-  //int root = 0;
-  edges = builtin_loadEdgesFromFile ( argv[(1) ]) ;
+  edges = builtin_loadEdgesFromFile ( input_graph.c_str()) ;
   parent = new int [ builtin_getVertices(edges) ];
   parallel_for (int vertexsetapply_iter = 0; vertexsetapply_iter < builtin_getVertices(edges) ; vertexsetapply_iter++) {
     parent_generated_vector_op_apply_func_0()(vertexsetapply_iter);

@@ -75,9 +75,9 @@ int main(int argc, char * argv[])
   //int root = (int) argv[2];
   //int root = 524287; //this is the max vertex for graph500.19.16.el
   //int root = 1048572; //this is the max vertex for graph500.20.16.el
-  //int root = 65535; //this is the max vertex for graph500.16.16.el
+  int root = 65535; //this is the max vertex for graph500.16.16.el
   //int root = 262143; //this is the max vertex for graph500.18.16.el
-  int root = 0;
+  //int root = 0;
   edges = builtin_loadEdgesFromFile ( argv[(1) ]) ;
   parent = new int [ builtin_getVertices(edges) ];
   parallel_for (int vertexsetapply_iter = 0; vertexsetapply_iter < builtin_getVertices(edges) ; vertexsetapply_iter++) {
@@ -90,6 +90,7 @@ int main(int argc, char * argv[])
   parent[root ] = (root) ;
   std::cout << "root: " << root << std::endl;
   int iter_c = 0;
+  bool written = false;
   while ( (builtin_getVertexSetSize(frontier) ) != ((0) ))
   {
     VertexSubset<int> *  output ;
@@ -99,7 +100,7 @@ int main(int argc, char * argv[])
     iter_c++;
     double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
     std::cout << "size of frontier/total nodes: " << percentage << std::endl;
-    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/10)){
+    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/10) && !written){
       std::cout << "writing frontier to file" << std::endl;
       ofstream file("frontier.txt");
       ofstream file2("parent.txt");
@@ -115,6 +116,7 @@ int main(int argc, char * argv[])
         }
         file.close();
         file2.close();
+        written = true;
       }
       std::cout << "frontier written to file" << std::endl;
       //break;

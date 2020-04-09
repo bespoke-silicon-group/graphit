@@ -19,7 +19,7 @@ static inline void local_range(int n, int *start, int *end)
 void recursive_range(int n, int e, int grain_size, int start, int end, int * idx, int * start_idx, int * end_idx, int * edge_index)
 {
   //TODO(thread idx = 0 does the work to assign all the ranges)
-  if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){
+  if ((start == end-1) || ((edge_index[end] - edge_index[start]) < grain_size)){
     start_idx[idx] = start;
     end_idx[idx] = end;
     *idx++;

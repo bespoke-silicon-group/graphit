@@ -16,10 +16,18 @@ static inline void local_range(int n, int *start, int *end)
 }
 #endif
 
-void recursive_range(int n, int e, int grain_size, int * start_idx, int * end_idx, int * edge_index)
+void recursive_range(int n, int e, int grain_size, int start, int end, int * idx, int * start_idx, int * end_idx, int * edge_index)
 {
   //TODO(thread idx = 0 does the work to assign all the ranges)
-
+  if ((start == end-1) || ((edge_in_index[end] - edge_in_index[start]) < grain_size)){
+    start_idx[idx] = start;
+    end_idx[idx] = end;
+    *idx++;
+  }
+  else {
+    recursive_range(n, e, grain_size, start, start + ((end-start) >> 1), idx, start_idx, end_idx, edge_index);
+    recursive_range(n, e, grain_size, start + ((end-start)>>1), end, idx, start_idx, end_idx, edge_index);
+  }
 
 }
 
@@ -33,7 +41,8 @@ static inline void edge_aware_local_range(int n, int e, int *start, int *end, in
         int start_idx[bsg_tiles_X * bsg_tiles_Y] = {0};
         int end_idx[bsg_tiles_X * bsg_tiles_Y] = {0};
         if(bsg_id == 0) {
-          recursive_range(n, e, grain_size, start_idx, end_idx, edge_index);
+          int idx = 0;
+          recursive_range(n, e, grain_size, 0, n, &idx, start_idx, end_idx, edge_index);
         }
         //barrier here?
         bsg_tile_group_barrier(&r_barrier, &c_barrier);

@@ -1,8 +1,6 @@
 #pragma once
 #include <bsg_manycore.h>
 #include <bsg_set_tile_x_y.h>
-#include <bsg_tile_group_barrier.h>
-INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,7 +16,7 @@ static inline void local_range(int n, int *start, int *end)
 }
 #endif
 
-void recursive_range(int n, int e, int grain size, int * start_idx, int * end_idx, int * edge_index)
+void recursive_range(int n, int e, int grain_size, int * start_idx, int * end_idx, int * edge_index)
 {
   //TODO(thread idx = 0 does the work to assign all the ranges)
 

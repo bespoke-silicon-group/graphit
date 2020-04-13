@@ -57,6 +57,9 @@ public:
 					return _host_g.out_degree(v);
 				}
 
+				int64_t in_degree(int v) const {
+					return _host_g.in_degree(v);
+				}
 private:
 
 	static const hb_mc_eva_t DEVICE_NULLPTR = 0;

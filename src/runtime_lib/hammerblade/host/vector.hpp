@@ -127,8 +127,10 @@ private:
         void moveFrom(Vector &other) {
                 _mem    = other._mem;
                 _length = other._length;
+                _device = other._device;
                 other._mem = 0;
                 other._length = 0;
+                other._device = nullptr;
         }
 
         /* initialize the vector's memory on HammerBlade hardware */

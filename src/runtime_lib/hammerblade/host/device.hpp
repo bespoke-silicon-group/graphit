@@ -26,6 +26,23 @@ public:
 	typedef Device* Ptr;
 	typedef const Device* ConstPtr;
 #endif
+        class WriteJob {
+        public:
+                WriteJob(hb_mc_eva_t d_addr, const void *h_addr, size_t sz) :
+                        _data(sz),
+                        _d_addr(d_addr) {
+                        memcpy(&_data[0], h_addr, sz);
+                }
+
+                hb_mc_dma_htod_t to_htod () const {
+                        hb_mc_dma_htod_t job = { .d_addr = _d_addr, .h_addr = &_data[0], .size = _data.size()};
+                        return job;
+                }
+
+        private:
+                std::vector<unsigned char> _data;
+                hb_mc_eva_t _d_addr;
+        };
 
 	/* no copy; no move */
 	Device(Device && d)      = delete;
@@ -175,16 +192,15 @@ public:
 			write(dst, src, sz);
 			return;
 		}
-		hb_mc_dma_htod_t htod_job = {
-			.d_addr = dst,
-			.h_addr = src,
-			.size   = sz
-		};
-		_write_jobs.push_back(htod_job);
+
+                _write_jobs.push_back(WriteJob(dst, src, sz));
 	}
 
 	void write_dma() {
-		int err = hb_mc_device_dma_to_device(_device, &_write_jobs[0], _write_jobs.size());
+                std::vector<hb_mc_dma_htod_t> _jobs;
+                for (auto & j : _write_jobs) _jobs.push_back(j.to_htod());
+		int err = hb_mc_device_dma_to_device(_device, &_jobs[0], _jobs.size());
+
 		_write_jobs.clear();
 		if (err != HB_MC_SUCCESS)
 			throw hammerblade::manycore_runtime_error(err);
@@ -328,7 +344,7 @@ private:
 	std::vector< std::vector <uint32_t> > _argv_saves;
 	std::vector<unsigned char> _ucode;
 	hb_mc_device_t * _device;
-	std::vector<hb_mc_dma_htod_t> _write_jobs;
+	std::vector<WriteJob> _write_jobs;
 	std::vector<hb_mc_dma_dtoh_t> _read_jobs;
 };
 }

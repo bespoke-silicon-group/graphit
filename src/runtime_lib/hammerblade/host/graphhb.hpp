@@ -70,14 +70,14 @@ private:
                 if (true) {
                         //throw hammerblade::runtime_error("transpose not supported");
                         // convert
-                        std::vector<int32_t> index(num_nodes());
+                        std::vector<int32_t> index(num_nodes() + 1);
 
                         # pragma omp parallel for
                         for (int64_t i = 0; i < num_nodes(); i++)
                                 index[i] = _host_g.in_index_[i] - _host_g.in_neighbors_;
-
+			index[num_nodes()] = num_edges();
                         // allocate
-                        _in_index = Vec(num_nodes());
+                        _in_index = Vec(num_nodes() + 1);
                         _in_neighbors = Vec(num_edges());
                         // copy
                         _in_index.copyToDevice(index.data(), index.size());
@@ -85,14 +85,14 @@ private:
                 }
 
                 // out neighbors
-                std::vector<int32_t> index(num_nodes());
+                std::vector<int32_t> index(num_nodes() + 1);
 
                 #pragma omp parallel for
                 for (int64_t i = 0; i < num_nodes(); i++)
                         index[i] = _host_g.out_index_[i] - _host_g.out_neighbors_;
-
+		index[num_nodes()] = num_edges();
                 //allocate
-                _out_index = Vec(num_nodes());
+                _out_index = Vec(num_nodes() + 1);
                 _out_neighbors = Vec(num_edges());
                 //std::cerr << "index size = " << index.size() << std::endl;
                 //std::cerr << "_out_index length = " << _out_index.getLength() << std::endl;

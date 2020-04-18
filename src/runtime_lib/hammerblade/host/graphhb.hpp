@@ -49,6 +49,14 @@ public:
                 return _in_neighbors.getBase();
         }
 
+        std::vector<int32_t> get_out_degrees() const {
+		std::vector<int32_t> out_degrees (_host_g.num_nodes(), 0);
+    		for (NodeID n=0; n < _host_g.num_nodes(); n++){
+        		out_degrees[n] = _host_g.out_degree(n);
+    		}
+    		return out_degrees;
+        }
+        
         Graph & getHostGraph() {
                 return _host_g;
         }

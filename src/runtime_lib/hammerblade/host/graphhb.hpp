@@ -163,6 +163,8 @@ private:
                 _out_neighbors = std::move(other._out_neighbors);
                 _in_index = std::move(other._in_index);
                 _in_neighbors = std::move(other._in_neighbors);
+                _in_vertexlist = std::move(other._in_vertexlist);
+                _out_vertexlist = std::move(other._out_vertexlist);
         }
 };
 }

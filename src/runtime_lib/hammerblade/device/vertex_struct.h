@@ -1,4 +1,4 @@
 struct vertexdata {
-  int32_t offset;
-  int32_t degree;
-}
+  int offset;
+  int degree;
+};

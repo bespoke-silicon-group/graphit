@@ -8,7 +8,7 @@ namespace hammerblade {
 class GraphHB {
 public:
 
-	struct vertexlist {
+	struct vertexdata {
 		int32_t offset;
 		int32_t degree;
 	};
@@ -49,7 +49,7 @@ public:
                 return _out_neighbors.getBase();
         }
 
-				decltype(Vector<vertexlist>.getBase()) getOutVertexlistAddr() const {
+				decltype(Vector<vertexdata>.getBase()) getOutVertexlistAddr() const {
 								return _out_vertexlist.getBase();
 				}
 
@@ -60,7 +60,7 @@ public:
                 return _in_neighbors.getBase();
         }
 
-				decltype(Vector<vertexlist>.getBase()) getInVertexlistAddr() const {
+				decltype(Vector<vertexdata>.getBase()) getInVertexlistAddr() const {
 								return _in_vertexlist.getBase();
 				}
 
@@ -103,18 +103,18 @@ private:
 	    // convert
 	    std::vector<int32_t> index(num_nodes() + 1);
 			std::vector<int32_t> tmp_deg = this->get_in_degrees();
-			std::vector<vertexlist> tmp_vertexlist(num_nodes());
+			std::vector<vertexdata> tmp_vertexlist(num_nodes());
 	    # pragma omp parallel for
 	    for (int64_t i = 0; i < num_nodes(); i++) {
 	      index[i] = _host_g.in_index_[i] - _host_g.in_neighbors_;
-				vertexlist tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
+				vertexdata tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
 				tmp_vertexlist[i] = tmp_elem;
 			}
 			index[num_nodes()] = num_edges();
 	    // allocate
 	    _in_index = Vec(num_nodes() + 1);
 	    _in_neighbors = Vec(num_edges());
-			_in_vertexlist = Vector<vertexlist>(num_nodes());
+			_in_vertexlist = Vector<vertexdata>(num_nodes());
 	    // copy
 	    _in_index.copyToDevice(index.data(), index.size());
 	    _in_neighbors.copyToDevice(_host_g.in_neighbors_, num_edges());
@@ -124,18 +124,18 @@ private:
 	  // out neighbors
 	  std::vector<int32_t> index(num_nodes() + 1);
 		std::vector<int32_t> tmp_deg = this->get_out_degrees();
-		std::vector<vertexlist> tmp_vertexlist(num_nodes());
+		std::vector<vertexdata> tmp_vertexlist(num_nodes());
 	  #pragma omp parallel for
 	  for (int64_t i = 0; i < num_nodes(); i++) {
 	  	index[i] = _host_g.out_index_[i] - _host_g.out_neighbors_;
-			vertexlist tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
+			vertexdata tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
 			tmp_vertexlist[i] = tmp_elem;
 		}
 		index[num_nodes()] = num_edges();
 	  //allocate
 	  _out_index = Vec(num_nodes() + 1);
 	  _out_neighbors = Vec(num_edges());
-		_out_vertexlist = Vector<vertexlist>(num_nodes());
+		_out_vertexlist = Vector<vertexdata>(num_nodes());
 
 	  //copy
 	  _out_index.copyToDevice(index.data(), index.size());
@@ -154,8 +154,8 @@ private:
         Vec   _out_neighbors;
         Vec   _in_index;
         Vec   _in_neighbors;
-				Vector<vertexlist> _out_vertexlist;
-				Vector<vertexlist> _in_vertexlist;
+				Vector<vertexdata> _out_vertexlist;
+				Vector<vertexdata> _in_vertexlist;
 
         void moveFrom(GraphHB & other) {
                 _host_g = std::move(other._host_g);

@@ -135,7 +135,7 @@ private:
 
         /* initialize the vector's memory on HammerBlade hardware */
 	void init(void) {
-		if (sizeof(T) % 4 != )
+		if (sizeof(T) % 4 != 0)
 			throw hammerblade::runtime_error("Only Vectors with types of size equal to a multiple of 4 bytes supported");
 
 		if (_length != 0) {

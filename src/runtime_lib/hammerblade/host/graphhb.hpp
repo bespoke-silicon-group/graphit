@@ -108,7 +108,7 @@ private:
 	    for (int64_t i = 0; i < num_nodes(); i++) {
 	      index[i] = _host_g.in_index_[i] - _host_g.in_neighbors_;
 				vertexlist tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
-				tmp_vertexlist.push_back(tmp_elem);
+				tmp_vertexlist[i] = tmp_elem;
 			}
 			index[num_nodes()] = num_edges();
 	    // allocate
@@ -129,7 +129,7 @@ private:
 	  for (int64_t i = 0; i < num_nodes(); i++) {
 	  	index[i] = _host_g.out_index_[i] - _host_g.out_neighbors_;
 			vertexlist tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
-			tmp_vertexlist.push_back(tmp_elem);
+			tmp_vertexlist[i] = tmp_elem;
 		}
 		index[num_nodes()] = num_edges();
 	  //allocate

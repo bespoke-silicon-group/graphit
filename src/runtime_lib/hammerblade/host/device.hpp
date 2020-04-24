@@ -3,6 +3,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_cuda.h>
+#include <bsg_manycore_tile.h>
 #include <hammerblade/host/error.hpp>
 #include <memory>
 #include <vector>
@@ -283,6 +284,28 @@ private:
 		// all symbol addresses are now invalid
 		_symbol_addresses.clear();
         }
+
+private:
+        template <bool FREEZE>
+        void freeze_unfreeze_cores() {
+                hb_mc_manycore_t *mc = _device->mc;
+                const hb_mc_config_t*cfg = hb_mc_manycore_get_config(mc);
+                hb_mc_dimension_t base = hb_mc_config_get_origin_vcore(cfg);
+                for (hb_mc_idx_t x = 0; x < hb_mc_config_get_dimension_vcore(cfg).x; x++) {
+                        for (hb_mc_idx_t y = 0; y < hb_mc_config_get_dimension_vcore(cfg).y; y++) {
+                                hb_mc_coordinate_t xy = hb_mc_coordinate(base.x+x, base.y+y);
+                                int r = FREEZE
+                                        ? hb_mc_tile_freeze(mc, &xy)
+                                        : hb_mc_tile_unfreeze(mc, &xy);
+                                if (r != HB_MC_SUCCESS)
+                                        throw hammerblade::manycore_runtime_error(r);
+                        }
+                }
+        }
+
+public:
+        void freeze_cores() { freeze_unfreeze_cores<true>(); }
+        void unfreeze_cores() { freeze_unfreeze_cores<false>(); }
 
 protected:
 	/* singleton; constructor is protected */

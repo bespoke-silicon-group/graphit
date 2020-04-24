@@ -48,7 +48,7 @@ static inline void edge_aware_local_range(int n, int e, int *start, int *end, in
           int idx = 0;
           recursive_range(n, e, grain_size, 0, n, &idx, edge_index);
         }
-        bsg_tile_group_barrier(&r_barrier, &c_barrier);
+        barrier.sync();
         *start = start_idx[bsg_id];
         *end = end_idx[bsg_id];
 	//bsg_printf("start: %i, end: %i id: %i, edges: end %i - start %i, total edge: %i,  grain size: %i\n", start_idx[bsg_id], end_idx[bsg_id], bsg_id, edge_index[*end], edge_index[*start], e, grain_size);

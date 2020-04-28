@@ -32,7 +32,7 @@ Various helper functions to ease writing of kernels
 typedef int32_t NodeID;
 
 
-typedef int32_t WeightT;
+typedef double WeightT;
 typedef NodeWeight<NodeID, WeightT> WNode;
 
 typedef CSRGraph<NodeID> Graph;

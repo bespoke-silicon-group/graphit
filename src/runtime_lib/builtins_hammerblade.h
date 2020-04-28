@@ -22,6 +22,15 @@ GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file)
 }
 
 static
+WGraphHB builtin_loadWeightedEdgesFromFileToHB(const char *graph_file)
+{
+        if (!graph_file)
+                throw std::runtime_error("bad graph file: did you pass a graph argument?");
+
+        return WGraphHB(builtin_loadWeightedEdgesFromFile(graph_file));
+}
+
+static
 int * builtin_loadFrontierFromFile(const char *frontier_file)
 {
         std::vector<int> file_vals;

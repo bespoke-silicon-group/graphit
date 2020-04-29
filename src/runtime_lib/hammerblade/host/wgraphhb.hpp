@@ -89,6 +89,11 @@ public:
   int64_t in_degree(int v) const {
     return _host_g.in_degree(v);
   }
+
+  void print_size_dst() {
+    std::cerr << "size of in_neighs: " << sizeof(vertexdata) << std::endl;
+  } 
+
 private:
 
   static const hb_mc_eva_t DEVICE_NULLPTR = 0;
@@ -111,7 +116,7 @@ private:
       index[num_nodes()] = num_edges();
       // allocate
       _in_index = Vec(num_nodes() + 1);
-      _in_neighbors = Vec(num_edges());
+      _in_neighbors = Vector<WNode>(num_edges());
       _in_vertexlist = Vector<vertexdata>(num_nodes());
       // copy
       _in_index.copyToDevice(index.data(), index.size());
@@ -132,7 +137,7 @@ private:
     index[num_nodes()] = num_edges();
     //allocate
     _out_index = Vec(num_nodes() + 1);
-    _out_neighbors = Vec(num_edges());
+    _out_neighbors = Vector<WNode>(num_edges());
     _out_vertexlist = Vector<vertexdata>(num_nodes());
 
     //copy

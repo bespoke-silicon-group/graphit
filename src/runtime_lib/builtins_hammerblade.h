@@ -1,5 +1,6 @@
 #pragma once
 #include <hammerblade/host/graphhb.hpp>
+#include <hammerblade/host/wgraphhb.hpp>
 #include <hammerblade/host/device.hpp>
 #include <hammerblade/host/error.hpp>
 #include <hammerblade/host/global_scalar.hpp>

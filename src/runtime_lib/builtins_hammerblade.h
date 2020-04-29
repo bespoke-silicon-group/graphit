@@ -54,6 +54,12 @@ GraphHB builtin_transposeHB(GraphHB & graph)
 }
 
 static
+WGraphHB builtin_transposeHB(WGraphHB & graph)
+{
+        return WGraphHB(builtin_transpose(graph.getHostGraph()));
+}
+
+static
 void builtin_loadMicroCodeFromSTDVectorRValue(std::vector<unsigned char> &&ucode)
 {
         Device::Ptr device = Device::GetInstance();
@@ -134,6 +140,12 @@ void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 
 static
 int builtin_getVerticesHB(GraphHB &g)
+{
+  return g.num_nodes();
+}
+
+static
+int builtin_getVerticesHB(WGraphHB &g)
 {
   return g.num_nodes();
 }

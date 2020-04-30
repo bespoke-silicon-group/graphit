@@ -1,5 +1,6 @@
 #pragma once
 #include <hammerblade/host/graphhb.hpp>
+#include <hammerblade/host/wgraphhb.hpp>
 #include <hammerblade/host/device.hpp>
 #include <hammerblade/host/error.hpp>
 #include <hammerblade/host/global_scalar.hpp>
@@ -19,6 +20,15 @@ GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file)
                 throw std::runtime_error("bad graph file: did you pass a graph argument?");
 
         return GraphHB(builtin_loadEdgesFromFile(graph_file));
+}
+
+static
+WGraphHB builtin_loadWeightedEdgesFromFileToHB(const char *graph_file)
+{
+        if (!graph_file)
+                throw std::runtime_error("bad graph file: did you pass a graph argument?");
+
+        return WGraphHB(builtin_loadWeightedEdgesFromFile(graph_file));
 }
 
 static
@@ -124,6 +134,12 @@ void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 
 static
 int builtin_getVerticesHB(GraphHB &g)
+{
+  return g.num_nodes();
+}
+
+static
+int builtin_getVerticesHB(WGraphHB &g)
 {
   return g.num_nodes();
 }

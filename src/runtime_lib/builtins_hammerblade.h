@@ -54,12 +54,6 @@ GraphHB builtin_transposeHB(GraphHB & graph)
 }
 
 static
-WGraphHB builtin_transposeHB(WGraphHB & graph)
-{
-        return WGraphHB(builtin_transpose(graph.getHostGraph()));
-}
-
-static
 void builtin_loadMicroCodeFromSTDVectorRValue(std::vector<unsigned char> &&ucode)
 {
         Device::Ptr device = Device::GetInstance();

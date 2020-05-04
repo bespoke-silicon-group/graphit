@@ -57,8 +57,8 @@ namespace graphit {
 
 		// High Level API for selecting the GPU backend
 		ProgramScheduleNode::Ptr generateGPUCode(void);
-                        
-                // NOTE(Emily): High level API for selecting the Hammerblade backend 
+
+                // NOTE(Emily): High level API for selecting the Hammerblade backend
                 ProgramScheduleNode::Ptr generateHBCode(void);
 
                 // High level API for fusing together two fields / system vectors as ArrayOfStructs
@@ -109,6 +109,11 @@ namespace graphit {
                 // Scheduling Options include Enable and Disable deduplication
                 high_level_schedule::ProgramScheduleNode::Ptr
                 configApplyDeduplication(std::string apply_label, std::string apply_schedule){
+                    return setApply(apply_label, apply_schedule);
+                }
+
+                high_level_schedule::ProgramScheduleNode::Ptr
+                configApplyBlocking(std::string apply_label, std::string apply_schedule){
                     return setApply(apply_label, apply_schedule);
                 }
 

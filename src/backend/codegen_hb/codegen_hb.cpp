@@ -1044,8 +1044,8 @@ namespace graphit {
         *oss << "#include \"bsg_set_tile_x_y.h\"" << std::endl;
         *oss << "#define BSG_TILE_GROUP_X_DIM bsg_tiles_X" << std::endl;
         *oss << "#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y" << std::endl;
-        *oss << "#include \"bsg_tile_group_barrier.h\"" << std::endl;
-        *oss << "INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);" << std::endl;
+        *oss << "#include \"bsg_tile_group_barrier.hpp\"" << std::endl;
+        *oss << "bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;" << std::endl;
         //NOTE(Emily): include device runtime libraries here:
         *oss << "#include <local_range.h>" << std::endl;
         oss = &oss_host;
@@ -1396,7 +1396,7 @@ namespace graphit {
         *oss << "\t\t\t" << "break;" << std::endl;
         *oss << "\t\t" << "}" << std::endl;
         *oss << "\t" << "}" << std::endl;
-        *oss << "\t" << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        *oss << "\t" << "barrier.sync();" << std::endl;
         *oss << "\t" << "return 0;" << std::endl;
         *oss << "}" << std::endl;
 

@@ -81,6 +81,19 @@ namespace graphit {
                                                   bool apply_expr_gen_frontier,
                                                   std::string dst_type,
                                                   std::string apply_func_name = "apply_func");
+
+        void printPushBlockedEdgeTraversalReturnFrontier(mir::EdgeSetApplyExpr::Ptr apply,
+                                                  bool from_vertexset_specified,
+                                                  bool apply_expr_gen_frontier,
+                                                  std::string dst_type,
+                                                  std::string apply_func_name = "apply_func");
+
+
+        void printPullBlockedEdgeTraversalReturnFrontier(mir::EdgeSetApplyExpr::Ptr apply,
+                                                  bool from_vertexset_specified,
+                                                  bool apply_expr_gen_frontier,
+                                                  std::string dst_type,
+                                                  std::string apply_func_name = "apply_func");
 /*
         void printHybridDenseEdgeTraversalReturnFrontier(mir::EdgeSetApplyExpr::Ptr apply,
                                                          bool from_vertexset_specified,

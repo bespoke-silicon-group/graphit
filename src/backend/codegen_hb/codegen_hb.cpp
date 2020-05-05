@@ -1255,8 +1255,38 @@ namespace graphit {
         oss = &oss_device;
         *oss << "extern \"C\" int __attribute__ ((noinline)) ";
         *oss << edgeset_apply_func_name << "_call(";
+        if (apply->is_weighted) {
+          if(apply->enable_blocking) {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              *oss << "vertexdata *out_indices, WNode *out_neighbors";
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              *oss << "vertexdata *in_indices, WNode *in_neighbors";
+            }
+          } else {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              *oss << "int *out_indices, WNode *out_neighbors";
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              *oss << "int *in_indices, WNode *in_neighbors";
+            }
+          }
+        } else {
+            //arguments.push_back("Graph & g");
+            if(apply->enable_blocking) {
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                *oss << "vertexdata *out_indices, int *out_neighbors";
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                *oss << "vertexdata *in_indices, int *in_neighbors";
+              }
+            }
+            else {
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                *oss << "int *out_indices, int *out_neighbors";
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                *oss << "int *in_indices, int *in_neighbors";
+              }
+            }
 
-        *oss << "int *out_indices, int *out_neighbors";
+        }
 
         if (apply->from_func != "") {
             if (mir_context_->isFunction(apply->from_func)) {
@@ -1317,8 +1347,12 @@ namespace graphit {
 
         *oss << ") {" << std::endl;
         *oss << "\t" << edgeset_apply_func_name << "(";
+        if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+          *oss << "out_indices, out_neighbors";
+        } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+          *oss << "in_indices, in_neighbors";
+        }
 
-        *oss << "out_indices, out_neighbors";
 
         //apply->target->accept(this);
         for (auto &arg : arguments) {
@@ -1337,7 +1371,21 @@ namespace graphit {
         *oss << edgeset_apply_func_name << "_call\", {";
 
         apply->target->accept(this);
-        *oss << ".getOutIndicesAddr()";
+        if(apply->enable_blocking) {
+          if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+            *oss << ".getOutVertexListAddr()";
+          } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+            *oss << ".getInVertexListAddr()";
+          }
+
+        }
+        else {
+          if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+            *oss << ".getOutIndicesAddr()";
+          } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+            *oss << ".getInIndicesAddr()";
+          }
+        }
         *oss << " , ";
         apply->target->accept(this);
         *oss << ".getOutNeighborsAddr()";

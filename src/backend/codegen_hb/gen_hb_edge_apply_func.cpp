@@ -389,12 +389,7 @@ namespace graphit {
 
         if (apply->to_func != "") {
             printIndent();
-            if(from_vertexset_specified) {
-              *oss_ << "if (to_func(d) && from_vertexset[d] == 1){ " << std::endl;
-            }
-            else {
-              *oss_ << "if (to_func(d)){" << std::endl;
-            }
+            *oss_ << "if (to_func(d)){" << std::endl;
             indent();
         }
 
@@ -417,17 +412,21 @@ namespace graphit {
           *oss_ << "if";
           std::string src_type = "neighbors[s]";
 
-          if(mir_context_->isFunction(apply->from_func)) {
-            *oss_ << " (from_func(" << src_type << ")";
+          if(from_vertexset_specified) {
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";
+            }
+            else {
+              *oss_ << "(from_vertexset[" << src_type << "]";
+            }
           }
           else {
-            *oss_ << "(true";
-            //TODO(Emily): using a vertex subset, need to determine what form we use
-            // if (! apply->use_pull_frontier_bitvector){
-            //     oss_ << " (from_vertexset->bool_map_[" << src_type <<  "] ";
-            // } else {
-            //     oss_ << " (bitmap.get_bit(" << src_type << ")";
-            // }
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ")";
+            }
+            else {
+              *oss_ << "(true";
+            }
           }
           *oss_ << ") {" << std::endl;
         }
@@ -497,12 +496,7 @@ namespace graphit {
         dedent();
         if (apply->to_func != "") {
             printIndent();
-            if(from_vertexset_specified) {
-              *oss_ << "if (to_func(d) && from_vertexset[d] == 1){ " << std::endl;
-            }
-            else {
-              *oss_ << "if (to_func(d)){" << std::endl;
-            }
+            *oss_ << "if (to_func(d)){ " << std::endl;
             indent();
         }
         std::string node_id_type = "int";
@@ -520,13 +514,24 @@ namespace graphit {
 
           *oss_ << "if";
           std::string src_type = "neighbors[s]";
-
-          if(mir_context_->isFunction(apply->from_func)) {
-            *oss_ << " (from_func(" << src_type << ")";
+          if(from_vertexset_specified) {
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";
+            }
+            else {
+              *oss_ << "(from_vertexset[" << src_type << "]";
+            }
           }
           else {
-            *oss_ << "(true";
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ")";
+            }
+            else {
+              *oss_ << "(true";
+            }
           }
+
+
           *oss_ << ") {" << std::endl;
         }
 
@@ -851,7 +856,7 @@ namespace graphit {
       printIndent();
       *oss_ << "memcpy(&lcl_visited[0], &visited[blk_dst_base],sizeof(lcl_visited));" << std::endl;
       printIndent();
-      *oss_ << "memcpy(&lcl_nodes[0], &rnodes[blk_dst_base], sizeof(lcl_nodes));" << std::endl;
+      *oss_ << "memcpy(&lcl_nodes[0], &in_vertices[blk_dst_base], sizeof(lcl_nodes));" << std::endl;
       printIndent();
       *oss_ << "memset(&lcl_next_frontier[0], 0, sizeof(lcl_dense_o));" << std::endl;
 
@@ -868,9 +873,7 @@ namespace graphit {
       printIndent();
       *oss_ << "} //end of dst node for loop" << std::endl;
 
-      dedent();//end of outer block loop
-      printIndent();
-      *oss_ << "} //end of outer blocked loop" << std::endl;
+
 
       printIndent();
       *oss_ << "memcpy(&next_frontier[blk_dst_base], &lcl_next_frontier[0],sizeof(lcl_dense_o));" << std::endl;
@@ -878,6 +881,10 @@ namespace graphit {
       *oss_ << "memcpy(&visited[blk_dst_base], &lcl_visited[0], sizeof(lcl_visited_io));" << std::endl;
       //printIndent();
       //*oss_ << "barrier.sync();" << std::endl;
+      dedent();//end of outer block loop
+      printIndent();
+      *oss_ << "} //end of outer blocked loop" << std::endl;
+
       printIndent();
       *oss_ << "return 0;" << std::endl;
 
@@ -925,24 +932,48 @@ namespace graphit {
 
         //TODO(Emily): are we going to use their Graph class or will we need our own
         if (apply->is_weighted) {
-          if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
-            arguments.push_back("int *out_indices");
-            arguments.push_back("WNode *out_neighbors");
-          } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
-            arguments.push_back("int *in_indices");
-            arguments.push_back("WNode *in_neighbors");
+          if(apply->enable_blocking) {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("vertexdata *out_indices");
+              arguments.push_back("WNode *out_neighbors");
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("vertexdata *in_indices");
+              arguments.push_back("WNode *in_neighbors");
+            }
+          } else {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("int *out_indices");
+              arguments.push_back("WNode *out_neighbors");
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("int *in_indices");
+              arguments.push_back("WNode *in_neighbors");
+            }
           }
         } else {
             //arguments.push_back("Graph & g");
-            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
-              arguments.push_back("int *out_indices");
-              arguments.push_back("int *out_neighbors");
-            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
-              arguments.push_back("int *in_indices");
-              arguments.push_back("int *in_neighbors");
+            if(apply->enable_blocking) {
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("vertexdata *out_vertices");
+                arguments.push_back("int *out_neighbors");
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("vertexdata *in_vertices");
+                arguments.push_back("int *in_neighbors");
+              }
+              else {
+                //TODO(Emily): implement other directions
+              }
             }
             else {
-              //TODO(Emily): implement other directions
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("int *out_indices");
+                arguments.push_back("int *out_neighbors");
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("int *in_indices");
+                arguments.push_back("int *in_neighbors");
+              }
+              else {
+                //TODO(Emily): implement other directions
+              }
             }
 
         }

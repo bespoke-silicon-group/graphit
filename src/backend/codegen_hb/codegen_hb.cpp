@@ -1435,14 +1435,10 @@ namespace graphit {
     void CodeGenHB::genVertexsetApplyKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
         oss = &oss_device;
         *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
-        *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
-        *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
-        *oss << "\t\t" << "if ((start_x + iter_x) < V) {" << std::endl;
-        *oss << "\t\t\t" << apply->input_function_name << "()(start_x + iter_x);" << std::endl;
-        *oss << "\t\t" << "}" << std::endl;
-        *oss << "\t\t" << "else {" << std::endl;
-        *oss << "\t\t\t" << "break;" << std::endl;
-        *oss << "\t\t" << "}" << std::endl;
+        *oss << "\t" << "int start, end;" << std::endl;
+        *oss << "\t" << "local_range(V, &start, &end);" << std::endl;
+        *oss << "\t" << "for (int iter_x = start, iter_x < end; iter_x++) {" << std::endl;
+        *oss << "\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
         *oss << "\t" << "}" << std::endl;
         *oss << "\t" << "barrier.sync();" << std::endl;
         *oss << "\t" << "return 0;" << std::endl;

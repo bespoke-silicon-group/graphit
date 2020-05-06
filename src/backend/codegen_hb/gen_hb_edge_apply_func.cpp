@@ -119,12 +119,12 @@ namespace graphit {
 
         //TODO(Emily): do we want to support this? if so it needs to be modified
         //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
-        if (apply->enable_deduplication && apply_expr_gen_frontier) {
-            *oss_ << "    if (g.flags_ == nullptr){\n"
-                    "      g.flags_ = new int[numVertices]();\n"
-                    "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
-                    "    }\n";
-        }
+        // if (apply->enable_deduplication && apply_expr_gen_frontier) {
+        //     *oss_ << "    if (g.flags_ == nullptr){\n"
+        //             "      g.flags_ = new int[numVertices]();\n"
+        //             "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
+        //             "    }\n";
+        // }
 
         // If apply function has a return value, then we need to return a temporary vertexsubset
         //NOTE(Emily): we don't want to deal with this. so we will never generate this code
@@ -168,8 +168,9 @@ namespace graphit {
             *oss_ << "int start, end;" << std::endl;
             printIndent();
             *oss_ << "local_range(V, &start, &end);" << std::endl;
+            printIndent();
         }
-        printIndent();
+
         std::string for_type = "for";
         //if (apply->is_parallel)
         //    for_type = "parallel_for";
@@ -190,9 +191,11 @@ namespace graphit {
         }
         indent();
 
-        printIndent();
-        *oss_ << "if(from_vertexset[s]) {" << std::endl;
-        indent();
+        if(from_vertexset_specified) {
+          printIndent();
+          *oss_ << "if(from_vertexset[s]) {" << std::endl;
+          indent();
+        }
 
         //NOTE(Emily): more vars that we most likely won't need
         //if (from_vertexset_specified){
@@ -210,11 +213,11 @@ namespace graphit {
             *oss_ << "if (from_func(s)){ " << std::endl;
             indent();
         }
-        indent();
+        
         printIndent();
-        *oss_ << "int degree = in_indices[s + 1] - in_indices[s];" << std::endl;
+        *oss_ << "int degree = out_indices[s + 1] - out_indices[s];" << std::endl;
         printIndent();
-        *oss_ << node_id_type << " * neighbors = &in_neighbors[in_indices[s]];" << std::endl;
+        *oss_ << node_id_type << " * neighbors = &out_neighbors[out_indices[s]];" << std::endl;
         printIndent();
         *oss_ << "for(int d = 0; d < degree; d++) { "<< std::endl;
 
@@ -267,9 +270,9 @@ namespace graphit {
 
 
             //need to return a frontier
-            if (apply->enable_deduplication && apply_expr_gen_frontier) {
-                *oss_ << " && CAS(&(g.flags_[" << dst_type << "]), 0, 1) ";
-            }
+            // if (apply->enable_deduplication && apply_expr_gen_frontier) {
+            //     *oss_ << " && CAS(&(g.flags_[" << dst_type << "]), 0, 1) ";
+            // }
 
             indent();
             //TODO(Emily): they're using this outEdges as a temp var to build the frontier, we don't want this
@@ -279,7 +282,7 @@ namespace graphit {
             if(apply->is_weighted) {
               *oss_ << "next_frontier[neighbors[d].vertex] = 1;" << std::endl;
             } else {
-              *oss_ << "next_frontier[out_neighbors[iter_n]] = 1;" << std::endl;
+              *oss_ << "next_frontier[neighbors[d]] = 1;" << std::endl;
             }
             dedent();
             printIndent();
@@ -313,6 +316,7 @@ namespace graphit {
         dedent();
         printIndent();
         *oss_ << "} //end of for loop on neighbors" << std::endl;
+
         dedent();
         printIndent();
         *oss_ << "}" << std::endl;
@@ -325,10 +329,12 @@ namespace graphit {
             *oss_ << "} //end of from func " << std::endl;
         }
 
+        if(from_vertexset_specified) {
+          dedent();
+          printIndent();
+          *oss_ << "}" << std::endl;
+        }
 
-        dedent();
-        printIndent();
-        *oss_ << "}" << std::endl;
 
         // if(apply_expr_gen_frontier)
         // {
@@ -839,7 +845,7 @@ namespace graphit {
       if (apply->is_weighted) node_id_type = "WNode";
       indent();
       printIndent();
-      *oss_ << "int BLOCK_SIZE = 16;" << std::endl;
+      *oss_ << "int BLOCK_SIZE = 32; //cache line size" << std::endl;
       printIndent();
       *oss_ << "vertexdata lcl_nodes [ BLOCK_SIZE ];" << std::endl;
       printIndent();

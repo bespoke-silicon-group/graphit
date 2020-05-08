@@ -389,10 +389,10 @@ namespace graphit {
       indent();
       if(from_vertexset_specified) {
         printIndent();
-        *oss_ << "if(lcl_frontier[s] == 0) break;" << std::endl;
+        *oss_ << "if(lcl_frontier[s] == 0) continue;" << std::endl;
       }
       printIndent();
-      *oss_ << "const " << node_id_type << " * neighbors = &edges[lcl_nodes[s].offset];" << std::endl;
+      *oss_ << "const " << node_id_type << " * neighbors = &out_indices[lcl_nodes[s].offset];" << std::endl;
       printIndent();
       *oss_ << "int dst_n = lcl_nodes[s].degree;" << std::endl;
       printIndent();

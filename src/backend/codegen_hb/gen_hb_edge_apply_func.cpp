@@ -149,21 +149,6 @@ namespace graphit {
 
         printIndent();
 
-        //TODO(Emily): using our parallel blocked macro here
-        //             do we want to load in the distance blocked vertex like in example?
-        //             how do we change the generation of distance to reflect src/dist
-
-        //     printIndent();
-        //     *oss_ << "bvs_block_t fbid, nbid;" << std::endl;
-        //     *oss_ << "blocked_vertex_set_foreach_block(from_vertexset, fbid) {" << std::endl;
-        //     indent();
-        // if(apply_expr_gen_frontier)
-        // {
-        //     printIndent();
-        //     *oss_ << "blocked_vertex_set_foreach_block(next_frontier, nbid) {" << std::endl;
-        //     indent();
-        // }
-
         if(apply->is_parallel) {
             *oss_ << "int start, end;" << std::endl;
             printIndent();
@@ -213,7 +198,7 @@ namespace graphit {
             *oss_ << "if (from_func(s)){ " << std::endl;
             indent();
         }
-        
+
         printIndent();
         *oss_ << "int degree = out_indices[s + 1] - out_indices[s];" << std::endl;
         printIndent();
@@ -221,11 +206,6 @@ namespace graphit {
         printIndent();
         *oss_ << "for(int d = 0; d < degree; d++) { "<< std::endl;
 
-
-        //want to check that we're in the correct block of next frontier
-        // indent();
-        // printIndent();
-        // *oss_ << "if(blocked_vertexset_block_of(next_frontier, d){" << std::endl;
         // print the checks on filtering on sources s
         if (apply->to_func != "") {
             indent();
@@ -236,7 +216,7 @@ namespace graphit {
             if (mir_context_->isFunction(apply->to_func)) {
                 //if the input expression is a function call
                 if(apply->is_weighted) {
-                  *oss_ << " (to_func( neighbors[d].weight)";
+                  *oss_ << " (to_func( neighbors[d].vertex)";
                 } else {
                   *oss_ << "(to_func(neighbors[d]))";
                 }
@@ -244,7 +224,7 @@ namespace graphit {
             } else {
                 //the input expression is a vertex subset
                 //NOTE(Emily): we currently don't support this
-                *oss_ << " (to_vertexset->bool_map_[s] ";
+                *oss_ << " (to_vertexset->bool_map_[neighbors[d]] ";
             }
             *oss_ << ") { " << std::endl;
         }
@@ -380,7 +360,119 @@ namespace graphit {
             bool apply_expr_gen_frontier,
             std::string dst_type,
             std::string apply_func_name) {
-       *oss_ << "to be implemented blocked approach" << std::endl;
+      std::string node_id_type = "int";
+      if (apply->is_weighted) node_id_type = "WNode";
+      indent();
+      printIndent();
+      *oss_ << "int BLOCK_SIZE = 32; //cache line size" << std::endl;
+      printIndent();
+      *oss_ << "vertexdata lcl_nodes[ BLOCK_SIZE ];" << std::endl;
+      if(from_vertexset_specified) {
+        printIndent();
+        *oss_ << "int lcl_frontier [ BLOCK_SIZE ];" << std::endl;
+      }
+      printIndent();
+      *oss_ << "int blk_src_n = V/BLOCK_SIZE + (V%BLOCK_SIZE == 0 ? 0 : 1);" << std::endl;
+      printIndent();
+      *oss_ << "for (int blk_src_i = bsg_id; blk_src_i < blk_src_n; blk_src_i += bsg_tiles_X*bsg_tiles_Y) {" << std::endl;
+      indent();
+      printIndent();
+      *oss_ << "int block_off = blk_src_i * BLOCK_SIZE;" << std::endl;
+      if(from_vertexset_specified) {
+        printIndent();
+        *oss_ << "memcpy(&lcl_frontier[0], &frontier[block_off], BLOCK_SIZE * sizeof(lcl_frontier[0]));" << std::endl;
+      }
+      printIndent();
+      *oss_ << "memcpy(&lcl_nodes[0], &in_vertices[block_off], BLOCK_SIZE * sizeof(lcl_nodes[0]));" << std::endl;
+      printIndent();
+      *oss_ << "for(int s = 0; s < BLOCK_SIZE; s++) {" << std::endl;
+      indent();
+      if(from_vertexset_specified) {
+        printIndent();
+        *oss_ << "if(lcl_frontier[s] == 0) break;" << std::endl;
+      }
+      printIndent();
+      *oss_ << "const " << node_id_type << " * neighbors = &edges[lcl_nodes[s].offset];" << std::endl;
+      printIndent();
+      *oss_ << "int dst_n = lcl_nodes[s].degree;" << std::endl;
+      printIndent();
+      *oss_ << "for( int d = 0; d < dst_n; d++) {" << std::endl;
+      indent();
+      printIndent();
+      *oss_ << node_id_type << " dst = neighbors[d];" << std::endl;
+
+      if (apply->to_func != "") {
+          printIndent();
+          *oss_ << "if";
+          //TODO: move this logic in to MIR at some point
+          if (mir_context_->isFunction(apply->to_func)) {
+              //if the input expression is a function call
+              if(apply->is_weighted) {
+                *oss_ << " (to_func( dst.vertex)";
+              } else {
+                *oss_ << "(to_func(dst))";
+              }
+
+          } else {
+              //the input expression is a vertex subset
+              //NOTE(Emily): we currently don't support this
+              *oss_ << " (to_vertexset[dst] ";
+          }
+          *oss_ << ") { " << std::endl;
+          indent();
+      }
+      printIndent();
+      if (apply_expr_gen_frontier) {
+          *oss_ << "if( ";
+      }
+
+      // generating the C++ code for the apply function call
+      if (apply->is_weighted) {
+          *oss_ << apply_func_name << " ( s , dst.vertex, dst.weight )";
+      } else {
+          *oss_ << apply_func_name << " ( s, dst )";
+      }
+
+      if (!apply_expr_gen_frontier) {
+          *oss_ << ";" << std::endl;
+
+      } else {
+        indent();
+        *oss_ << ") {" << std::endl;
+        printIndent();
+        if(apply->is_weighted) {
+          *oss_ << "next_frontier[dst.vertex] = 1;" << std::endl;
+        } else {
+          *oss_ << "next_frontier[dst] = 1;" << std::endl;
+        }
+        dedent();
+        printIndent();
+        *oss_ << "}" << std::endl;
+      }
+      // end of from filtering
+      if (apply->to_func != "") {
+          dedent();
+          printIndent();
+          *oss_ << "} //end of to func" << std::endl;
+
+
+      }
+      dedent();
+      printIndent();
+      *oss_ << "} //end of for loop on neighbors" << std::endl;
+
+      dedent();
+      printIndent();
+      *oss_ << "} //end of for loop on source nodes" << std::endl;
+
+      dedent();
+      printIndent();
+      *oss_ << "} //end of loop on blocks" << std::endl;
+
+      printIndent();
+      *oss_ << "barrier.sync();" << std::endl;
+      printIndent();
+      *oss_ << "return 0;" << std::endl;
 
     }
 

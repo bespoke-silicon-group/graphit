@@ -383,7 +383,7 @@ namespace graphit {
         *oss_ << "memcpy(&lcl_frontier[0], &frontier[block_off], BLOCK_SIZE * sizeof(lcl_frontier[0]));" << std::endl;
       }
       printIndent();
-      *oss_ << "memcpy(&lcl_nodes[0], &in_vertices[block_off], BLOCK_SIZE * sizeof(lcl_nodes[0]));" << std::endl;
+      *oss_ << "memcpy(&lcl_nodes[0], &out_vertices[block_off], BLOCK_SIZE * sizeof(lcl_nodes[0]));" << std::endl;
       printIndent();
       *oss_ << "for(int s = 0; s < BLOCK_SIZE; s++) {" << std::endl;
       indent();

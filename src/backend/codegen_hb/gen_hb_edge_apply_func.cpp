@@ -428,9 +428,9 @@ namespace graphit {
 
       // generating the C++ code for the apply function call
       if (apply->is_weighted) {
-          *oss_ << apply_func_name << " ( s , dst.vertex, dst.weight )";
+          *oss_ << apply_func_name << " ( (block_off + s) , dst.vertex, dst.weight )";
       } else {
-          *oss_ << apply_func_name << " ( s, dst )";
+          *oss_ << apply_func_name << " ( (block_off + s), dst )";
       }
 
       if (!apply_expr_gen_frontier) {

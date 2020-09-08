@@ -117,6 +117,10 @@ namespace graphit {
                     return setApply(apply_label, apply_schedule);
                 }
 
+                high_level_schedule::ProgramScheduleNode::Ptr
+                configApplyAlignment(std::string apply_label, std::string apply_schedule){
+                    return setApply(apply_label, apply_schedule);
+                }
 
                 // High lvel API for speicifying Data Structure scheduling options for apply
                 // A wrapper around setApply for now.

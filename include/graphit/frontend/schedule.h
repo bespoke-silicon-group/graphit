@@ -176,6 +176,11 @@ namespace graphit {
                 Disable
             };
 
+            enum class AlignmentType {
+                Enable,
+                Disable
+            };
+
             enum class OtherOpt {
                 QUEUE,
                 SLIDING_QUEUE
@@ -197,6 +202,7 @@ namespace graphit {
             //FrontierType frontier_type;
             DeduplicationType deduplication_type;
             BlockingType blocking_type;
+            AlignmentType alignment_type;
             OtherOpt opt;
             PullFrontierType pull_frontier_type;
             PullLoadBalance pull_load_balance_type;

@@ -766,6 +766,7 @@ namespace graphit {
             bool is_parallel = false;
             bool enable_deduplication = false;
             bool enable_blocking = false;
+            bool enable_alignment = false;
             bool is_weighted = false;
             bool use_sliding_queue = false;
             bool use_pull_frontier_bitvector = false;

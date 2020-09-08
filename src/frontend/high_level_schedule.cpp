@@ -308,6 +308,7 @@ namespace graphit {
                            ApplySchedule::ParType::Serial,
                            ApplySchedule::DeduplicationType::Enable,
                            ApplySchedule::BlockingType::Disable,
+                           ApplySchedule::AlignmentType::Disable,
                            ApplySchedule::OtherOpt::QUEUE,
                            ApplySchedule::PullFrontierType::BOOL_MAP,
                            ApplySchedule::PullLoadBalance::VERTEX_BASED,
@@ -356,6 +357,7 @@ namespace graphit {
                            ApplySchedule::ParType::Serial,
                            ApplySchedule::DeduplicationType::Enable,
                            ApplySchedule::BlockingType::Disable,
+                           ApplySchedule::AlignmentType::Disable,
                            ApplySchedule::OtherOpt::QUEUE,
                            ApplySchedule::PullFrontierType::BOOL_MAP,
                            ApplySchedule::PullLoadBalance::VERTEX_BASED,
@@ -391,7 +393,11 @@ namespace graphit {
             } else if (apply_schedule_str == "enable_blocking") {
                 (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Enable;
             } else if (apply_schedule_str == "disable_blocking") {
-                  (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Disable;
+                (*schedule_->apply_schedules)[apply_label].blocking_type = ApplySchedule::BlockingType::Disable;
+            } else if (apply_schedule_str == "enable_alignment") {
+                (*schedule_->apply_schedules)[apply_label].alignment_type = ApplySchedule::AlignmentType::Enable;
+            } else if (apply_schedule_str == "disable_alignment") {
+                (*schedule_->apply_schedules)[apply_label].alignment_type = ApplySchedule::AlignmentType::Disable;
             } else {
                 std::cout << "unrecognized schedule for apply: " << apply_schedule_str << std::endl;
                 exit(0);

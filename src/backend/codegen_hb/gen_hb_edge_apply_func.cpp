@@ -42,11 +42,11 @@ namespace graphit {
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
         if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
-            genEdgePullApplyFunctionDeclBody(apply);
+          genEdgePullApplyFunctionDeclBody(apply);
         }
 
         if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
-            genEdgePushApplyFunctionDeclBody(apply);
+          genEdgePushApplyFunctionDeclBody(apply);
         }
         //TODO(Emily): implement other directions
         /*
@@ -119,12 +119,12 @@ namespace graphit {
 
         //TODO(Emily): do we want to support this? if so it needs to be modified
         //set up logic fo enabling deduplication with CAS on flags (only if it returns a frontier)
-        if (apply->enable_deduplication && apply_expr_gen_frontier) {
-            *oss_ << "    if (g.flags_ == nullptr){\n"
-                    "      g.flags_ = new int[numVertices]();\n"
-                    "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
-                    "    }\n";
-        }
+        // if (apply->enable_deduplication && apply_expr_gen_frontier) {
+        //     *oss_ << "    if (g.flags_ == nullptr){\n"
+        //             "      g.flags_ = new int[numVertices]();\n"
+        //             "      parallel_for(int i = 0; i < numVertices; i++) g.flags_[i]=0;\n"
+        //             "    }\n";
+        // }
 
         // If apply function has a return value, then we need to return a temporary vertexsubset
         //NOTE(Emily): we don't want to deal with this. so we will never generate this code
@@ -149,23 +149,13 @@ namespace graphit {
 
         printIndent();
 
-        //TODO(Emily): using our parallel blocked macro here
-        //             do we want to load in the distance blocked vertex like in example?
-        //             how do we change the generation of distance to reflect src/dist
+        if(apply->is_parallel) {
+            *oss_ << "int start, end;" << std::endl;
+            printIndent();
+            *oss_ << "local_range(V, &start, &end);" << std::endl;
+            printIndent();
+        }
 
-        //     printIndent();
-        //     *oss_ << "bvs_block_t fbid, nbid;" << std::endl;
-        //     *oss_ << "blocked_vertex_set_foreach_block(from_vertexset, fbid) {" << std::endl;
-        //     indent();
-        // if(apply_expr_gen_frontier)
-        // {
-        //     printIndent();
-        //     *oss_ << "blocked_vertex_set_foreach_block(next_frontier, nbid) {" << std::endl;
-        //     indent();
-        // }
-
-        *oss_ << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
-        printIndent();
         std::string for_type = "for";
         //if (apply->is_parallel)
         //    for_type = "parallel_for";
@@ -176,14 +166,21 @@ namespace graphit {
         //TODO(Emily): will we always assume from vertexset is specified?
         //             - also do we want to use vertex_t type? or just assume we will always index w/ long type
 
-        *oss_ << for_type << " (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
+        std::string outer_end = "V";
+        std::string iter = "s";
+        if(apply->is_parallel) {
+          *oss_ << for_type << " ( int " << iter << " = start; " << iter << " < end; " << iter << "++) {" << std::endl;
+        }
+        else {
+          *oss_ << for_type << " ( int " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
+        }
         indent();
-        printIndent();
-        *oss_ << "if((start_x + iter_x) < V-1) {" << std::endl;
-        indent();
-        printIndent();
-        *oss_ << "if(from_vertexset[start_x + iter_x]) {" << std::endl;
-        indent();
+
+        if(from_vertexset_specified) {
+          printIndent();
+          *oss_ << "if(from_vertexset[s]) {" << std::endl;
+          indent();
+        }
 
         //NOTE(Emily): more vars that we most likely won't need
         //if (from_vertexset_specified){
@@ -198,21 +195,16 @@ namespace graphit {
 
         if (apply->from_func != "" && !from_vertexset_specified) {
             printIndent();
-            *oss_ << "if (from_func(start_x + iter_x)){ " << std::endl;
+            *oss_ << "if (from_func(s)){ " << std::endl;
             indent();
         }
 
         printIndent();
-
-        //TODO(Emily): can we pass the Graph type to our device code?
-        //            - if so, need to implement out_neigh(s) in our library
-        *oss_ << "for(int iter_n = out_indices[start_x + iter_x]; iter_n < out_indices[start_x + iter_x + 1]; iter_n++) { "<< std::endl;
-
-
-        //want to check that we're in the correct block of next frontier
-        // indent();
-        // printIndent();
-        // *oss_ << "if(blocked_vertexset_block_of(next_frontier, d){" << std::endl;
+        *oss_ << "int degree = out_indices[s + 1] - out_indices[s];" << std::endl;
+        printIndent();
+        *oss_ << node_id_type << " * neighbors = &out_neighbors[out_indices[s]];" << std::endl;
+        printIndent();
+        *oss_ << "for(int d = 0; d < degree; d++) { "<< std::endl;
 
         // print the checks on filtering on sources s
         if (apply->to_func != "") {
@@ -223,12 +215,16 @@ namespace graphit {
             //TODO: move this logic in to MIR at some point
             if (mir_context_->isFunction(apply->to_func)) {
                 //if the input expression is a function call
-                *oss_ << " (to_func( out_neighbors[itern_n])";
+                if(apply->is_weighted) {
+                  *oss_ << " (to_func( neighbors[d].vertex)";
+                } else {
+                  *oss_ << "(to_func(neighbors[d]))";
+                }
 
             } else {
                 //the input expression is a vertex subset
                 //NOTE(Emily): we currently don't support this
-                *oss_ << " (to_vertexset->bool_map_[s] ";
+                *oss_ << " (to_vertexset->bool_map_[neighbors[d]] ";
             }
             *oss_ << ") { " << std::endl;
         }
@@ -241,9 +237,9 @@ namespace graphit {
 
         // generating the C++ code for the apply function call
         if (apply->is_weighted) {
-            *oss_ << apply_func_name << " ( s , d.v, d.w )";
+            *oss_ << apply_func_name << " ( s , neighbors[d].vertex, neighbors[d].weight )";
         } else {
-            *oss_ << apply_func_name << " ( (start_x + iter_x), out_neighbors[iter_n] )";
+            *oss_ << apply_func_name << " ( s, neighbors[d] )";
 
         }
 
@@ -254,16 +250,20 @@ namespace graphit {
 
 
             //need to return a frontier
-            if (apply->enable_deduplication && apply_expr_gen_frontier) {
-                *oss_ << " && CAS(&(g.flags_[" << dst_type << "]), 0, 1) ";
-            }
+            // if (apply->enable_deduplication && apply_expr_gen_frontier) {
+            //     *oss_ << " && CAS(&(g.flags_[" << dst_type << "]), 0, 1) ";
+            // }
 
             indent();
             //TODO(Emily): they're using this outEdges as a temp var to build the frontier, we don't want this
             //generate the code for adding destination to "next" frontier
             *oss_ << " ) { " << std::endl;
             printIndent();
-            *oss_ << "next_frontier[out_neighbors[iter_n]] = 1;" << std::endl;
+            if(apply->is_weighted) {
+              *oss_ << "next_frontier[neighbors[d].vertex] = 1;" << std::endl;
+            } else {
+              *oss_ << "next_frontier[neighbors[d]] = 1;" << std::endl;
+            }
             dedent();
             printIndent();
             *oss_ << "}" << std::endl;
@@ -296,111 +296,10 @@ namespace graphit {
         dedent();
         printIndent();
         *oss_ << "} //end of for loop on neighbors" << std::endl;
+
         dedent();
         printIndent();
         *oss_ << "}" << std::endl;
-        dedent();
-        printIndent();
-        *oss_ << "} //end of vertices < V-1" << std::endl;
-
-        printIndent();
-        *oss_ << "else if((start_x + iter_x) == V-1) {" << std::endl;
-        indent();
-        printIndent();
-        *oss_ << "if(from_vertexset[start_x + iter_x]) {" << std::endl;
-        indent();
-
-        //NOTE(Emily): more vars that we most likely won't need
-        //if (from_vertexset_specified){
-        if(false){
-            *oss_ << "    NodeID s = from_vertexset->dense_vertex_set_[i];\n"
-                    "    int j = 0;\n";
-            if (apply_expr_gen_frontier){
-                *oss_ <<  "    uintT offset = offsets[i];\n";
-            }
-        }
-
-
-        if (apply->from_func != "" && !from_vertexset_specified) {
-            printIndent();
-            *oss_ << "if (from_func(start_x + iter_x)){ " << std::endl;
-            indent();
-        }
-
-        printIndent();
-
-        //TODO(Emily): can we pass the Graph type to our device code?
-        //            - if so, need to implement out_neigh(s) in our library
-        *oss_ << "for(int iter_n = out_indices[start_x + iter_x]; iter_n < E; iter_n++) { "<< std::endl;
-
-        // print the checks on filtering on sources s
-        if (apply->to_func != "") {
-            indent();
-            printIndent();
-
-            *oss_ << "if";
-            //TODO: move this logic in to MIR at some point
-            if (mir_context_->isFunction(apply->to_func)) {
-                //if the input expression is a function call
-                *oss_ << " (to_func( out_neighbors[itern_n])";
-
-            } else {
-                //the input expression is a vertex subset
-                //NOTE(Emily): we currently don't support this
-                *oss_ << " (to_vertexset->bool_map_[s] ";
-            }
-            *oss_ << ") { " << std::endl;
-        }
-
-        indent();
-        printIndent();
-        if (apply_expr_gen_frontier) {
-            *oss_ << "if( ";
-        }
-
-        // generating the C++ code for the apply function call
-        if (apply->is_weighted) {
-            *oss_ << apply_func_name << " ( s , d.v, d.w )";
-        } else {
-            *oss_ << apply_func_name << " ( (start_x + iter_x), out_neighbors[iter_n] )";
-
-        }
-
-        if (!apply_expr_gen_frontier) {
-            *oss_ << ";" << std::endl;
-
-        } else {
-
-
-            indent();
-            //TODO(Emily): they're using this outEdges as a temp var to build the frontier, we don't want this
-            //generate the code for adding destination to "next" frontier
-            *oss_ << " ) { " << std::endl;
-            printIndent();
-            *oss_ << "next_frontier[out_neighbors[iter_n]] = 1;" << std::endl;
-            dedent();
-            printIndent();
-            *oss_ << "}" << std::endl;
-        }
-
-        // end of from filtering
-        if (apply->to_func != "") {
-            dedent();
-            printIndent();
-            *oss_ << "} //end of to func" << std::endl;
-
-
-        }
-
-        dedent();
-        printIndent();
-        *oss_ << "} //end of for loop on neighbors" << std::endl;
-        dedent();
-        printIndent();
-        *oss_ << "}" << std::endl;
-        dedent();
-        printIndent();
-        *oss_ << "} //end of vertices == V-1" << std::endl;
 
 
 
@@ -410,10 +309,12 @@ namespace graphit {
             *oss_ << "} //end of from func " << std::endl;
         }
 
+        if(from_vertexset_specified) {
+          dedent();
+          printIndent();
+          *oss_ << "}" << std::endl;
+        }
 
-        dedent();
-        printIndent();
-        *oss_ << "}" << std::endl;
 
         // if(apply_expr_gen_frontier)
         // {
@@ -448,9 +349,131 @@ namespace graphit {
             *oss_ << "  return next_frontier;\n";
         }
         printIndent();
-        *oss_ << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        *oss_ << "barrier.sync();" << std::endl;
         printIndent();
         *oss_ << "return 0;" << std::endl;
+    }
+
+    void HBEdgesetApplyFunctionGenerator::printPushBlockedEdgeTraversalReturnFrontier(
+            mir::EdgeSetApplyExpr::Ptr apply,
+            bool from_vertexset_specified,
+            bool apply_expr_gen_frontier,
+            std::string dst_type,
+            std::string apply_func_name) {
+      std::string node_id_type = "int";
+      if (apply->is_weighted) node_id_type = "WNode";
+      indent();
+      printIndent();
+      *oss_ << "int BLOCK_SIZE = 32; //cache line size" << std::endl;
+      printIndent();
+      *oss_ << "vertexdata lcl_nodes[ BLOCK_SIZE ];" << std::endl;
+      if(from_vertexset_specified) {
+        printIndent();
+        *oss_ << "int lcl_frontier [ BLOCK_SIZE ];" << std::endl;
+      }
+      printIndent();
+      *oss_ << "int blk_src_n = V/BLOCK_SIZE + (V%BLOCK_SIZE == 0 ? 0 : 1);" << std::endl;
+      printIndent();
+      *oss_ << "for (int blk_src_i = bsg_id; blk_src_i < blk_src_n; blk_src_i += bsg_tiles_X*bsg_tiles_Y) {" << std::endl;
+      indent();
+      printIndent();
+      *oss_ << "int block_off = blk_src_i * BLOCK_SIZE;" << std::endl;
+      if(from_vertexset_specified) {
+        printIndent();
+        *oss_ << "memcpy(&lcl_frontier[0], &frontier[block_off], BLOCK_SIZE * sizeof(lcl_frontier[0]));" << std::endl;
+      }
+      printIndent();
+      *oss_ << "memcpy(&lcl_nodes[0], &out_vertices[block_off], BLOCK_SIZE * sizeof(lcl_nodes[0]));" << std::endl;
+      printIndent();
+      *oss_ << "for(int s = 0; s < BLOCK_SIZE; s++) {" << std::endl;
+      indent();
+      if(from_vertexset_specified) {
+        printIndent();
+        *oss_ << "if(lcl_frontier[s] == 0) continue;" << std::endl;
+      }
+      printIndent();
+      *oss_ << "const " << node_id_type << " * neighbors = &out_indices[lcl_nodes[s].offset];" << std::endl;
+      printIndent();
+      *oss_ << "int dst_n = lcl_nodes[s].degree;" << std::endl;
+      printIndent();
+      *oss_ << "for( int d = 0; d < dst_n; d++) {" << std::endl;
+      indent();
+      printIndent();
+      *oss_ << node_id_type << " dst = neighbors[d];" << std::endl;
+
+      if (apply->to_func != "") {
+          printIndent();
+          *oss_ << "if";
+          //TODO: move this logic in to MIR at some point
+          if (mir_context_->isFunction(apply->to_func)) {
+              //if the input expression is a function call
+              if(apply->is_weighted) {
+                *oss_ << " (to_func( dst.vertex)";
+              } else {
+                *oss_ << "(to_func(dst))";
+              }
+
+          } else {
+              //the input expression is a vertex subset
+              //NOTE(Emily): we currently don't support this
+              *oss_ << " (to_vertexset[dst] ";
+          }
+          *oss_ << ") { " << std::endl;
+          indent();
+      }
+      printIndent();
+      if (apply_expr_gen_frontier) {
+          *oss_ << "if( ";
+      }
+
+      // generating the C++ code for the apply function call
+      if (apply->is_weighted) {
+          *oss_ << apply_func_name << " ( (block_off + s) , dst.vertex, dst.weight )";
+      } else {
+          *oss_ << apply_func_name << " ( (block_off + s), dst )";
+      }
+
+      if (!apply_expr_gen_frontier) {
+          *oss_ << ";" << std::endl;
+
+      } else {
+        indent();
+        *oss_ << ") {" << std::endl;
+        printIndent();
+        if(apply->is_weighted) {
+          *oss_ << "next_frontier[dst.vertex] = 1;" << std::endl;
+        } else {
+          *oss_ << "next_frontier[dst] = 1;" << std::endl;
+        }
+        dedent();
+        printIndent();
+        *oss_ << "}" << std::endl;
+      }
+      // end of from filtering
+      if (apply->to_func != "") {
+          dedent();
+          printIndent();
+          *oss_ << "} //end of to func" << std::endl;
+
+
+      }
+      dedent();
+      printIndent();
+      *oss_ << "} //end of for loop on neighbors" << std::endl;
+
+      dedent();
+      printIndent();
+      *oss_ << "} //end of for loop on source nodes" << std::endl;
+
+      dedent();
+      printIndent();
+      *oss_ << "} //end of loop on blocks" << std::endl;
+
+      printIndent();
+      *oss_ << "barrier.sync();" << std::endl;
+      printIndent();
+      *oss_ << "return 0;" << std::endl;
+
     }
 
     void HBEdgesetApplyFunctionGenerator::printPullEdgeTraversalInnerNeighborLoop(
@@ -464,38 +487,44 @@ namespace graphit {
 
         if (apply->to_func != "") {
             printIndent();
-            if(from_vertexset_specified) {
-              *oss_ << "if (to_func(d) && from_vertexset[d] == 1){ " << std::endl;
-            }
-            else {
-              *oss_ << "if (to_func(d)){" << std::endl;
-            }
+            *oss_ << "if (to_func(d)){" << std::endl;
             indent();
         }
 
         std::string node_id_type = "int";
+        if (apply->is_weighted) node_id_type = "WNode";
+
+        indent();
         printIndent();
 
-        *oss_ << "for(int s = in_indices[d]; s < in_indices[d+1]; s++) {" <<std::endl;
+        *oss_ << "int degree = in_indices[d + 1] - in_indices[d];" << std::endl;
+        printIndent();
+        *oss_ << node_id_type << " * neighbors = &in_neighbors[in_indices[d]];" << std::endl;
+        printIndent();
+        *oss_ << "for(int s = 0; s < degree; s++) { "<< std::endl;
 
         if(apply->from_func != "") {
           indent();
           printIndent();
 
           *oss_ << "if";
-          std::string src_type = "s";
+          std::string src_type = "neighbors[s]";
 
-          if(mir_context_->isFunction(apply->from_func)) {
-            *oss_ << " (from_func(" << src_type << ")";
+          if(from_vertexset_specified) {
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";
+            }
+            else {
+              *oss_ << "(from_vertexset[" << src_type << "]";
+            }
           }
           else {
-            *oss_ << "(true";
-            //TODO(Emily): using a vertex subset, need to determine what form we use
-            // if (! apply->use_pull_frontier_bitvector){
-            //     oss_ << " (from_vertexset->bool_map_[" << src_type <<  "] ";
-            // } else {
-            //     oss_ << " (bitmap.get_bit(" << src_type << ")";
-            // }
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ")";
+            }
+            else {
+              *oss_ << "(true";
+            }
           }
           *oss_ << ") {" << std::endl;
         }
@@ -506,7 +535,12 @@ namespace graphit {
           *oss_ << "if( ";
         }
 
-        *oss_ << apply_func_name << "( in_neighbors[s], d )";
+        if (apply->is_weighted) {
+            *oss_ << apply_func_name << " ( d , neighbors[s].vertex, neighbors[s].weight )";
+        } else {
+            *oss_ << apply_func_name << " ( d, neighbors[s] )";
+
+        }
 
         if(!apply_expr_gen_frontier) {
           *oss_ << ";" << std::endl;
@@ -536,11 +570,113 @@ namespace graphit {
         printIndent();
         *oss_ << "} //end of loop on in neighbors" << std::endl;
 
-        if(apply->from_func != "") {
+        if(apply->to_func != "") {
           dedent();
           printIndent();
           *oss_ << "} //end of to filtering" <<std::endl;
         }
+
+    }
+
+    void HBEdgesetApplyFunctionGenerator::printPullBlockedEdgeTraversalInnerNeighborLoop(
+            mir::EdgeSetApplyExpr::Ptr apply,
+            bool from_vertexset_specified,
+            bool apply_expr_gen_frontier,
+            std::string dst_type,
+            std::string apply_func_name,
+            bool cache_aware,
+            bool numa_aware) {
+        printIndent();
+        *oss_ << "if ( lcl_visited[d] == 1)" << std::endl;
+        indent();
+        printIndent();
+        *oss_ << "continue; //skip visited nodes" << std::endl;
+        dedent();
+        if (apply->to_func != "") {
+            printIndent();
+            *oss_ << "if (to_func(d)){ " << std::endl;
+            indent();
+        }
+        std::string node_id_type = "int";
+        if (apply->is_weighted) node_id_type = "WNode";
+
+        printIndent();
+        *oss_ << "int degree = lcl_nodes[d].degree;" << std::endl;
+        printIndent();
+        *oss_ << node_id_type << " * neighbors = &in_neighbors[lcl_nodes[d].offset];" << std::endl;
+        printIndent();
+        *oss_ << "for(int s = 0; s < degree; s++) { "<< std::endl;
+        if(apply->from_func != "") {
+          indent();
+          printIndent();
+
+          *oss_ << "if";
+          std::string src_type = "neighbors[s]";
+          if(from_vertexset_specified) {
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";
+            }
+            else {
+              *oss_ << "(from_vertexset[" << src_type << "]";
+            }
+          }
+          else {
+            if(mir_context_->isFunction(apply->from_func)) {
+              *oss_ << " (from_func(" << src_type << ")";
+            }
+            else {
+              *oss_ << "(true";
+            }
+          }
+
+
+          *oss_ << ") {" << std::endl;
+        }
+
+        indent();
+        printIndent();
+        if(apply_expr_gen_frontier) {
+          *oss_ << "if( ";
+        }
+
+        if (apply->is_weighted) {
+            *oss_ << apply_func_name << " ( d , neighbors[s].vertex, neighbors[s].weight )";
+        } else {
+            *oss_ << apply_func_name << " ( d, neighbors[s] )";
+
+        }
+
+        if(!apply_expr_gen_frontier) {
+          *oss_ << ";" << std::endl;
+        }
+        else {
+          indent();
+          *oss_ << ") { " << std::endl;
+          printIndent();
+          *oss_ << "lcl_next_frontier[d] = 1; " << std::endl;
+          printIndent();
+          *oss_ << "lcl_visited[d] = 1; " << std::endl;
+          dedent();
+          printIndent();
+          *oss_ << "}" << std::endl;
+        }
+
+        if(apply->from_func != "") {
+          dedent();
+          printIndent();
+          *oss_ << "}" <<std::endl;
+        }
+
+        dedent();
+        printIndent();
+        *oss_ << "} //end of loop on in neighbors" << std::endl;
+
+        if(apply->to_func != "") {
+          dedent();
+          printIndent();
+          *oss_ << "} //end of to filtering" << std::endl;
+        }
+
 
     }
 
@@ -760,7 +896,7 @@ namespace graphit {
         }
 
         printIndent();
-        *oss_ << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        *oss_ << "barrier.sync();" << std::endl;
         printIndent();
         *oss_ << "return 0;" << std::endl;
 
@@ -785,6 +921,74 @@ namespace graphit {
 
     }
 
+    void HBEdgesetApplyFunctionGenerator::printPullBlockedEdgeTraversalReturnFrontier(
+            mir::EdgeSetApplyExpr::Ptr apply,
+            bool from_vertexset_specified,
+            bool apply_expr_gen_frontier,
+            std::string dst_type,
+            std::string apply_func_name) {
+
+      if (apply_expr_gen_frontier) {
+          apply_expr_gen_frontier = true;
+      }
+      bool cache_aware = false;
+      bool numa_aware = false;
+      std::string node_id_type = "int";
+      if (apply->is_weighted) node_id_type = "WNode";
+      indent();
+      printIndent();
+      *oss_ << "int BLOCK_SIZE = 32; //cache line size" << std::endl;
+      printIndent();
+      *oss_ << "vertexdata lcl_nodes [ BLOCK_SIZE ];" << std::endl;
+      printIndent();
+      *oss_ << "int lcl_next_frontier [ BLOCK_SIZE ];" << std::endl;
+      printIndent();
+      *oss_ << "int lcl_visited [ BLOCK_SIZE ];" << std::endl;
+      printIndent();
+      *oss_ << "int blk_dst_n = V/BLOCK_SIZE + (V%BLOCK_SIZE == 0 ? 0 : 1);" << std::endl;
+      printIndent();
+      *oss_ << "for (int blk_dst_i = bsg_id; blk_dst_i < blk_dst_n; blk_dst_i += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
+      indent();
+      printIndent();
+      *oss_ << "int blk_dst_base = blk_dst_i * BLOCK_SIZE;" << std::endl;
+      printIndent();
+      *oss_ << "memcpy(&lcl_visited[0], &visited[blk_dst_base],sizeof(lcl_visited));" << std::endl;
+      printIndent();
+      *oss_ << "memcpy(&lcl_nodes[0], &in_vertices[blk_dst_base], sizeof(lcl_nodes));" << std::endl;
+      printIndent();
+      *oss_ << "memset(&lcl_next_frontier[0], 0, sizeof(lcl_dense_o));" << std::endl;
+
+      std::string outer_end = "BLOCK_SIZE";
+      std::string iter = "d";
+      printIndent();
+      *oss_ << "for ( int " << iter << " = 0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
+      indent();
+
+      printPullBlockedEdgeTraversalInnerNeighborLoop(apply, from_vertexset_specified, apply_expr_gen_frontier,
+          dst_type, apply_func_name, cache_aware, numa_aware);
+
+      dedent();
+      printIndent();
+      *oss_ << "} //end of dst node for loop" << std::endl;
+
+
+
+      printIndent();
+      *oss_ << "memcpy(&next_frontier[blk_dst_base], &lcl_next_frontier[0],sizeof(lcl_dense_o));" << std::endl;
+      printIndent();
+      *oss_ << "memcpy(&visited[blk_dst_base], &lcl_visited[0], sizeof(lcl_visited_io));" << std::endl;
+      //printIndent();
+      //*oss_ << "barrier.sync();" << std::endl;
+      dedent();//end of outer block loop
+      printIndent();
+      *oss_ << "} //end of outer blocked loop" << std::endl;
+
+      printIndent();
+      *oss_ << "return 0;" << std::endl;
+
+
+    }
+
     // Generate the code for pushed based program
     void HBEdgesetApplyFunctionGenerator::genEdgePushApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
         bool apply_expr_gen_frontier = false;
@@ -794,7 +998,12 @@ namespace graphit {
         //NOTE(Emily): instead of initializing global vars, we're passing them all in
         //setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
         //TODO(Emily): this is the main algorithmic func that we need to change
-        printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+        if(apply->enable_blocking) {
+          printPushBlockedEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+        }
+        else {
+          printPushEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+        }
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgePullApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
@@ -803,7 +1012,12 @@ namespace graphit {
         string dst_type;
         setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
         //setupGlobalVariables(apply, apply_expr_gen_frontier, from_vertexset_specified);
-        printPullEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+        if(apply->enable_blocking) {
+          printPullBlockedEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+        }
+        else {
+          printPullEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
+        }
     }
 
     //TODO(Emily): we want to get rid of the templating here - need to track the params passed to call in main
@@ -816,18 +1030,48 @@ namespace graphit {
 
         //TODO(Emily): are we going to use their Graph class or will we need our own
         if (apply->is_weighted) {
-            arguments.push_back("WGraph & g");
-        } else {
-            //arguments.push_back("Graph & g");
+          if(apply->enable_blocking) {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("vertexdata *out_indices");
+              arguments.push_back("WNode *out_neighbors");
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              arguments.push_back("vertexdata *in_indices");
+              arguments.push_back("WNode *in_neighbors");
+            }
+          } else {
             if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
               arguments.push_back("int *out_indices");
-              arguments.push_back("int *out_neighbors");
+              arguments.push_back("WNode *out_neighbors");
             } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
               arguments.push_back("int *in_indices");
-              arguments.push_back("int *in_neighbors");
+              arguments.push_back("WNode *in_neighbors");
+            }
+          }
+        } else {
+            //arguments.push_back("Graph & g");
+            if(apply->enable_blocking) {
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("vertexdata *out_vertices");
+                arguments.push_back("int *out_neighbors");
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("vertexdata *in_vertices");
+                arguments.push_back("int *in_neighbors");
+              }
+              else {
+                //TODO(Emily): implement other directions
+              }
             }
             else {
-              //TODO(Emily): implement other directions
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("int *out_indices");
+                arguments.push_back("int *out_neighbors");
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                arguments.push_back("int *in_indices");
+                arguments.push_back("int *in_neighbors");
+              }
+              else {
+                //TODO(Emily): implement other directions
+              }
             }
 
         }

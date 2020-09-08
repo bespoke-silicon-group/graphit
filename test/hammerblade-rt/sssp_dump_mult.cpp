@@ -27,6 +27,8 @@ template <typename APPLY_FUNC > VertexSubset<NodeID>* edgeset_apply_pull_serial_
       }
     } //end of loop on in neighbors
   } //end of outer for loop
+  std::cout << "traversed edges for this iteration: " << traversed << std::endl;
+  std::cout << std::endl;
   next_frontier->num_vertices_ = sequence::sum(next, numVertices);
   next_frontier->bool_map_ = next;
   next_frontier->is_dense = true;
@@ -85,14 +87,9 @@ int main(int argc, char * argv[])
   std::cout << "root: " << root << std::endl;
   int rounds = (0) ;
 
-  bool written = false;
   while ( (builtin_getVertexSetSize(frontier) ) != ((0) ))
   {
-    double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
-    auto start = std::chrono::steady_clock::now();
     VertexSubset<int> *  output = edgeset_apply_pull_serial_weighted_deduplicatied_from_vertexset_with_frontier(edges, frontier, updateEdge());
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end-start;
     deleteObject(frontier) ;
     frontier = output;
     rounds = (rounds + (1) );
@@ -101,10 +98,27 @@ int main(int argc, char * argv[])
       std::cout << "negative cycle"<< std::endl;
       break;
      }
-
+     double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
      std::cout << "size of frontier/total nodes: " << percentage << std::endl;
-     std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n\n";
-
+     if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/45)){
+       std::cout << "writing frontier to file" << std::endl;
+       ofstream file(std::to_string(rounds) + "-frontier.txt");
+       ofstream file2(std::to_string(rounds) + "-sp.txt");
+       if(file.is_open()){
+         for ( NodeID d=0; d < edges.num_nodes(); d++) {
+           if (frontier->bool_map_[d] ) {
+             file << "1\n";
+           }
+           else {
+             file << "0\n";
+           }
+           file2 << SP[d] << std::endl;
+         }
+         file.close();
+         file2.close();
+       }
+       std::cout << "frontier written to file" << std::endl;
+     }
   }
   deleteObject(frontier) ;
 };

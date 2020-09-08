@@ -144,6 +144,7 @@ namespace graphit {
             to_func = expr->to_func;
             is_parallel = expr->is_parallel;
             enable_deduplication = expr->enable_deduplication;
+            enable_blocking = expr->enable_blocking;
             is_weighted = expr->is_weighted;
         }
 

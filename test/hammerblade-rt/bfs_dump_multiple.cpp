@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <fstream>
 #include <string>
-#include <chrono>
 
 Graph edges;
 int  * __restrict parent;
@@ -32,6 +31,8 @@ template <typename TO_FUNC , typename APPLY_FUNC> VertexSubset<NodeID>* edgeset_
       } //end of loop on in neighbors
     } //end of to filtering
   } //end of outer for loop
+  std::cout << "traversed edges for this iteration: " << traversed << std::endl;
+  std::cout << std::endl;
   next_frontier->num_vertices_ = sequence::sum(next, numVertices);
   next_frontier->bool_map_ = next;
   next_frontier->is_dense = true;
@@ -99,20 +100,33 @@ int main(int argc, char * argv[])
   while ( (builtin_getVertexSetSize(frontier) ) != ((0) ))
   {
     VertexSubset<int> *  output ;
-    double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
-    auto start = std::chrono::steady_clock::now();
     output = edgeset_apply_pull_serial_from_vertexset_to_filter_func_with_frontier(edges, frontier, toFilter(), updateEdge());
-    auto end = std::chrono::steady_clock::now();
-    std::chrono::duration<double> elapsed_seconds = end-start;
     deleteObject(frontier) ;
     frontier = output;
     iter_c++;
-    //double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
-    std::cout << "size of input frontier/total nodes: " << percentage << std::endl;
-    std::cout << "elapsed time: " << elapsed_seconds.count() << "s\n" << std::endl;
-    // if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/10)){
-    //   break;
-    // }
+    double percentage = builtin_getVertexSetSize(frontier) / ((double) builtin_getVertices(edges));
+    std::cout << "size of frontier/total nodes: " << percentage << std::endl;
+    if(builtin_getVertexSetSize(frontier) > (builtin_getVertices(edges)/60)){
+      std::cout << "writing frontier to file" << std::endl;
+       ofstream file(std::to_string(iter_c) + "-frontier.txt");
+       ofstream file2(std::to_string(iter_c) + "-parent.txt");
+       if(file.is_open()){
+        for ( NodeID d=0; d < edges.num_nodes(); d++) {
+          if (frontier->bool_map_[d] ) {
+            file << "1\n";
+          }
+          else {
+            file << "0\n";
+          }
+          file2 << parent[d] << std::endl;
+        }
+        file.close();
+        file2.close();
+      }
+      std::cout << "frontier written to file" << std::endl;
+      //break;
+    }
+
   }
   deleteObject(frontier) ;
 };

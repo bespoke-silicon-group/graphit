@@ -16,7 +16,7 @@ namespace graphit {
         BACKEND_CPP,
         BACKEND_GPU,
         BACKEND_HB,     //NOTE(Emily): hammerblade backend selection
-        
+
         BACKEND_INVALID
     };
 
@@ -170,6 +170,12 @@ namespace graphit {
                 Disable
             };
 
+            //determines whether blocking is enabled for HB code gen
+            enum class BlockingType {
+                Enable,
+                Disable
+            };
+
             enum class OtherOpt {
                 QUEUE,
                 SLIDING_QUEUE
@@ -190,6 +196,7 @@ namespace graphit {
             ParType parallel_type;
             //FrontierType frontier_type;
             DeduplicationType deduplication_type;
+            BlockingType blocking_type;
             OtherOpt opt;
             PullFrontierType pull_frontier_type;
             PullLoadBalance pull_load_balance_type;

@@ -1044,8 +1044,8 @@ namespace graphit {
         *oss << "#include \"bsg_set_tile_x_y.h\"" << std::endl;
         *oss << "#define BSG_TILE_GROUP_X_DIM bsg_tiles_X" << std::endl;
         *oss << "#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y" << std::endl;
-        *oss << "#include \"bsg_tile_group_barrier.h\"" << std::endl;
-        *oss << "INIT_TILE_GROUP_BARRIER(r_barrier, c_barrier, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);" << std::endl;
+        *oss << "#include \"bsg_tile_group_barrier.hpp\"" << std::endl;
+        *oss << "bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;" << std::endl;
         //NOTE(Emily): include device runtime libraries here:
         *oss << "#include <local_range.h>" << std::endl;
         oss = &oss_host;
@@ -1255,8 +1255,38 @@ namespace graphit {
         oss = &oss_device;
         *oss << "extern \"C\" int __attribute__ ((noinline)) ";
         *oss << edgeset_apply_func_name << "_call(";
+        if (apply->is_weighted) {
+          if(apply->enable_blocking) {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              *oss << "vertexdata *out_indices, WNode *out_neighbors";
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              *oss << "vertexdata *in_indices, WNode *in_neighbors";
+            }
+          } else {
+            if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+              *oss << "int *out_indices, WNode *out_neighbors";
+            } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+              *oss << "int *in_indices, WNode *in_neighbors";
+            }
+          }
+        } else {
+            //arguments.push_back("Graph & g");
+            if(apply->enable_blocking) {
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                *oss << "vertexdata *out_indices, int *out_neighbors";
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                *oss << "vertexdata *in_indices, int *in_neighbors";
+              }
+            }
+            else {
+              if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+                *oss << "int *out_indices, int *out_neighbors";
+              } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+                *oss << "int *in_indices, int *in_neighbors";
+              }
+            }
 
-        *oss << "int *out_indices, int *out_neighbors";
+        }
 
         if (apply->from_func != "") {
             if (mir_context_->isFunction(apply->from_func)) {
@@ -1317,8 +1347,12 @@ namespace graphit {
 
         *oss << ") {" << std::endl;
         *oss << "\t" << edgeset_apply_func_name << "(";
+        if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+          *oss << "out_indices, out_neighbors";
+        } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+          *oss << "in_indices, in_neighbors";
+        }
 
-        *oss << "out_indices, out_neighbors";
 
         //apply->target->accept(this);
         for (auto &arg : arguments) {
@@ -1337,7 +1371,21 @@ namespace graphit {
         *oss << edgeset_apply_func_name << "_call\", {";
 
         apply->target->accept(this);
-        *oss << ".getOutIndicesAddr()";
+        if(apply->enable_blocking) {
+          if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+            *oss << ".getOutVertexListAddr()";
+          } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+            *oss << ".getInVertexListAddr()";
+          }
+
+        }
+        else {
+          if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+            *oss << ".getOutIndicesAddr()";
+          } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+            *oss << ".getInIndicesAddr()";
+          }
+        }
         *oss << " , ";
         apply->target->accept(this);
         *oss << ".getOutNeighborsAddr()";
@@ -1387,16 +1435,12 @@ namespace graphit {
     void CodeGenHB::genVertexsetApplyKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
         oss = &oss_device;
         *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
-        *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
-        *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
-        *oss << "\t\t" << "if ((start_x + iter_x) < V) {" << std::endl;
-        *oss << "\t\t\t" << apply->input_function_name << "()(start_x + iter_x);" << std::endl;
-        *oss << "\t\t" << "}" << std::endl;
-        *oss << "\t\t" << "else {" << std::endl;
-        *oss << "\t\t\t" << "break;" << std::endl;
-        *oss << "\t\t" << "}" << std::endl;
+        *oss << "\t" << "int start, end;" << std::endl;
+        *oss << "\t" << "local_range(V, &start, &end);" << std::endl;
+        *oss << "\t" << "for (int iter_x = start, iter_x < end; iter_x++) {" << std::endl;
+        *oss << "\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
         *oss << "\t" << "}" << std::endl;
-        *oss << "\t" << "bsg_tile_group_barrier(&r_barrier, &c_barrier);" << std::endl;
+        *oss << "\t" << "barrier.sync();" << std::endl;
         *oss << "\t" << "return 0;" << std::endl;
         *oss << "}" << std::endl;
 

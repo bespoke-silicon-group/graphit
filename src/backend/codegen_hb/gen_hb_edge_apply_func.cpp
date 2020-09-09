@@ -35,9 +35,9 @@ namespace graphit {
       //TODO(Emily):
       //we might want to declare the current frontier here too?
       auto apply_func = mir_context_->getFunction(apply->input_function_name);
-      if(apply_func->result.isInitialized()) {
-        *oss_ << "__attribute__((section(\".dram\"))) int  * __restrict next_frontier;" << endl;
-      }
+      // if(apply_func->result.isInitialized()) {
+      //   *oss_ << "__attribute__((section(\".dram\"))) int  * __restrict next_frontier;" << endl;
+      // }
     }
 
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionDeclBody(mir::EdgeSetApplyExpr::Ptr apply) {
@@ -665,7 +665,7 @@ namespace graphit {
           indent();
           *oss_ << ") { " << std::endl;
           printIndent();
-          *oss_ << "next[d] = 1; " << std::endl;
+          *oss_ << "next_frontier[d] = 1; " << std::endl;
 
           // if(apply->to_func != "") {
           //   printIndent();
@@ -1101,7 +1101,7 @@ namespace graphit {
 
       printIndent();
       *oss_ << "barrier.sync();" << std::endl;
-      
+
       printIndent();
       *oss_ << "return 0;" << std::endl;
 
@@ -1203,7 +1203,7 @@ namespace graphit {
     //TODO(Emily): we want to get rid of the templating here - need to track the params passed to call in main
     void HBEdgesetApplyFunctionGenerator::genEdgeApplyFunctionSignature(mir::EdgeSetApplyExpr::Ptr apply) {
         auto func_name = genFunctionName(apply);
-
+        auto apply_func = mir_context_->getFunction(apply->input_function_name);
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
         vector<string> templates = vector<string>();
         vector<string> arguments = vector<string>();
@@ -1267,10 +1267,9 @@ namespace graphit {
             }
         }
 
-        auto apply_func = mir_context_->getFunction(apply->input_function_name);
         if (apply_func->result.isInitialized()) {
             // build an empty vertex subset if apply function returns
-            //arguments.push_back("int * next_frontier");
+            arguments.push_back("int * next_frontier");
         }
 
         if (apply->to_func != "") {

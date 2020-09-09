@@ -206,14 +206,19 @@ namespace graphit {
             // we likely will want to figure out a way to do this on device
             *oss << std::endl;
             printIndent();
+            *oss << "hammerblade::builtin_swapVectors(";
             assign_stmt->lhs->accept(this);
-            *oss << " = next_";
+            *oss << ", next_";
             assign_stmt->lhs->accept(this);
-            *oss << ";" << std::endl;
+            *oss << ");" << std::endl;
             printIndent();
-            *oss << "next_";
-            assign_stmt->lhs->accept(this);
-            *oss << ".assign(0, edges.num_nodes(), 0);" << std::endl;
+            //TODO(Emily): right now we instantiate and delete the next frontier every iteration
+            // would prefer to reuse and reset
+            *oss << "delete next_";
+            // *oss << "next_";
+             assign_stmt->lhs->accept(this);
+            // *oss << ".assign(0, edges.num_nodes(), 0);" << std::endl;
+            *oss << ";" << std::endl;
 
             // *oss << "int * temp;" << std::endl;
             // printIndent();
@@ -609,6 +614,7 @@ namespace graphit {
               arg->accept(this);
               printDelimiter = true;
           }
+          //TODO(Emily): need to get rid of this explicit ref to edges
           *oss << ", edges.num_nodes()) ";
 
 
@@ -818,6 +824,7 @@ namespace graphit {
             printIndent();
             *oss << "device->enqueueJob(\"" << vertexset_where_expr->input_func << "_where_call\", {";
             associated_element_type_size->accept(this);
+            //TODO(Emily): get rid of this explicit call to edges.
             *oss << ", edges.num_nodes()});" << std::endl;
             printIndent();
             *oss << "device->runJobs();" << std::endl;
@@ -1100,22 +1107,14 @@ namespace graphit {
         auto vector_element_type = vector_type->vector_element_type;
         assert(vector_element_type != nullptr);
 
-        /**  Deprecated, now we generate an array declaration, not a vector one
-         //generate std::vector implementation
-         oss << "std::vector< ";
-         vector_element_type->accept(this);
-         // pointer declaration
-         oss << " >  ";
-         oss << name;
-         oss << ";" << std::endl;
-         **/
-        *oss << "__attribute__((section(\".dram\"))) ";
+        //*oss << "__attribute__((section(\".dram\"))) ";
+        oss = &oss_host;
         if (!mir::isa<mir::VectorType>(vector_element_type)){
+            *oss << "Vector<";
             vector_element_type->accept(this);
-            *oss << " * __restrict " << name << ";" << std::endl;
-
-            oss = &oss_host;
-            *oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
+            *oss << "> " << name << ";" << std::endl;
+            //*oss << " * __restrict " << name << ";" << std::endl;
+            //*oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
         } else if (mir::isa<mir::VectorType>(vector_element_type)) {
             //if each element is a vector
             auto vector_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
@@ -1131,10 +1130,9 @@ namespace graphit {
             vector_vector_element_type->typedef_name_ = typedef_name;
 
             //use the typedef defined type to declare a new pointer
-            *oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
+            //*oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
 
-            oss = &oss_host;
-            *oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
+            *oss << "Vector<" << typedef_name << "> " << name << ";" << std::endl;
 
         } else {
             std::cout << "unsupported type for property: " << var_decl->name << std::endl;
@@ -1156,10 +1154,14 @@ namespace graphit {
 
 
         if (!mir::isa<mir::VectorType>(vector_element_type)){
-            *oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
+            //*oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
+            *oss << name << "= new Vector<";
+            vector_element_type->accept(this);
+            *oss << ">();" << std::endl;
         } else if (mir::isa<mir::VectorType>(vector_element_type)) {
-            *oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
-
+            auto vector_type_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
+            //*oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
+            *oss << name << "= new Vector<" << vector_type_vector_element_type->typedef_name_ << ">();" << std::endl;
         } else {
             std::cout << "unsupported type for property: " << var_decl->name << std::endl;
             exit(0);
@@ -1245,13 +1247,18 @@ namespace graphit {
     void CodeGenHB::genEdgesetApplyFunctionCall(mir::EdgeSetApplyExpr::Ptr apply, std::string return_arg, mir::Expr::Ptr lhs) {
         // the arguments order here has to be consistent with genEdgeApplyFunctionSignature in gen_edge_apply_func_decl.cpp
 
-
+        auto apply_func = mir_context_->getFunction(apply->input_function_name);
         auto edgeset_apply_func_name = edgeset_apply_func_gen_->genFunctionName(apply);
 
         auto mir_var = std::dynamic_pointer_cast<mir::VarExpr>(apply->target);
         std::vector<std::string> arguments = std::vector<std::string>();
         std::vector<std::string> arguments_def = std::vector<std::string>();
-
+        //TODO: want to move this out of while loop.
+        if(apply_func->result.isInitialized()) {
+          *oss << "Vector<int32_t> next_frontier = new Vector<int32_t>(";
+          apply->target->accept(this);
+          *oss << ".num_nodes(), 0);" << std::endl;
+        }
         oss = &oss_device;
         *oss << "extern \"C\" int __attribute__ ((noinline)) ";
         *oss << edgeset_apply_func_name << "_call(";
@@ -1340,7 +1347,7 @@ namespace graphit {
           *oss << ", " << arg;
         }
 
-        if(return_arg != ""){ *oss << ", " << return_arg; }
+        if(apply_func->result.isInitialized()){ *oss << ", next_frontier"; }
 
 
         *oss << ", int V, int E, int block_size_x";
@@ -1358,8 +1365,8 @@ namespace graphit {
         for (auto &arg : arguments) {
           *oss << ", " << arg;
         }
-        if(return_arg != ""){ *oss << ", " << return_arg; }
-        *oss << ", V, E, block_size_x";
+        if(apply_func->result.isInitialized()){ *oss << ", next_frontier"; }
+        //*oss << ", V, E, block_size_x";
 
 
         *oss << ");" << std::endl;
@@ -1390,16 +1397,21 @@ namespace graphit {
         apply->target->accept(this);
         *oss << ".getOutNeighborsAddr()";
 
-        if(return_arg != ""){ *oss << ", " << return_arg << ".getAddr()"; }
-
         if(lhs != NULL){
           *oss << ", ";
           lhs->accept(this);
           *oss <<".getAddr()";;
         }
-
-        //TODO(Emily): need to confirm we always need these 3 args for kernel calls
-        *oss << ", edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
+        if(apply_func->result.isInitialized()){ *oss << ", next_frontier.getAddr()"; }
+        
+        *oss << ", ";
+        apply->target->accept(this);
+        *oss <<".num_nodes(), ";
+        apply->target->accept(this);
+        *oss << ".num_edges(), ";
+        apply->target->accept(this);
+        *oss << ".num_nodes()";
+        //*oss << ", edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
         *oss << "}); " << std::endl;
         printIndent();
         *oss << "device->runJobs();" << std::endl;

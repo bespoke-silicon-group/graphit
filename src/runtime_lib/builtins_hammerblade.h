@@ -144,4 +144,20 @@ int builtin_getVerticesHB(WGraphHB &g)
   return g.num_nodes();
 }
 
+static
+void builtin_swapVectors(Vector<int32_t> a, Vector<int32_t> b)
+{
+  int n = a.getLength();
+  if(n != b.getLength())
+    throw std::runtime_error("vectors are not equal in length.");
+  int * hosta = new int[n];
+  int * hostb = new int[n];
+  a.copyToHost(hosta, n);
+  b.copyToHost(hostb, n);
+  a.copyToDevice(hostb, n);
+  b.copyToDevice(hosta, n);
+  delete[] hosta;
+  delete[] hostb;
+}
+
 }

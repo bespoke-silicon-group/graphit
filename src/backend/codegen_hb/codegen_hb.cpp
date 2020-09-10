@@ -42,9 +42,6 @@ namespace graphit {
         oss = &oss_device;
         *oss << std::endl;
 
-        //TODO(Emily): need to modify these calls for manycore blocking
-        //TODO(Emily): we want to move this/modify this to directly after the call in main is generated
-        //             so that we can remove templating
         auto gen_edge_apply_function_visitor = HBEdgesetApplyFunctionGenerator(mir_context_, oss);
         gen_edge_apply_function_visitor.genEdgeApplyFuncDecls();
 
@@ -193,8 +190,6 @@ namespace graphit {
 
             assign_stmt->lhs->accept(this);
             *oss << "  = ____graphit_tmp_out; "  << std::endl;
-        //TODO(Emily): need to change this. we won't be returning a nextFrontier
-        // so we need to pass it in instead of doing an assign statement
         } else if (mir::isa<mir::EdgeSetApplyExpr>(assign_stmt->expr)) {
             printIndent();
             //assign_stmt->lhs->accept(this);
@@ -229,9 +224,9 @@ namespace graphit {
             // printIndent();
             // assign_stmt->lhs->accept(this);
             // *oss <<  ".copyToDevice(temp, edges.num_edges());";
-
-
         } else {
+            //TODO(Emily): need to fix this so that
+            //the assignment is happening on the device
             printIndent();
             assign_stmt->lhs->accept(this);
             *oss << " = ";
@@ -741,33 +736,30 @@ namespace graphit {
             assert(associated_element_type);
             auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
             assert(associated_element_type_size);
-            // std::string for_type = apply_expr->is_parallel ? "parallel_for" : "for";
-            // *oss << for_type << " (int vertexsetapply_iter = 0; vertexsetapply_iter < ";
-            // associated_element_type_size->accept(this);
-            // *oss << "; vertexsetapply_iter++) {" << std::endl;
-            // indent();
-            // printIndent();
-            // *oss << apply_expr->input_function_name << "()(vertexsetapply_iter);" << std::endl;
-            // dedent();
-            // printIndent();
-            // *oss << "}";
-            //TODO(Emily): need to figure out a way to generate the params for the apply expr here
-            //            alternatively, these might always be global vars
-            //TODO(Emily): need to handle the idea that vertexset sizes are not always = edges.num_nodes()
-            arg_list = "edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
-            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{";
+            //apply_expr->target->accept(this);
+            //*oss << ".getAddr(), ";
+            associated_element_type_size->accept(this);
+            *oss <<  "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
-            arg_def_list = "int V, int E, int block_size_x";
+            arg_def_list = "int V";
             genVertexsetApplyKernel(apply_expr, arg_def_list);
         } else {
+            //TODO(Emily): this most likely will fail the asserts. need to find other solution here.
+            auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
+            assert(associated_element_type);
+            auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
+            assert(associated_element_type_size);
             // if this is a dynamically created vertexset
-            //TODO(Emily): need to figure out a way to generate the params for the apply expr here
-            arg_list = "edges.num_nodes(), edges.num_edges(),edges.num_nodes()";
-            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{" << arg_list << "});" << std::endl;
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{";
+            //apply_expr->target->accept(this);
+            //*oss << ".getAddr(), ";
+            associated_element_type_size->accept(this);
+            *oss <<  "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
-            arg_def_list = "int V, int E, int block_size_x";
+            arg_def_list = "int V";
             genVertexsetApplyKernel(apply_expr, arg_def_list);
 
         }
@@ -1428,7 +1420,7 @@ namespace graphit {
           *oss <<".getAddr()";;
         }
         if(apply_func->result.isInitialized()){ *oss << ", next_frontier.getAddr()"; }
-        
+
         *oss << ", ";
         apply->target->accept(this);
         *oss <<".num_nodes(), ";

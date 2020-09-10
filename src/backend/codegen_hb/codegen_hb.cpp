@@ -1107,14 +1107,15 @@ namespace graphit {
         auto vector_element_type = vector_type->vector_element_type;
         assert(vector_element_type != nullptr);
 
-        //*oss << "__attribute__((section(\".dram\"))) ";
-        oss = &oss_host;
+        *oss << "__attribute__((section(\".dram\"))) ";
+        // oss = &oss_host;
         if (!mir::isa<mir::VectorType>(vector_element_type)){
-            *oss << "Vector<";
-            vector_element_type->accept(this);
-            *oss << "> " << name << ";" << std::endl;
-            //*oss << " * __restrict " << name << ";" << std::endl;
-            //*oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
+            // *oss << "Vector<";
+            // vector_element_type->accept(this);
+            // *oss << "> " << name << ";" << std::endl;
+            *oss << " * __restrict " << name << ";" << std::endl;
+            oss = &oss_host;
+            *oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
         } else if (mir::isa<mir::VectorType>(vector_element_type)) {
             //if each element is a vector
             auto vector_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
@@ -1130,9 +1131,11 @@ namespace graphit {
             vector_vector_element_type->typedef_name_ = typedef_name;
 
             //use the typedef defined type to declare a new pointer
-            //*oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
+            *oss << typedef_name << " * __restrict  " << name << ";" << std::endl;
 
-            *oss << "Vector<" << typedef_name << "> " << name << ";" << std::endl;
+            //*oss << "Vector<" << typedef_name << "> " << name << ";" << std::endl;
+            oss = &oss_host;
+            *oss << "GlobalScalar<hb_mc_eva_t> " << name << "_dev;" << std::endl;
 
         } else {
             std::cout << "unsupported type for property: " << var_decl->name << std::endl;
@@ -1154,14 +1157,36 @@ namespace graphit {
 
 
         if (!mir::isa<mir::VectorType>(vector_element_type)){
-            //*oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
-            *oss << name << "= new Vector<";
-            vector_element_type->accept(this);
-            *oss << ">();" << std::endl;
+            *oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
+            printIndent();
+            const auto size_expr = mir_context_->getElementCount(vector_type->element_type);
+            *oss << "hammerblade::init_global_array(";
+            size_expr->accept(this);
+            *oss << ", " << name << "_dev);" << std::endl;
+            printIndent();
+            *oss << "hammerblade::assign_val(0, ";
+            size_expr->accept(this);
+            *oss << ", ";
+            var_decl->initVal->accept(this);
+            *oss << ", " << name << "_decl);" << std::endl;
+            // *oss << name << "= new Vector<";
+            // vector_element_type->accept(this);
+            // *oss << ">();" << std::endl;
         } else if (mir::isa<mir::VectorType>(vector_element_type)) {
             auto vector_type_vector_element_type = mir::to<mir::VectorType>(vector_element_type);
-            //*oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
-            *oss << name << "= new Vector<" << vector_type_vector_element_type->typedef_name_ << ">();" << std::endl;
+            *oss << name << "_dev = GlobalScalar<hb_mc_eva_t>(\"" << name << "\");" << std::endl;
+            printIndent();
+            const auto size_expr = mir_context_->getElementCount(vector_type->element_type);
+            *oss << "hammerblade::init_global_array(";
+            size_expr->accept(this);
+            *oss << ", " << name << "_dev);" << std::endl;
+            printIndent();
+            *oss << "hammerblade::assign_val(0, ";
+            size_expr->accept(this);
+            *oss << ", ";
+            var_decl->initVal->accept(this);
+            *oss << ", " << name << "_decl);" << std::endl;
+            //*oss << name << "= new Vector<" << vector_type_vector_element_type->typedef_name_ << ">();" << std::endl;
         } else {
             std::cout << "unsupported type for property: " << var_decl->name << std::endl;
             exit(0);

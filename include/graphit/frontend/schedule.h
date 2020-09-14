@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 #include <graphit/frontend/gpu_schedule.h>
+#include <graphit/frontend/hb_schedule.h>
 
 namespace graphit {
 
@@ -222,6 +223,9 @@ namespace graphit {
 		for (auto s = apply_gpu_schedules.begin(); s != apply_gpu_schedules.end(); s++) {
 			delete s->second;
 		}
+                for(auto s = apply_hb_schedules.begin(); s != apply_hb_schedules.end(); s++) {
+                    delete s->second;
+                }
             }
 
             //TODO: what does it mean??
@@ -235,6 +239,7 @@ namespace graphit {
 
 
 	    std::map <std::string, graphit::fir::gpu_schedule::GPUSchedule*> apply_gpu_schedules;
+            std::map <std::string, graphit::fir::hb_schedule::HBSchedule*> apply_hb_schedules;
         };
     }
 

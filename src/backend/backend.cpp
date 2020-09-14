@@ -21,4 +21,10 @@ namespace graphit{
         CodeGenGPU code_gen_gpu(oss, mir_context_, module_name, module_path);
 	return code_gen_gpu.genGPU();
     }
+    int Backend::emitHB(std::ostream &oss, std::ostream &oss_device) {
+        CodeGenHB code_gen_hb(oss, oss_device, mir_context_);
+        int flag = code_gen_hb.genHBCode();
+        //delete code_gen_hb;
+        return flag;
+    }
 }

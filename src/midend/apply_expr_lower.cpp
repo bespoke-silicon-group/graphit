@@ -41,7 +41,7 @@ namespace graphit {
 		new_stmts.push_back(rewrite<mir::Stmt>(stmt));
 		while (insert_after_stmt != nullptr) {
 			auto temp = insert_after_stmt;
-			insert_after_stmt = nullptr;	
+			insert_after_stmt = nullptr;
 			temp = rewrite<mir::Stmt>(temp);
 			new_stmts.push_back(temp);
 		}
@@ -63,19 +63,19 @@ namespace graphit {
 			assign_stmt->stmt_label = var_decl->stmt_label;
 			insert_after_stmt = assign_stmt;
 			node = var_decl;
-			return;	
-		} 
+			return;
+		}
 	}
 	MIRRewriter::visit(var_decl);
 	var_decl = mir::to<mir::VarDecl>(node);
 	node = var_decl;
-    }    
+    }
     void ApplyExprLower::LowerApplyExpr::visit(mir::AssignStmt::Ptr assign_stmt) {
-	
+
         if (assign_stmt->stmt_label != "") {
                 label_scope_.scope(assign_stmt->stmt_label);
         }
-		
+
 	// Check for Hybrid stmt
 	if (mir::isa<mir::EdgeSetApplyExpr> (assign_stmt->expr)) {
 		mir::EdgeSetApplyExpr::Ptr edgeset_apply = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
@@ -84,25 +84,25 @@ namespace graphit {
 			auto apply_schedule_iter = schedule_->apply_gpu_schedules.find(current_scope_name);
 			if (apply_schedule_iter != schedule_->apply_gpu_schedules.end()) {
 				auto apply_schedule = apply_schedule_iter->second;
-				if (dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule) != nullptr) {	
-					fir::gpu_schedule::HybridGPUSchedule *hybrid_schedule = dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule);	
+				if (dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule) != nullptr) {
+					fir::gpu_schedule::HybridGPUSchedule *hybrid_schedule = dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule);
 					// This EdgeSetApply has a Hybrid Schedule attached to it
 					// Create the first Stmt block
-					mir::StmtBlock::Ptr stmt_block_1 = std::make_shared<mir::StmtBlock>();	
+					mir::StmtBlock::Ptr stmt_block_1 = std::make_shared<mir::StmtBlock>();
 					mir::AssignStmt::Ptr stmt1 = std::make_shared<mir::AssignStmt>();
 					stmt1->lhs = assign_stmt->lhs;
 					stmt1->expr = assign_stmt->expr;
-					stmt1->stmt_label = "hybrid1";	
+					stmt1->stmt_label = "hybrid1";
 					stmt_block_1->insertStmtEnd(stmt1);
 					fir::gpu_schedule::SimpleGPUSchedule * schedule1 = new fir::gpu_schedule::SimpleGPUSchedule();
 					*schedule1 = hybrid_schedule->s1;
 					schedule_->apply_gpu_schedules[current_scope_name + ":hybrid1"] = schedule1;
 					stmt_block_1 = rewrite<mir::StmtBlock>(stmt_block_1);
-					
+
 					// Now create the second Stmt block
 				        auto func_decl = mir_context_->getFunction(edgeset_apply->input_function_name);
 				        mir::FuncDecl::Ptr func_decl_v2 = func_decl->clone<mir::FuncDecl>();
-				        func_decl_v2->name = func_decl->name + "_v2"; 
+				        func_decl_v2->name = func_decl->name + "_v2";
 				        mir_context_->addFunctionFront(func_decl_v2);
 					mir::StmtBlock::Ptr stmt_block_2 = std::make_shared<mir::StmtBlock>();
 					mir::AssignStmt::Ptr stmt2 = std::make_shared<mir::AssignStmt>();
@@ -115,8 +115,8 @@ namespace graphit {
 					*schedule2 = hybrid_schedule->s2;
 					schedule_->apply_gpu_schedules[current_scope_name + ":hybrid2"] = schedule2;
 					stmt_block_2 = rewrite<mir::StmtBlock>(stmt_block_2);
-					
-					// Finally create a hybrid statement and replace - 
+
+					// Finally create a hybrid statement and replace -
 					mir::HybridGPUStmt::Ptr hybrid_node = std::make_shared<mir::HybridGPUStmt>();
 					hybrid_node->stmt1 = stmt_block_1;
 					hybrid_node->stmt2 = stmt_block_2;
@@ -124,18 +124,18 @@ namespace graphit {
 					hybrid_node->argv_index = hybrid_schedule->argv_index;
 					hybrid_node->criteria = hybrid_schedule->_hybrid_criteria;
 					if (hybrid_node->criteria == fir::gpu_schedule::HybridGPUSchedule::hybrid_criteria::INPUT_VERTEXSET_SIZE && edgeset_apply->from_func != "") {
-						hybrid_node->input_frontier_name = edgeset_apply->from_func;	
+						hybrid_node->input_frontier_name = edgeset_apply->from_func;
 					} else {
 						assert(false && "Invalid criteria for Hybrid Node\n");
 					}
-					
+
 					node = hybrid_node;
 					mir_context_->hybrid_gpu_stmts.push_back(hybrid_node);
 					if (assign_stmt->stmt_label != "") {
 						label_scope_.unscope();
 					}
 					return;
-								
+
 				}
 			}
 		}
@@ -156,7 +156,7 @@ namespace graphit {
 			} else {
 				mir::VertexSetDedupExpr::Ptr dedup_expr = std::make_shared<mir::VertexSetDedupExpr>();
 				mir::ExprStmt::Ptr expr_stmt = std::make_shared<mir::ExprStmt>();
-				dedup_expr->target = assign_stmt->lhs;	
+				dedup_expr->target = assign_stmt->lhs;
 				expr_stmt->expr = dedup_expr;
 				insert_after_stmt = expr_stmt;
 				dedup_expr->perfect_dedup = true;
@@ -169,7 +169,7 @@ namespace graphit {
 			} else {
 				mir::VertexSetDedupExpr::Ptr dedup_expr = std::make_shared<mir::VertexSetDedupExpr>();
 				mir::ExprStmt::Ptr expr_stmt = std::make_shared<mir::ExprStmt>();
-				dedup_expr->target = assign_stmt->lhs;	
+				dedup_expr->target = assign_stmt->lhs;
 				expr_stmt->expr = dedup_expr;
 				insert_after_stmt = expr_stmt;
 				dedup_expr->perfect_dedup = false;
@@ -190,24 +190,24 @@ namespace graphit {
 			auto apply_schedule_iter = schedule_->apply_gpu_schedules.find(current_scope_name);
 			if (apply_schedule_iter != schedule_->apply_gpu_schedules.end()) {
 				auto apply_schedule = apply_schedule_iter->second;
-				if (dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule) != nullptr) {	
-					fir::gpu_schedule::HybridGPUSchedule *hybrid_schedule = dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule);	
+				if (dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule) != nullptr) {
+					fir::gpu_schedule::HybridGPUSchedule *hybrid_schedule = dynamic_cast<fir::gpu_schedule::HybridGPUSchedule*>(apply_schedule);
 					// This EdgeSetApply has a Hybrid Schedule attached to it
 					// Create the first Stmt block
-					mir::StmtBlock::Ptr stmt_block_1 = std::make_shared<mir::StmtBlock>();	
+					mir::StmtBlock::Ptr stmt_block_1 = std::make_shared<mir::StmtBlock>();
 					mir::ExprStmt::Ptr stmt1 = std::make_shared<mir::ExprStmt>();
 					stmt1->expr = expr_stmt->expr;
-					stmt1->stmt_label = "hybrid1";	
+					stmt1->stmt_label = "hybrid1";
 					stmt_block_1->insertStmtEnd(stmt1);
 					fir::gpu_schedule::SimpleGPUSchedule * schedule1 = new fir::gpu_schedule::SimpleGPUSchedule();
 					*schedule1 = hybrid_schedule->s1;
 					schedule_->apply_gpu_schedules[current_scope_name + ":hybrid1"] = schedule1;
 					stmt_block_1 = rewrite<mir::StmtBlock>(stmt_block_1);
-					
+
 					// Now create the second Stmt block
 				        auto func_decl = mir_context_->getFunction(edgeset_apply->input_function_name);
 				        mir::FuncDecl::Ptr func_decl_v2 = func_decl->clone<mir::FuncDecl>();
-				        func_decl_v2->name = func_decl->name + "_v2"; 
+				        func_decl_v2->name = func_decl->name + "_v2";
 				        mir_context_->addFunctionFront(func_decl_v2);
 					mir::StmtBlock::Ptr stmt_block_2 = std::make_shared<mir::StmtBlock>();
 					mir::ExprStmt::Ptr stmt2 = std::make_shared<mir::ExprStmt>();
@@ -219,8 +219,8 @@ namespace graphit {
 					*schedule2 = hybrid_schedule->s2;
 					schedule_->apply_gpu_schedules[current_scope_name + ":hybrid2"] = schedule2;
 					stmt_block_2 = rewrite<mir::StmtBlock>(stmt_block_2);
-					
-					// Finally create a hybrid statement and replace - 
+
+					// Finally create a hybrid statement and replace -
 					mir::HybridGPUStmt::Ptr hybrid_node = std::make_shared<mir::HybridGPUStmt>();
 					hybrid_node->stmt1 = stmt_block_1;
 					hybrid_node->stmt2 = stmt_block_2;
@@ -228,18 +228,18 @@ namespace graphit {
 					hybrid_node->argv_index = hybrid_schedule->argv_index;
 					hybrid_node->criteria = hybrid_schedule->_hybrid_criteria;
 					if (hybrid_node->criteria == fir::gpu_schedule::HybridGPUSchedule::hybrid_criteria::INPUT_VERTEXSET_SIZE && edgeset_apply->from_func != "") {
-						hybrid_node->input_frontier_name = edgeset_apply->from_func;	
+						hybrid_node->input_frontier_name = edgeset_apply->from_func;
 					} else {
 						assert(false && "Invalid criteria for Hybrid Node\n");
 					}
-					
+
 					node = hybrid_node;
 					mir_context_->hybrid_gpu_stmts.push_back(hybrid_node);
 					if (expr_stmt->stmt_label != "") {
 						label_scope_.unscope();
 					}
 					return;
-					
+
 				}
 			}
 		}
@@ -273,12 +273,12 @@ namespace graphit {
 		edgeset_apply->is_parallel = true;
 		if (edgeset_apply->tracking_field != "")
 			edgeset_apply->requires_output = true;
-		// Check if there is a GPU schedule attached to this statement - 
+		// Check if there is a GPU schedule attached to this statement -
             	auto current_scope_name = label_scope_.getCurrentScope();
 		auto apply_schedule_iter = schedule_->apply_gpu_schedules.find(current_scope_name);
 		if (apply_schedule_iter != schedule_->apply_gpu_schedules.end()) {
 			auto apply_schedule = apply_schedule_iter->second;
-			if (dynamic_cast<fir::gpu_schedule::SimpleGPUSchedule*>(apply_schedule) != nullptr) {	
+			if (dynamic_cast<fir::gpu_schedule::SimpleGPUSchedule*>(apply_schedule) != nullptr) {
 				edgeset_apply->applied_schedule = *dynamic_cast<fir::gpu_schedule::SimpleGPUSchedule*>(apply_schedule);
 			} else {
 				assert(false && "Schedule applied to EdgeSetApply must be a Simple Schedule");
@@ -288,19 +288,44 @@ namespace graphit {
 			else if (edgeset_apply->applied_schedule.direction == fir::gpu_schedule::SimpleGPUSchedule::direction_type::DIR_PULL) {
 				node = std::make_shared<mir::PullEdgeSetApplyExpr>(edgeset_apply);
 				mir_context_->graphs_with_transpose[mir::to<mir::VarExpr>(edgeset_apply->target)->var.getName()] = true;
-			} else 
+			} else
 				assert(false && "Invalid option for direction\n");
-			
+
 			if (edgeset_apply->applied_schedule.load_balancing == fir::gpu_schedule::SimpleGPUSchedule::load_balancing_type::EDGE_ONLY && edgeset_apply->applied_schedule.edge_blocking == fir::gpu_schedule::SimpleGPUSchedule::edge_blocking_type::BLOCKED) {
 				mir_context_->graphs_with_blocking[mir::to<mir::VarExpr>(edgeset_apply->target)->var.getName()] = edgeset_apply->applied_schedule.edge_blocking_size;
 			}
-						
+
 		} else {
-			// No schedule is attached, lower using default schedule	
-			node = std::make_shared<mir::PushEdgeSetApplyExpr>(edgeset_apply);			
+			// No schedule is attached, lower using default schedule
+			node = std::make_shared<mir::PushEdgeSetApplyExpr>(edgeset_apply);
 		}
 		return;
 	}
+
+    else if (schedule_ != nullptr && !schedule_->apply_hb_schedules.empty()) {
+        // Always parallelize all operators for HB schedules
+        edgeset_apply->is_parallel = true;
+        if (edgeset_apply->tracking_field != "")
+            edgeset_apply->requires_output = true;
+        // Check if there is a HB schedule attached to this statement -
+        auto current_scope_name = label_scope_.getCurrentScope();
+        auto apply_schedule_iter = schedule_->apply_hb_schedules.find(current_scope_name);
+        if (apply_schedule_iter != schedule_->apply_hb_schedules.end()) {
+
+            auto apply_schedule = apply_schedule_iter->second;
+            if (dynamic_cast<fir::hb_schedule::SimpleHBSchedule*>(apply_schedule) != nullptr) {
+                edgeset_apply->manycore_schedule = *dynamic_cast<fir::hb_schedule::SimpleHBSchedule*>(apply_schedule);
+            } else {
+                assert(false && "Schedule applied to EdgeSetApply must be a Simple Schedule");
+            }
+            if (edgeset_apply->manycore_schedule.direction_type == fir::hb_schedule::SimpleHBSchedule::DirectionType::PUSH)
+                node = std::make_shared<mir::PushEdgeSetApplyExpr>(edgeset_apply);
+            else if (edgeset_apply->manycore_schedule.direction_type == fir::hb_schedule::SimpleHBSchedule::DirectionType::PULL) {
+                node = std::make_shared<mir::PullEdgeSetApplyExpr>(edgeset_apply);
+            } else
+                assert(false && "Invalid option for direction\n");
+        }
+    }
 
         // check if the schedule contains entry for the current edgeset apply expressions
 

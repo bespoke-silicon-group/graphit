@@ -1049,7 +1049,7 @@ namespace graphit {
         *oss << "#include <local_range.h>" << std::endl;
         oss = &oss_host;
 
-        *oss << "#include \"builtins_hammerblade.h\"" << std::endl;
+        *oss << "#include \"hb_intrinsics.h\"" << std::endl;
         *oss << "#include <string.h> " << std::endl;
 
         //TODO(Emily): need a better way of naming the ucode path based on the input program

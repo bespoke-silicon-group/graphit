@@ -1281,8 +1281,7 @@ namespace graphit {
         *oss << edgeset_apply_func_name << "_call(";
         //TODO(Emily): reenable blocking with new schedule
         if (apply->is_weighted) {
-          if(false) {
-          //if(apply->enable_blocking) {
+          if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
             if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
               *oss << "vertexdata *out_indices, WNode *out_neighbors";
             } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
@@ -1297,8 +1296,7 @@ namespace graphit {
           }
         } else {
             //arguments.push_back("Graph & g");
-            if(false) {
-            //if(apply->enable_blocking) {
+            if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
               if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
                 *oss << "vertexdata *out_indices, int *out_neighbors";
               } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
@@ -1399,8 +1397,7 @@ namespace graphit {
         *oss << edgeset_apply_func_name << "_call\", {";
 
         apply->target->accept(this);
-        if(false) {
-        //if(apply->enable_blocking) {
+        if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
           if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
             *oss << ".getOutVertexListAddr()";
           } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {

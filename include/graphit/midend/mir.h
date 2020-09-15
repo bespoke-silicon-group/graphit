@@ -901,6 +901,7 @@ namespace graphit {
 	    std::string kernel_function;
 
 	    fir::gpu_schedule::SimpleGPUSchedule applied_schedule;
+        fir::hb_schedule::SimpleHBSchedule manycore_schedule;
 	    bool requires_output = false;
 
         protected:
@@ -1002,6 +1003,7 @@ namespace graphit {
 		requires_output = edgeset_apply->requires_output;
 		fused_dedup = edgeset_apply->fused_dedup;
 		fused_dedup_perfect = edgeset_apply->fused_dedup_perfect;
+                manycore_schedule = edgeset_apply->manycore_schedule;
             }
 
             virtual void accept(MIRVisitor *visitor) {
@@ -1033,6 +1035,7 @@ namespace graphit {
 		requires_output = edgeset_apply->requires_output;
 		fused_dedup = edgeset_apply->fused_dedup;
 		fused_dedup_perfect = edgeset_apply->fused_dedup_perfect;
+                manycore_schedule = edgeset_apply->manycore_schedule;
             }
 
             virtual void accept(MIRVisitor *visitor) {

@@ -40,4 +40,5 @@ end
 
 schedule:
     fir::hb_schedule::SimpleHBSchedule s1;
+    s1.configLoadBalance(fir::hb_schedule::hb_schedule_options::BLOCKING);
     program->applyHBSchedule("s1", s1);

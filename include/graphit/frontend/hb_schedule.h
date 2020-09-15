@@ -10,7 +10,7 @@ namespace hb_schedule {
 enum hb_schedule_options {
     PUSH,
     PULL,
-    BLOCKED,
+    BLOCKING,
     ALIGNED,
     EDGE_BASED,
     VERTEX_BASED
@@ -71,7 +71,7 @@ public:
             case ALIGNED:
                 hb_load_balance_type = HBLoadBalanceType::ALIGNED;
                 break;
-            case BLOCKED:
+            case BLOCKING:
                 hb_load_balance_type = HBLoadBalanceType::BLOCKED;
                 break;
             default:

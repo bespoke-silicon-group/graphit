@@ -149,12 +149,15 @@ namespace graphit {
 
         printIndent();
 
-        if(apply->is_parallel) {
-            *oss_ << "int start, end;" << std::endl;
-            printIndent();
+        *oss_ << "int start, end;" << std::endl;
+        printIndent();
+        if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::VERTEX_BASED) {
             *oss_ << "local_range(V, &start, &end);" << std::endl;
-            printIndent();
         }
+        else {
+            *oss_ << "edge_aware_local_range(V, E, &start, &end, out_indices);" << std::endl;
+        }
+        printIndent();
 
         std::string for_type = "for";
         //if (apply->is_parallel)
@@ -168,12 +171,7 @@ namespace graphit {
 
         std::string outer_end = "V";
         std::string iter = "s";
-        if(apply->is_parallel) {
-          *oss_ << for_type << " ( int " << iter << " = start; " << iter << " < end; " << iter << "++) {" << std::endl;
-        }
-        else {
-          *oss_ << for_type << " ( int " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
-        }
+        *oss_ << for_type << " ( int " << iter << " = start; " << iter << " < end; " << iter << "++) {" << std::endl;
         indent();
 
         if(from_vertexset_specified) {
@@ -851,10 +849,13 @@ namespace graphit {
         }
         indent();
         printIndent();
-        if(apply->is_parallel) {
-            *oss_ << "int start, end;" << std::endl;
-            printIndent();
+        *oss_ << "int start, end;" << std::endl;
+        printIndent();
+        if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::VERTEX_BASED) {
             *oss_ << "local_range(V, &start, &end);" << std::endl;
+        }
+        else {
+            *oss_ << "edge_aware_local_range(V, E, &start, &end, in_indices);" << std::endl;
         }
 
 
@@ -938,20 +939,7 @@ namespace graphit {
         //genearte the outer for loop
         if (! apply->use_pull_edge_based_load_balance) {
             std::string for_type = "for";
-            if (numa_aware) {
-                // *oss_ << "#pragma omp parallel num_threads(omp_get_place_num_procs(socketId)) proc_bind(close)\n{\n";
-                // *oss_ << "#pragma omp for schedule(dynamic, 1024)\n";
-            } else if (apply->is_parallel) {
-                for_type = "for";
-            }
-
-            //printIndent();
-            if(apply->is_parallel) {
-              *oss_ << for_type << " ( int " << iter << " = start; " << iter << " < end; " << iter << "++) {" << std::endl;
-            }
-            else {
-              *oss_ << for_type << " ( int " << iter << "=0; " << iter << " < " << outer_end << "; " << iter << "++) {" << std::endl;
-            }
+            *oss_ << for_type << " ( int " << iter << " = start; " << iter << " < end; " << iter << "++) {" << std::endl;
             indent();
             // if (cache_aware) {
             //     printIndent();
@@ -1170,12 +1158,10 @@ namespace graphit {
         string dst_type;
         setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
         //TODO(Emily): need to enable these options again with the new schedule
-        //if(apply->enable_blocking) {
-        if(false) {
+        if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
           printPushBlockedEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
         }
-        else if(false) {
-        //else if(apply->enable_alignment) {
+        else if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::ALIGNED) {
           printPushAlignedEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
         }
         else {
@@ -1188,13 +1174,10 @@ namespace graphit {
         bool from_vertexset_specified = false;
         string dst_type;
         setupFlags(apply, apply_expr_gen_frontier, from_vertexset_specified, dst_type);
-        //TODO(Emily): need to reenable these options
-        if(false) {
-        //if(apply->enable_blocking) {
+        if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
           printPullBlockedEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
         }
-        else if (false) {
-        //else if(apply->enable_alignment) {
+        else if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::ALIGNED) {
           printPullAlignedEdgeTraversalReturnFrontier(apply, from_vertexset_specified, apply_expr_gen_frontier, dst_type);
         }
         else {
@@ -1212,8 +1195,7 @@ namespace graphit {
 
         //TODO(Emily): are we going to use their Graph class or will we need our own
         if (apply->is_weighted) {
-          //if(apply->enable_blocking) {
-          if(false) {
+          if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
             if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
               arguments.push_back("vertexdata *out_indices");
               arguments.push_back("WNode *out_neighbors");
@@ -1232,8 +1214,7 @@ namespace graphit {
           }
         } else {
             //arguments.push_back("Graph & g");
-            if(false) {
-            //if(apply->enable_blocking) {
+            if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {
               if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
                 arguments.push_back("vertexdata *out_vertices");
                 arguments.push_back("int *out_neighbors");
@@ -1353,12 +1334,7 @@ namespace graphit {
             output_name += "_hybrid_dense";
         }
 
-        //check parallelism specification
-        if (apply->is_parallel) {
-            output_name += "_parallel";
-        } else {
-            output_name += "_serial";
-        }
+        output_name += "_parallel";
 
         if (apply->use_sliding_queue) {
             output_name += "_sliding_queue";

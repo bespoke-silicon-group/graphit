@@ -76,6 +76,7 @@ if __name__ == '__main__':
         compile_file.write("#include <graphit/frontend/high_level_schedule.h>\n")
         compile_file.write("namespace graphit {\n")
         compile_file.write("using namespace graphit::fir::gpu_schedule;\n")
+        compile_file.write("using namespace graphit::fir::hb_schedule;\n")
         compile_file.write("void user_defined_schedule (graphit::fir::high_level_schedule::ProgramScheduleNode::Ptr program) {\n")
         for schedule_cmd in schedule_cmd_list:
             compile_file.write(schedule_cmd)
@@ -107,4 +108,3 @@ if __name__ == '__main__':
     #subprocess.check_call("g++ -g -std=c++11 -I ../../src/runtime_lib/  " + output_file_name + " -o test.o", shell=True)
     if algo_file_name == "algo.gt" and os.path.exists(algo_file_name):
         os.unlink(algo_file_name)
-

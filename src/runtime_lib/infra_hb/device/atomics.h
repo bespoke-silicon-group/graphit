@@ -19,3 +19,20 @@ bool compare_and_swap(int &x, const int &old_val, const int &new_val) {
 #ifdef __cplusplus
 }
 #endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int fetch_and_add(int &x, int inc) {
+    int orig_val = x;
+    int result = bsg_amoswap(&x, (orig_val + inc));
+    //TODO(Emily): we probably want to try again to aquire the lock
+    //instead of failing here
+    if(result == orig_val) bsg_fail();
+    return orig_val;
+}
+
+#ifdef __cplusplus
+}
+#endif

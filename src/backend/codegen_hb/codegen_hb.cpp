@@ -209,11 +209,11 @@ namespace graphit {
             printIndent();
             //TODO(Emily): right now we instantiate and delete the next frontier every iteration
             // would prefer to reuse and reset
-            *oss << "delete next_";
+            *oss << "deleteObject(next_";
             // *oss << "next_";
              assign_stmt->lhs->accept(this);
             // *oss << ".assign(0, edges.num_nodes(), 0);" << std::endl;
-            *oss << ";" << std::endl;
+            *oss << ");" << std::endl;
 
             // *oss << "int * temp;" << std::endl;
             // printIndent();
@@ -1047,6 +1047,7 @@ namespace graphit {
         *oss << "bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;" << std::endl;
         //NOTE(Emily): include device runtime libraries here:
         *oss << "#include <local_range.h>" << std::endl;
+        *oss << "#include <vertex_struct.h>" << std::endl;
         oss = &oss_host;
 
         *oss << "#include \"hb_intrinsics.h\"" << std::endl;
@@ -1160,7 +1161,7 @@ namespace graphit {
             size_expr->accept(this);
             *oss << ", ";
             var_decl->initVal->accept(this);
-            *oss << ", " << name << "_decl);" << std::endl;
+            *oss << ", " << name << "_dev);" << std::endl;
             // *oss << name << "= new Vector<";
             // vector_element_type->accept(this);
             // *oss << ">();" << std::endl;

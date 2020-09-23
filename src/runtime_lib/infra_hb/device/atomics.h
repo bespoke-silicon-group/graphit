@@ -25,11 +25,10 @@ extern "C" {
 #endif
 
 int fetch_and_add(int &x, int inc) {
-    int orig_val = x;
+    int orig_val, result;
     //NOTE(Emily): do while loop until the swap happens
     // (instead of recursive func)
-    int result;
-    do {result = bsg_amoswap(&x, (orig_val + inc));}
+    do {orig_val = x; result = bsg_amoswap(&x, (orig_val + inc));}
     while(result != orig_val);
     return orig_val;
 }

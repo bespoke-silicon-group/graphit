@@ -30,7 +30,7 @@ int fetch_and_add(int &x, int inc) {
     //TODO(Emily): trying a recursive call instead
     //to try to acquire the lock again if it fails
     if(result != orig_val){
-        return fetch_and_add(&x, inc);
+        return fetch_and_add(x, inc);
     }
     return orig_val;
 }

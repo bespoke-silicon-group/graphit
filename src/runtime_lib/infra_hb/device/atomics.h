@@ -26,12 +26,11 @@ extern "C" {
 
 int fetch_and_add(int &x, int inc) {
     int orig_val = x;
-    int result = bsg_amoswap(&x, (orig_val + inc));
-    //TODO(Emily): trying a recursive call instead
-    //to try to acquire the lock again if it fails
-    if(result != orig_val){
-        return fetch_and_add(x, inc);
-    }
+    //NOTE(Emily): do while loop until the swap happens
+    // (instead of recursive func)
+    int result;
+    do {result = bsg_amoswap(&x, (orig_val + inc));}
+    while(result != orig_val);
     return orig_val;
 }
 

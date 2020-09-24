@@ -6,15 +6,15 @@
 
 template <typename T>
 class lockable {
-private:
+public:
     atomic<int> lock;
     T value;
 void acquire_lock() {
-    int l = 0;
-    do { l = lock.exchange(0, std::memory_order_acquire); } while (l == 0);
-};
+    int l = 1;
+    do { l = lock.exchange(1, std::memory_order_acquire); } while (l == 1);
+}
 void release_lock() {
-    lock.store(1, std::memory_order_release);
+    lock.store(0, std::memory_order_release);
 }
 bool cas(T t, T v) {
     acquire_lock();

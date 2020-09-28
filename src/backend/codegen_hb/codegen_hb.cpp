@@ -225,8 +225,8 @@ namespace graphit {
             // assign_stmt->lhs->accept(this);
             // *oss <<  ".copyToDevice(temp, edges.num_edges());";
         }
-        //doing assignment on a single val of an array
-        else if(mir::isa<mir::TensorArrayReadExpr>(assign_stmt->lhs) && (mir::isa<mir::FloatLiteral>(assign_stmt->expr) || mir::isa<mir::IntLiteral>(assign_stmt->expr))) {
+        //doing assignment on a single val of an array from host code
+        else if(oss == &oss_host && mir::isa<mir::TensorArrayReadExpr>(assign_stmt->lhs) && (mir::isa<mir::FloatLiteral>(assign_stmt->expr) || mir::isa<mir::IntLiteral>(assign_stmt->expr))) {
             auto left = mir::to<mir::TensorArrayReadExpr>(assign_stmt->lhs);
             printIndent();
             *oss << "hammerblade::insert_val(";
@@ -239,8 +239,7 @@ namespace graphit {
 
         }
         else {
-            //NOTE(Emily): we shouldn't be calling this anymore
-            //double check for any cases where this is called
+            //NOTE(Emily): we should only be calling in device code
             printIndent();
             assign_stmt->lhs->accept(this);
             *oss << " = ";
@@ -598,9 +597,19 @@ namespace graphit {
 
     void CodeGenHB::visit(mir::PrintStmt::Ptr print_stmt) {
         printIndent();
-        *oss << "std::cout << ";
-        print_stmt->expr->accept(this);
-        *oss << "<< std::endl;" << std::endl;
+        if(mir::isa<mir::TensorArrayReadExpr>(print_stmt->expr) && oss == &oss_device) {
+            auto tare = mir::to<mir::TensorArrayReadExpr>(print_stmt->expr);
+            auto target_expr = mir::to<mir::VarExpr>(tare->target);
+            //TODO(Emily): want to check the type and format accordingly;
+            *oss << "bsg_printf(\"%i\\n\", ";
+            print_stmt->expr->accept(this);
+            *oss << ");" << std::endl;
+
+        } else {
+            *oss << "std::cout << ";
+            print_stmt->expr->accept(this);
+            *oss << "<< std::endl;" << std::endl;
+        }
     }
 
     void CodeGenHB::visit(mir::BreakStmt::Ptr print_stmt) {

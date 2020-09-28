@@ -224,9 +224,23 @@ namespace graphit {
             // printIndent();
             // assign_stmt->lhs->accept(this);
             // *oss <<  ".copyToDevice(temp, edges.num_edges());";
-        } else {
-            //TODO(Emily): need to fix this so that
-            //the assignment is happening on the device
+        }
+        //doing assignment on a single val of an array
+        else if(mir::isa<mir::TensorArrayReadExpr>(assign_stmt->lhs) && (mir::isa<mir::FloatLiteral>(assign_stmt->expr) || mir::isa<mir::IntLiteral>(assign_stmt->expr))) {
+            auto left = mir::to<mir::TensorArrayReadExpr>(assign_stmt->lhs);
+            printIndent();
+            *oss << "hammerblade::insert_val(";
+            left->index->accept(this);
+            *oss << ", ";
+            assign_stmt->expr->accept(this);
+            *oss << ", ";
+            left->target->accept(this);
+            *oss << "_dev);" << std::endl;
+
+        }
+        else {
+            //NOTE(Emily): we shouldn't be calling this anymore
+            //double check for any cases where this is called
             printIndent();
             assign_stmt->lhs->accept(this);
             *oss << " = ";

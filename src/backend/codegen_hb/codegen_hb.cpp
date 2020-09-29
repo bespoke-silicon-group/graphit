@@ -602,7 +602,6 @@ namespace graphit {
             auto target_expr = mir::to<mir::VarExpr>(tare->target);
             auto type = target_expr->var.getType();
             mir::VectorType::Ptr vector_type = mir::to<mir::VectorType>(type);
-        	auto scalar_type = mir::to<mir::ScalarType>(vector_type->vector_element_type)->type;
 
             if (mir::isa<mir::ScalarType>(vector_type->vector_element_type)){
                 auto scalar_type = mir::to<mir::ScalarType>(vector_type->vector_element_type)->type;

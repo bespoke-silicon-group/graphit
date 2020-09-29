@@ -600,10 +600,29 @@ namespace graphit {
         if(mir::isa<mir::TensorArrayReadExpr>(print_stmt->expr) && oss == &oss_device) {
             auto tare = mir::to<mir::TensorArrayReadExpr>(print_stmt->expr);
             auto target_expr = mir::to<mir::VarExpr>(tare->target);
-            //TODO(Emily): want to check the type and format accordingly;
-            *oss << "bsg_printf(\"%i\\n\", ";
-            print_stmt->expr->accept(this);
-            *oss << ");" << std::endl;
+            auto type = target_expr->var.getType();
+            mir::VectorType::Ptr vector_type = mir::to<mir::VectorType>(type);
+        	auto scalar_type = mir::to<mir::ScalarType>(vector_type->vector_element_type)->type;
+
+            if (mir::isa<mir::ScalarType>(vector_type->vector_element_type)){
+                auto scalar_type = mir::to<mir::ScalarType>(vector_type->vector_element_type)->type;
+                if(scalar_type == mir::ScalarType::Type::INT) {
+                    *oss << "bsg_printf(\"%i\\n\", ";
+                    print_stmt->expr->accept(this);
+                    *oss << ");" << std::endl;
+                } else if (scalar_type == mir::ScalarType::Type::FLOAT || scalar_type == mir::ScalarType::Type::DOUBLE) {
+                    *oss << "bsg_printf(\"%f\\n\", ";
+                    print_stmt->expr->accept(this);
+                    *oss << ");" << std::endl;
+                }
+                else if (scalar_type == mir::ScalarType::Type::STRING){
+                    *oss << "bsg_printf(\"";
+                    print_stmt->expr->accept(this);
+                    *oss << "\\n\");" << std::endl;
+                }
+                else { assert(false && "Printing for this type not supported"); }
+            }
+            else {assert(false && "Printing for this type not supported");}
 
         } else {
             *oss << "std::cout << ";
@@ -1126,7 +1145,7 @@ namespace graphit {
         // oss = &oss_host;
         if (!mir::isa<mir::VectorType>(vector_element_type)){
             // *oss << "Vector<";
-            // vector_element_type->accept(this);
+             vector_element_type->accept(this);
             // *oss << "> " << name << ";" << std::endl;
             *oss << " * __restrict " << name << ";" << std::endl;
             oss = &oss_host;

@@ -771,6 +771,10 @@ namespace graphit {
         std::string arg_list = "";
         std::string arg_def_list = "";
 
+        //check if this is a print statement function
+        // and generate on host
+
+
         if (mir_context_->isConstVertexSet(mir_var->var.getName())){
             //if the verstexset is a const / global vertexset, then we can get size easily
             auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
@@ -785,7 +789,12 @@ namespace graphit {
             printIndent();
             *oss << "device->runJobs()";
             arg_def_list = "int V";
-            genVertexsetApplyKernel(apply_expr, arg_def_list);
+            if(apply_expr->input_function_name.find("print") != std::string::npos) {
+                genVertexsetPrintKernel(apply_expr, arg_def_list);
+            }
+            else {
+                genVertexsetApplyKernel(apply_expr, arg_def_list);
+            }
         } else {
             //TODO(Emily): this most likely will fail the asserts. need to find other solution here.
             auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
@@ -801,7 +810,12 @@ namespace graphit {
             printIndent();
             *oss << "device->runJobs()";
             arg_def_list = "int V";
-            genVertexsetApplyKernel(apply_expr, arg_def_list);
+            if(apply_expr->input_function_name.find("print") != std::string::npos) {
+                genVertexsetPrintKernel(apply_expr, arg_def_list);
+            }
+            else {
+                genVertexsetApplyKernel(apply_expr, arg_def_list);
+            }
 
         }
 
@@ -1518,6 +1532,21 @@ namespace graphit {
 
         oss = &oss_host;
 
+    }
+
+    void CodeGenHB::genVertexsetPrintKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
+        oss = &oss_device;
+        *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
+        *oss << "\t" << "if(bsg_id == 0) {" << std::endl;
+        *oss << "\t\t" << "for (int iter_x = 0, iter_x < V; iter_x++) {" << std::endl;
+        *oss << "\t\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
+        *oss << "\t\t" << "}" << std::endl;
+        *oss << "\t" << "}" << std::endl;
+        *oss << "\t" << "barrier.sync();" << std::endl;
+        *oss << "\t" << "return 0;" << std::endl;
+        *oss << "}" << std::endl;
+
+        oss = &oss_host;
     }
 
 }

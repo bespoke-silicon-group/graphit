@@ -224,9 +224,22 @@ namespace graphit {
             // printIndent();
             // assign_stmt->lhs->accept(this);
             // *oss <<  ".copyToDevice(temp, edges.num_edges());";
-        } else {
-            //TODO(Emily): need to fix this so that
-            //the assignment is happening on the device
+        }
+        //doing assignment on a single val of an array from host code
+        else if(oss == &oss_host && mir::isa<mir::TensorArrayReadExpr>(assign_stmt->lhs) && (mir::isa<mir::FloatLiteral>(assign_stmt->expr) || mir::isa<mir::IntLiteral>(assign_stmt->expr))) {
+            auto left = mir::to<mir::TensorArrayReadExpr>(assign_stmt->lhs);
+            printIndent();
+            *oss << "hammerblade::insert_val(";
+            left->index->accept(this);
+            *oss << ", ";
+            assign_stmt->expr->accept(this);
+            *oss << ", ";
+            left->target->accept(this);
+            *oss << "_dev);" << std::endl;
+
+        }
+        else {
+            //NOTE(Emily): we should only be calling in device code
             printIndent();
             assign_stmt->lhs->accept(this);
             *oss << " = ";
@@ -584,9 +597,37 @@ namespace graphit {
 
     void CodeGenHB::visit(mir::PrintStmt::Ptr print_stmt) {
         printIndent();
-        *oss << "std::cout << ";
-        print_stmt->expr->accept(this);
-        *oss << "<< std::endl;" << std::endl;
+        if(mir::isa<mir::TensorArrayReadExpr>(print_stmt->expr) && oss == &oss_device) {
+            auto tare = mir::to<mir::TensorArrayReadExpr>(print_stmt->expr);
+            auto target_expr = mir::to<mir::VarExpr>(tare->target);
+            auto type = target_expr->var.getType();
+            mir::VectorType::Ptr vector_type = mir::to<mir::VectorType>(type);
+
+            if (mir::isa<mir::ScalarType>(vector_type->vector_element_type)){
+                auto scalar_type = mir::to<mir::ScalarType>(vector_type->vector_element_type)->type;
+                if(scalar_type == mir::ScalarType::Type::INT) {
+                    *oss << "bsg_printf(\"%i\\n\", ";
+                    print_stmt->expr->accept(this);
+                    *oss << ");" << std::endl;
+                } else if (scalar_type == mir::ScalarType::Type::FLOAT || scalar_type == mir::ScalarType::Type::DOUBLE) {
+                    *oss << "bsg_printf(\"%f\\n\", ";
+                    print_stmt->expr->accept(this);
+                    *oss << ");" << std::endl;
+                }
+                else if (scalar_type == mir::ScalarType::Type::STRING){
+                    *oss << "bsg_printf(\"";
+                    print_stmt->expr->accept(this);
+                    *oss << "\\n\");" << std::endl;
+                }
+                else { assert(false && "Printing for this type not supported"); }
+            }
+            else {assert(false && "Printing for this type not supported");}
+
+        } else {
+            *oss << "std::cout << ";
+            print_stmt->expr->accept(this);
+            *oss << "<< std::endl;" << std::endl;
+        }
     }
 
     void CodeGenHB::visit(mir::BreakStmt::Ptr print_stmt) {
@@ -730,6 +771,10 @@ namespace graphit {
         std::string arg_list = "";
         std::string arg_def_list = "";
 
+        //check if this is a print statement function
+        // and generate on host
+
+
         if (mir_context_->isConstVertexSet(mir_var->var.getName())){
             //if the verstexset is a const / global vertexset, then we can get size easily
             auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
@@ -744,7 +789,12 @@ namespace graphit {
             printIndent();
             *oss << "device->runJobs()";
             arg_def_list = "int V";
-            genVertexsetApplyKernel(apply_expr, arg_def_list);
+            if(apply_expr->input_function_name.find("print") != std::string::npos) {
+                genVertexsetPrintKernel(apply_expr, arg_def_list);
+            }
+            else {
+                genVertexsetApplyKernel(apply_expr, arg_def_list);
+            }
         } else {
             //TODO(Emily): this most likely will fail the asserts. need to find other solution here.
             auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
@@ -760,7 +810,12 @@ namespace graphit {
             printIndent();
             *oss << "device->runJobs()";
             arg_def_list = "int V";
-            genVertexsetApplyKernel(apply_expr, arg_def_list);
+            if(apply_expr->input_function_name.find("print") != std::string::npos) {
+                genVertexsetPrintKernel(apply_expr, arg_def_list);
+            }
+            else {
+                genVertexsetApplyKernel(apply_expr, arg_def_list);
+            }
 
         }
 
@@ -1104,7 +1159,7 @@ namespace graphit {
         // oss = &oss_host;
         if (!mir::isa<mir::VectorType>(vector_element_type)){
             // *oss << "Vector<";
-            // vector_element_type->accept(this);
+             vector_element_type->accept(this);
             // *oss << "> " << name << ";" << std::endl;
             *oss << " * __restrict " << name << ";" << std::endl;
             oss = &oss_host;
@@ -1478,6 +1533,21 @@ namespace graphit {
 
         oss = &oss_host;
 
+    }
+
+    void CodeGenHB::genVertexsetPrintKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
+        oss = &oss_device;
+        *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
+        *oss << "\t" << "if(bsg_id == 0) {" << std::endl;
+        *oss << "\t\t" << "for (int iter_x = 0, iter_x < V; iter_x++) {" << std::endl;
+        *oss << "\t\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
+        *oss << "\t\t" << "}" << std::endl;
+        *oss << "\t" << "}" << std::endl;
+        *oss << "\t" << "barrier.sync();" << std::endl;
+        *oss << "\t" << "return 0;" << std::endl;
+        *oss << "}" << std::endl;
+
+        oss = &oss_host;
     }
 
 }

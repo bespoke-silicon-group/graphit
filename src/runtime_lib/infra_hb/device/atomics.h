@@ -4,38 +4,41 @@
 #include <bsg_manycore_atomic.h>
 #include <atomic>
 
-template <typename T>
-class lockable {
-public:
-    atomic<int> lock;
-    T value;
-void acquire_lock() {
-    int l = 1;
-    do { l = lock.exchange(1, std::memory_order_acquire); } while (l == 1);
-}
-void release_lock() {
-    lock.store(0, std::memory_order_release);
-}
-bool cas(T t, T v) {
-    acquire_lock();
-    T x = value;
-    bool r = false;
-    if (x == t) {
-        r = true;
-        value = v;
-    }
-    release_lock();
-    return r;
-}
-};
+__attribute__((section(".dram"))) std::atomic<int> * __restrict locks; //this is initialized in host program to be 1024 (16 * 64) in len
 
-template <typename T>
-bool compare_and_swap(lockable<T> &x, const T &old_val, const T &new_val) {
-    return x.cas(old_val, new_val);
+void acquire_lock(unsigned i)
+{
+  int l = 1;
+  do{ l = locks[i].exchange(1, std::memory_order_acquire); } while (l == 1);
 }
 
-//TODO(Emily): implement & test
+void release_lock(unsigned i)
+{
+  locks[i].store(0, std::memory_order_release);
+}
+
 template <typename T>
-int fetch_and_add(lockable<T> &x, T inc) {
-    bsg_fail(); //not yet implemented, so fails if called
+bool compare_and_swap(T& x, const T &old_val, const T &new_val)
+{
+  unsigned addr = (unsigned) &x;
+  unsigned mask = (unsigned) 0x3FF; //assuming 1024 locks
+  unsigned ind = (addr >> 2) & mask;
+  acquire_lock(ind);
+  T v = x;
+  bool r = false;
+  if(x == old_val) {
+    r = true;
+    x = new_val;
+  }
+  release_lock(ind);
+  return r;
+}
+
+template <typename T>
+T fetch_and_add(T& x, T inc)
+{
+  T newV, oldV;
+  do{oldV = x; newV = oldV + inc;}
+  while(!compare_and_swap<T>(x, oldV, newV));
+  return oldV;
 }

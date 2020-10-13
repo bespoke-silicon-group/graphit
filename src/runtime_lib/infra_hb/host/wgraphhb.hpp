@@ -1,7 +1,7 @@
 #pragma once
 #include <infra_gapbs/benchmark.h>
-#include <hammerblade/host/device.hpp>
-#include <hammerblade/host/vector.hpp>
+#include <infra_hb/host/device.hpp>
+#include <infra_hb/host/vector.hpp>
 
 namespace hammerblade {
 class WGraphHB {
@@ -36,7 +36,7 @@ public:
   }
 
   decltype(WGraph().num_nodes()) num_edges() const {
-    return _host_g.num_edges_;
+    return _host_g.num_edges();
   }
 
   using Vec = Vector<int32_t>;
@@ -109,7 +109,7 @@ private:
       std::vector<vertexdata> tmp_vertexlist(num_nodes());
       # pragma omp parallel for
       for (int64_t i = 0; i < num_nodes(); i++) {
-        index[i] = _host_g.in_index_[i] - _host_g.in_neighbors_;
+        index[i] = _host_g.in_index_shared_.get()[i] - _host_g.in_neighbors_shared_.get();
         vertexdata tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
         tmp_vertexlist[i] = tmp_elem;
       }
@@ -120,7 +120,7 @@ private:
       _in_vertexlist = Vector<vertexdata>(num_nodes());
       // copy
       _in_index.copyToDevice(index.data(), index.size());
-      _in_neighbors.copyToDevice(_host_g.in_neighbors_, num_edges());
+      _in_neighbors.copyToDevice(_host_g.in_neighbors_shared_.get(), num_edges());
       _in_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
     }
 
@@ -130,7 +130,7 @@ private:
     std::vector<vertexdata> tmp_vertexlist(num_nodes());
     #pragma omp parallel for
     for (int64_t i = 0; i < num_nodes(); i++) {
-      index[i] = _host_g.out_index_[i] - _host_g.out_neighbors_;
+      index[i] = _host_g.out_index_shared_.get()[i] - _host_g.out_neighbors_shared_.get();
       vertexdata tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
       tmp_vertexlist[i] = tmp_elem;
     }
@@ -142,15 +142,13 @@ private:
 
     //copy
     _out_index.copyToDevice(index.data(), index.size());
-    _out_neighbors.copyToDevice(_host_g.out_neighbors_, num_edges());
+    _out_neighbors.copyToDevice(_host_g.out_neighbors_shared_.get(), num_edges());
     _out_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
   }
 
   void exit() { freeGraphOnDevice(); }
 
   void freeGraphOnDevice() {}
-
-  bool isTranspose() const { return _host_g.is_transpose_; }
 
   WGraph _host_g;
   Vec   _out_index;

@@ -103,10 +103,14 @@ namespace hammerblade {
 
             // create a dense set on the device
             std::vector<int> h_dense_o(_num_identifiers, 0);
-            for (int id : _buckets[_current_bucket_idx]._identifiers)
+            for (int id : _buckets[_current_bucket_idx]._identifiers) {
                 h_dense_o[id] = 1;
+                // remove from our bucket map because we're going to empy this
+                // bucket in just a moment...
+                _id_to_bucket.erase(id);
+            }
 
-            // empty the current bucket
+            // empty this bucket
             _buckets[_current_bucket_idx]._identifiers.clear();
 
             Vector<int> d_dense_o(_num_identifiers);

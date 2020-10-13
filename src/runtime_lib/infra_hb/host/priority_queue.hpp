@@ -148,8 +148,8 @@ namespace hammerblade {
                     _buckets[it->second]._identifiers.erase(it->first);
                 } else if (it != _id_to_bucket.end() &&
                            it->second  == bkt_idx) {
-                    // we can just return - nothing to be done
-                    return;
+                    // we can just return - carry on
+                    continue;
                 }
 
                 // insert into mapped bucket

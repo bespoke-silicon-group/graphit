@@ -97,9 +97,9 @@ namespace hammerblade {
                 nextBucket();
             }
 
-            // return null if done
+            // return empty vector if done
             if (finished())
-                return nullptr;
+                return Vector<int>(0);
 
             // create a dense set on the device
             std::vector<int> h_dense_o(_num_identifiers, 0);

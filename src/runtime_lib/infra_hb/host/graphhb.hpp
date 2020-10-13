@@ -1,7 +1,7 @@
 #pragma once
 #include <infra_gapbs/benchmark.h>
-#include <hammerblade/host/device.hpp>
-#include <hammerblade/host/vector.hpp>
+#include <infra_hb/host/device.hpp>
+#include <infra_hb/host/vector.hpp>
 
 
 namespace hammerblade {

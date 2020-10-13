@@ -1,10 +1,10 @@
 #pragma once
+#define IGNORE_JULIENNE_TYPES
 #include <infra_hb/host/graphhb.hpp>
 #include <infra_hb/host/wgraphhb.hpp>
 #include <infra_hb/host/device.hpp>
 #include <infra_hb/host/error.hpp>
 #include <infra_hb/host/global_scalar.hpp>
-#include <infra_hb/host/parallel_vector.hpp>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -100,21 +100,6 @@ void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 //             so that we can avoid this unnecessary copy
 static
 int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
-    int size = 0;
-    int32_t temp[len];
-    frontier.copyToHost(temp, len);
-    for(auto i : temp) {
-      if(i == 1) {
-        size++;
-      }
-    }
-    return size;
-}
-
-//TODO(Emily): ideally this computation would happen on the device
-//             so that we can avoid this unnecessary copy
-static
-int builtin_getVertexSetSizeHB(ParallelVector<int32_t> &frontier, int len){
     int size = 0;
     int32_t temp[len];
     frontier.copyToHost(temp, len);

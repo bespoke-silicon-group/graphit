@@ -1421,7 +1421,7 @@ namespace graphit {
           *oss << ", " << arg;
         }
 
-        if(apply_func->result.isInitialized()){ *oss << ", next_frontier"; }
+        if(apply_func->result.isInitialized()){ *oss << ", int *next_frontier"; }
 
 
         *oss << ", int V, int E, int block_size_x";
@@ -1439,8 +1439,10 @@ namespace graphit {
         for (auto &arg : arguments) {
           *oss << ", " << arg;
         }
+        //TODO(Emily): this shouldn't be here/or we should fix
+        //the arg list for the function so that the order is correct here
         if(apply_func->result.isInitialized()){ *oss << ", next_frontier"; }
-        //*oss << ", V, E, block_size_x";
+        *oss << ", V, E, block_size_x";
 
 
         *oss << ");" << std::endl;
@@ -1524,7 +1526,7 @@ namespace graphit {
         *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
         *oss << "\t" << "int start, end;" << std::endl;
         *oss << "\t" << "local_range(V, &start, &end);" << std::endl;
-        *oss << "\t" << "for (int iter_x = start, iter_x < end; iter_x++) {" << std::endl;
+        *oss << "\t" << "for (int iter_x = start; iter_x < end; iter_x++) {" << std::endl;
         *oss << "\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
         *oss << "\t" << "}" << std::endl;
         *oss << "\t" << "barrier.sync();" << std::endl;

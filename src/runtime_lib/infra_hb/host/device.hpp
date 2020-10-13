@@ -4,7 +4,7 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_cuda.h>
 #include <bsg_manycore_tile.h>
-#include <hammerblade/host/error.hpp>
+#include <infra_hb/host/error.hpp>
 #include <memory>
 #include <vector>
 #include <iostream>

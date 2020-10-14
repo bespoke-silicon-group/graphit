@@ -1540,7 +1540,7 @@ namespace graphit {
         oss = &oss_device;
         *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
         *oss << "\t" << "if(bsg_id == 0) {" << std::endl;
-        *oss << "\t\t" << "for (int iter_x = 0, iter_x < V; iter_x++) {" << std::endl;
+        *oss << "\t\t" << "for (int iter_x = 0; iter_x < V; iter_x++) {" << std::endl;
         *oss << "\t\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
         *oss << "\t\t" << "}" << std::endl;
         *oss << "\t" << "}" << std::endl;

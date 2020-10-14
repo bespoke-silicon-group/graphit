@@ -18,7 +18,7 @@ namespace graphit {
 
         // these schedules are still supported by runtime libraries
         if (func_name == "edgeset_apply_push_parallel_sliding_queue_from_vertexset_with_frontier"
-            || func_name == "edgeset_apply_push_parallel_sliding_queue_weighted_deduplicatied_from_vertexset_with_frontier"){
+            || func_name == "edgeset_apply_push_parallel_sliding_queue_weighted_deduplicated_from_vertexset_with_frontier"){
             return;
         }
 
@@ -1347,7 +1347,7 @@ namespace graphit {
 
         // check for deduplication
         if (apply->enable_deduplication && apply_func->result.isInitialized()) {
-            output_name += "_deduplicatied";
+            output_name += "_deduplicated";
         }
 
         if (apply->from_func != "") {

@@ -1,5 +1,5 @@
 #pragma once
-#include <hammerblade/host/device.hpp>
+#include <infra_hb/host/device.hpp>
 #include <bsg_manycore_cuda.h>
 #include <string>
 #include <type_traits>

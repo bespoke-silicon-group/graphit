@@ -42,3 +42,23 @@ T fetch_and_add(T& x, T inc)
   while(!compare_and_swap<T>(x, oldV, newV));
   return oldV;
 }
+
+template <typename T>
+bool writeMin(T &a, T b) {
+  T c; bool r = 0;
+  if(a < b)
+    return false;
+  do {c = a;}
+  while(c > b && !(r = compare_and_swap<T>(a,c,b)));
+  return r;
+}
+
+template <typename T>
+bool writeMax(T &a, T b) {
+  T c; bool r = 0;
+  if(a >= b)
+    return false;
+  do {c = a;}
+  while(c < b && !(r = compare_and_swap<T>(a,c,b)));
+  return r;
+}

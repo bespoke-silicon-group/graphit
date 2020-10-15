@@ -47,6 +47,7 @@ static inline void edge_aware_local_range(int n, int e, int *start, int *end, in
         if(bsg_id == 0) {
           int idx = 0;
           recursive_range(n, e, grain_size, 0, n, &idx, edge_index);
+          if(end_idx[(bsg_tiles_X * bsg_tiles_Y) - 1] != n) end_idx[(bsg_tiles_X * bsg_tiles_Y) - 1] = n;
         }
         barrier.sync();
         *start = start_idx[bsg_id];

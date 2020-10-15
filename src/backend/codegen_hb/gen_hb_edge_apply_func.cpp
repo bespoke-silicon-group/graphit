@@ -650,9 +650,9 @@ namespace graphit {
         }
 
         if (apply->is_weighted) {
-            *oss_ << apply_func_name << " ( d , neighbors[s].vertex, neighbors[s].weight )";
+            *oss_ << apply_func_name << " ( neighbors[s].vertex, d, neighbors[s].weight )";
         } else {
-            *oss_ << apply_func_name << " ( d, neighbors[s] )";
+            *oss_ << apply_func_name << " (neighbors[s] , d)";
 
         }
 

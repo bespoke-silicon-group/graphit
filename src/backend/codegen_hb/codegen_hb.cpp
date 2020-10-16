@@ -636,6 +636,8 @@ namespace graphit {
     void CodeGenHB::visit(mir::Call::Ptr call_expr) {
         if(call_expr->name == "builtin_transpose") *oss << "hammerblade::builtin_transposeHB(";
 
+        if(call_expr->name == "deleteObject") *oss << "hammerblade::deleteObject(";
+
         if(call_expr->name == "builtin_getVertexSetSize")
         {
           *oss << "hammerblade::builtin_getVertexSetSizeHB(";

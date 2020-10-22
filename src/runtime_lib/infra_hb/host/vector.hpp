@@ -42,8 +42,14 @@ public:
                 _device(Device::GetInstance())
                 { moveFrom(other); }
 
-        /* we don't allow copying (because it will either be confusing or slow) */
-        Vector(const Vector &other) = delete;
+        /* we allow a shallow assignment/copy to be used in some cases
+        in the generated code, this should suffice for our uses*/
+        Vector(const Vector &other) {
+                move(other);
+        }
+        Vector & operator=(const Vector & other) {
+                move(other);
+        }
 
 
         Vector & operator=(Vector && other) {
@@ -131,6 +137,12 @@ private:
                 other._mem = 0;
                 other._length = 0;
                 other._device = nullptr;
+        }
+        //a shallow move that preserves the data of the other vector
+        void move(const Vector &other) {
+                _mem    = other._mem;
+                _length = other._length;
+                _device = other._device;
         }
 
         /* initialize the vector's memory on HammerBlade hardware */

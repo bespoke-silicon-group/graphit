@@ -192,41 +192,12 @@ namespace graphit {
             *oss << "  = ____graphit_tmp_out; "  << std::endl;
         } else if (mir::isa<mir::EdgeSetApplyExpr>(assign_stmt->expr)) {
             printIndent();
-            //assign_stmt->lhs->accept(this);
-            //*oss << " = ";
-            //TODO(Emily): we need to confirm that this is always a next_frontier case
             auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(assign_stmt->expr);
             genEdgesetApplyFunctionCall(edgeset_apply_expr, "", assign_stmt->lhs );
-            //NOTE(Emily): slightly hacky/suboptimal way of doing an assignment
-            // we likely will want to figure out a way to do this on device
             *oss << std::endl;
-            printIndent();
-            *oss << "hammerblade::builtin_swapVectors(";
-            assign_stmt->lhs->accept(this);
-            *oss << ", next_";
-            assign_stmt->lhs->accept(this);
-            *oss << ");" << std::endl;
-            printIndent();
-            //TODO(Emily): right now we instantiate and delete the next frontier every iteration
-            // would prefer to reuse and reset
-            *oss << "deleteObject(next_";
-            // *oss << "next_";
-             assign_stmt->lhs->accept(this);
-            // *oss << ".assign(0, edges.num_nodes(), 0);" << std::endl;
-            *oss << ");" << std::endl;
 
-            // *oss << "int * temp;" << std::endl;
-            // printIndent();
-            // *oss << "next_";
-            // assign_stmt->lhs->accept(this);
-            // *oss << '.copyToHost(temp, edges.num_edges());'
-            // *oss << std::endl;
-            // printIndent();
-            // assign_stmt->lhs->accept(this);
-            // *oss <<  ".copyToDevice(temp, edges.num_edges());";
-        }
         //doing assignment on a single val of an array from host code
-        else if(oss == &oss_host && mir::isa<mir::TensorArrayReadExpr>(assign_stmt->lhs) && (mir::isa<mir::FloatLiteral>(assign_stmt->expr) || mir::isa<mir::IntLiteral>(assign_stmt->expr))) {
+        } else if(oss == &oss_host && mir::isa<mir::TensorArrayReadExpr>(assign_stmt->lhs) && (mir::isa<mir::FloatLiteral>(assign_stmt->expr) || mir::isa<mir::IntLiteral>(assign_stmt->expr))) {
             auto left = mir::to<mir::TensorArrayReadExpr>(assign_stmt->lhs);
             printIndent();
             *oss << "hammerblade::insert_val(";
@@ -237,8 +208,36 @@ namespace graphit {
             left->target->accept(this);
             *oss << "_dev);" << std::endl;
 
-        }
-        else {
+        } else if (mir::isa<mir::VarExpr>(assign_stmt->lhs) && mir::isa<mir::VarExpr>(assign_stmt->expr)) {
+             auto lhs_var = std::dynamic_pointer_cast<mir::VarExpr>(assign_stmt->lhs);
+             auto rhs_var = std::dynamic_pointer_cast<mir::VarExpr>(assign_stmt->expr);
+             if (mir::isa<mir::VertexSetType>(lhs_var->var.getType()) && mir::isa<mir::VertexSetType>(rhs_var->var.getType())) {
+               printIndent();
+               *oss << "hammerblade::builtin_swapVectors(";
+               assign_stmt->lhs->accept(this);
+               *oss << ", ";
+               assign_stmt->expr->accept(this);
+               *oss << ");" << std::endl;
+               printIndent();
+             } else {
+               printIndent();
+               assign_stmt->lhs->accept(this);
+               *oss << " = ";
+               assign_stmt->expr->accept(this);
+               *oss << ";" << std::endl;
+             }
+        } else if (mir::isa<mir::VarExpr>(assign_stmt->lhs)) {
+            auto lhs_var = std::dynamic_pointer_cast<mir::VarExpr>(assign_stmt->lhs);
+            if(lhs_var->var.isInitialized()) {
+              printIndent();
+              assign_stmt->lhs->accept(this);
+              *oss << " = ";
+              assign_stmt->expr->accept(this);
+              *oss << ";" << std::endl;
+            } else {
+              *oss << "not initialized\n";
+            }
+        } else {
             //NOTE(Emily): we should only be calling in device code
             printIndent();
             assign_stmt->lhs->accept(this);
@@ -435,8 +434,7 @@ namespace graphit {
                         *oss << "*)numa_alloc_onnode(sizeof(";
                         merge_reduce->scalar_type->accept(this);
                         *oss << ") * ";
-                        auto count_expr = mir_context_->getElementCount(
-                                                                        mir_context_->getElementTypeFromVectorOrSetName(merge_reduce->field_name));
+                        auto count_expr = mir_context_->getElementCount(mir_context_->getElementTypeFromVectorOrSetName(merge_reduce->field_name));
                         count_expr->accept(this);
                         *oss << ", socketId);\n";
 
@@ -636,6 +634,9 @@ namespace graphit {
     }
 
     void CodeGenHB::visit(mir::Call::Ptr call_expr) {
+        if(call_expr->name == "builtin_transpose") *oss << "hammerblade::builtin_transposeHB(";
+
+        if(call_expr->name == "deleteObject") *oss << "hammerblade::deleteObject(";
 
         if(call_expr->name == "builtin_getVertexSetSize")
         {
@@ -796,16 +797,9 @@ namespace graphit {
                 genVertexsetApplyKernel(apply_expr, arg_def_list);
             }
         } else {
-            //TODO(Emily): this most likely will fail the asserts. need to find other solution here.
-            auto associated_element_type = mir_context_->getElementTypeFromVectorOrSetName(mir_var->var.getName());
-            assert(associated_element_type);
-            auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
-            assert(associated_element_type_size);
-            // if this is a dynamically created vertexset
+            //TODO(Emily): need to find other solution to get length of array.
             *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{";
-            //apply_expr->target->accept(this);
-            //*oss << ".getAddr(), ";
-            associated_element_type_size->accept(this);
+            *oss << mir_var->var.getName() << ".getAddr()";
             *oss <<  "});" << std::endl;
             printIndent();
             *oss << "device->runJobs()";
@@ -835,10 +829,8 @@ namespace graphit {
             *oss << "Vector<int32_t> ____graphit_tmp_out = new Vector<int32_t> ( ";
 
             //get the total number of vertices in the vertex set
-            auto vertex_type = mir_context_->getElementTypeFromVectorOrSetName(vertexset_where_expr->target);
-            auto vertices_range_expr =
-            mir_context_->getElementCount(vertex_type);
-            vertices_range_expr->accept(this);
+
+            associated_element_type_size->accept(this);
             *oss << " , ";
             //vertices_range_expr->accept(this);
             // the output vertexset is initially set to 0
@@ -852,7 +844,7 @@ namespace graphit {
             oss = &oss_host;
             printIndent();
             *oss << next_bool_map_name <<"_dev.set(device->malloc(" << next_bool_map_name << "_dev.scalar_size() * ";
-            vertices_range_expr->accept(this);
+            associated_element_type_size->accept(this);
             *oss << "));\n";
             oss = &oss_device;
             *oss << "extern \"C\" int __attribute__ ((noinline)) " << vertexset_where_expr->input_func << "_where_call(int V, int block_size_x) { " << std::endl;
@@ -1050,11 +1042,16 @@ namespace graphit {
         //TODO(Emily): can't return from a kernel call, so need to handle this case
         } else if (mir::isa<mir::EdgeSetApplyExpr>(var_decl->initVal)) {
             printIndent();
+            auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(var_decl->initVal);
+
             //TODO(Emily): need to check the type and might need to do more instantiate for device here
             var_decl->type->accept(this);
-            *oss << var_decl->name << std::endl;
+            *oss << var_decl->name;
+            *oss << "= new Vector<int32_t>(";
+            edgeset_apply_expr->target->accept(this);
+            *oss << ".num_nodes(), 0);" << std::endl;
             printIndent();
-            auto edgeset_apply_expr = mir::to<mir::EdgeSetApplyExpr>(var_decl->initVal);
+
             genEdgesetApplyFunctionCall(edgeset_apply_expr, var_decl->name, NULL);
         } else {
             printIndent();
@@ -1327,10 +1324,11 @@ namespace graphit {
         std::vector<std::string> arguments = std::vector<std::string>();
         std::vector<std::string> arguments_def = std::vector<std::string>();
         //TODO: want to move this out of while loop.
-        if(apply_func->result.isInitialized()) {
+        if(return_arg == "" && apply_func->result.isInitialized()) {
           *oss << "Vector<int32_t> next_frontier = new Vector<int32_t>(";
           apply->target->accept(this);
           *oss << ".num_nodes(), 0);" << std::endl;
+          printIndent();
         }
         oss = &oss_device;
         *oss << "extern \"C\" int __attribute__ ((noinline)) ";
@@ -1382,6 +1380,15 @@ namespace graphit {
             }
         }
 
+        if(return_arg != "") {
+          arguments.push_back(return_arg);
+          arguments_def.push_back("int *" + return_arg);
+        }
+        else if(apply_func->result.isInitialized()){
+          arguments.push_back("next_frontier");
+          arguments_def.push_back("int *next_frontier");
+        }
+
         if (apply->to_func != "") {
             if (mir_context_->isFunction(apply->to_func)) {
                 // the schedule is an input to function
@@ -1420,10 +1427,6 @@ namespace graphit {
         for (auto &arg : arguments_def) {
           *oss << ", " << arg;
         }
-
-        if(apply_func->result.isInitialized()){ *oss << ", int *next_frontier"; }
-
-
         *oss << ", int V, int E, int block_size_x";
 
         *oss << ") {" << std::endl;
@@ -1439,9 +1442,7 @@ namespace graphit {
         for (auto &arg : arguments) {
           *oss << ", " << arg;
         }
-        //TODO(Emily): this shouldn't be here/or we should fix
-        //the arg list for the function so that the order is correct here
-        if(apply_func->result.isInitialized()){ *oss << ", next_frontier"; }
+
         *oss << ", V, E, block_size_x";
 
 
@@ -1450,7 +1451,7 @@ namespace graphit {
         *oss << "}" << std::endl;
 
         oss = &oss_host;
-        printIndent();
+        //printIndent();
         *oss << "device->enqueueJob(\"";
         *oss << edgeset_apply_func_name << "_call\", {";
 
@@ -1472,14 +1473,19 @@ namespace graphit {
         }
         *oss << " , ";
         apply->target->accept(this);
-        *oss << ".getOutNeighborsAddr()";
+        if (mir::isa<mir::PushEdgeSetApplyExpr>(apply)) {
+          *oss << ".getOutNeighborsAddr()";
+        } else if (mir::isa<mir::PullEdgeSetApplyExpr>(apply)) {
+          *oss << ".getInNeighborsAddr()";
+        }
 
         if(lhs != NULL){
           *oss << ", ";
           lhs->accept(this);
           *oss <<".getAddr()";;
         }
-        if(apply_func->result.isInitialized()){ *oss << ", next_frontier.getAddr()"; }
+        if(return_arg != "") { *oss << ", " << return_arg << ".getAddr()"; }
+        else if(apply_func->result.isInitialized()){ *oss << ", next_frontier.getAddr()"; }
 
         *oss << ", ";
         apply->target->accept(this);
@@ -1492,6 +1498,18 @@ namespace graphit {
         *oss << "}); " << std::endl;
         printIndent();
         *oss << "device->runJobs();" << std::endl;
+        //need to swap the next frontier and frontier here
+        //& delete the next frontier object to be safe
+        if(return_arg == "" && apply_func->result.isInitialized() && apply->from_func != "") {
+          if(!mir_context_->isFunction(apply->from_func)) {
+            printIndent();
+            *oss << "hammerblade::builtin_swapVectors(";
+            *oss << apply->from_func;
+            *oss << ", next_frontier);" << std::endl;
+            printIndent();
+            *oss << "deleteObject(next_frontier);" << std::endl;
+          }
+        }
     }
 
     /**
@@ -1519,6 +1537,7 @@ namespace graphit {
         }
     }
 
+
     //NOTE(Emily): method to generate the kernel to call vertexset apply funcs on device
     // want to figure out better way to indent (mid overall generation)
     void CodeGenHB::genVertexsetApplyKernel(mir::VertexSetApplyExpr::Ptr apply, std::string arg_list) {
@@ -1541,7 +1560,7 @@ namespace graphit {
         oss = &oss_device;
         *oss << "extern \"C\" int  __attribute__ ((noinline)) " << apply->input_function_name << "_kernel(" << arg_list << ") {" << std::endl;
         *oss << "\t" << "if(bsg_id == 0) {" << std::endl;
-        *oss << "\t\t" << "for (int iter_x = 0, iter_x < V; iter_x++) {" << std::endl;
+        *oss << "\t\t" << "for (int iter_x = 0; iter_x < V; iter_x++) {" << std::endl;
         *oss << "\t\t\t" << apply->input_function_name << "()(iter_x);" << std::endl;
         *oss << "\t\t" << "}" << std::endl;
         *oss << "\t" << "}" << std::endl;

@@ -130,7 +130,7 @@ int builtin_getVerticesHB(WGraphHB &g)
 }
 
 static
-void builtin_swapVectors(Vector<int32_t> a, Vector<int32_t> b)
+void builtin_swapVectors(Vector<int32_t> &a, Vector<int32_t> &b)
 {
   int n = a.getLength();
   if(n != b.getLength())
@@ -143,6 +143,11 @@ void builtin_swapVectors(Vector<int32_t> a, Vector<int32_t> b)
   b.copyToDevice(hosta, n);
   delete[] hosta;
   delete[] hostb;
+}
+
+static
+void deleteObject(Vector<int32_t> &a) {
+  a.exit();
 }
 
 }

@@ -216,7 +216,7 @@ namespace graphit {
                 if(apply->is_weighted) {
                   *oss_ << " (to_func( neighbors[d].vertex)";
                 } else {
-                  *oss_ << "(to_func(neighbors[d]))";
+                  *oss_ << "(to_func(neighbors[d])";
                 }
 
             } else {

@@ -62,3 +62,8 @@ bool writeMax(T &a, T b) {
   while(c < b && !(r = compare_and_swap<T>(a,c,b)));
   return r;
 }
+
+template <typename T>
+void writeAdd(T &a, T b) {
+  T temp = fetch_and_add<T>(a, b);
+}

@@ -634,11 +634,35 @@ namespace graphit {
     }
 
     void CodeGenHB::visit(mir::Call::Ptr call_expr) {
-        if(call_expr->name == "builtin_transpose") *oss << "hammerblade::builtin_transposeHB(";
+        if(call_expr->name == "builtin_transpose") {
+          *oss << "hammerblade::builtin_transposeHB(";
+          bool printDelimiter = false;
 
-        if(call_expr->name == "deleteObject") *oss << "hammerblade::deleteObject(";
+          for (auto arg : call_expr->args) {
+              if (printDelimiter) {
+                  *oss << ", ";
+              }
+              arg->accept(this);
+              printDelimiter = true;
+          }
+          *oss << ") ";
+        }
 
-        if(call_expr->name == "builtin_getVertexSetSize")
+        else if(call_expr->name == "deleteObject") {
+          *oss << "hammerblade::deleteObject(";
+          bool printDelimiter = false;
+
+          for (auto arg : call_expr->args) {
+              if (printDelimiter) {
+                  *oss << ", ";
+              }
+              arg->accept(this);
+              printDelimiter = true;
+          }
+          *oss << ") ";
+        }
+
+        else if(call_expr->name == "builtin_getVertexSetSize")
         {
           *oss << "hammerblade::builtin_getVertexSetSizeHB(";
 
@@ -1100,6 +1124,7 @@ namespace graphit {
         //NOTE(Emily): include device runtime libraries here:
         *oss << "#include <local_range.h>" << std::endl;
         *oss << "#include <vertex_struct.h>" << std::endl;
+        *oss << "#include <atomics.h>" << std::endl;
         oss = &oss_host;
 
         *oss << "#include \"hb_intrinsics.h\"" << std::endl;
@@ -1113,6 +1138,7 @@ namespace graphit {
         *oss << "using hammerblade::Device;" << std::endl;
         *oss << "using hammerblade::Vector;" << std::endl;
         *oss << "using hammerblade::GraphHB;" << std::endl;
+        *oss << "using hammerblade::WGraphHB;" << std::endl;
         *oss << "using hammerblade::GlobalScalar;" <<std::endl;
 
 

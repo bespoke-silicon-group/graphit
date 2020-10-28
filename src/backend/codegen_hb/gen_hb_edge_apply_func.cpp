@@ -176,7 +176,8 @@ namespace graphit {
 
         if(from_vertexset_specified) {
           printIndent();
-          *oss_ << "if(from_vertexset[s]) {" << std::endl;
+          if(apply->is_weighted) { *oss_ << "if(from_vertexset[s].vertex) {" << std::endl;}
+          else { *oss_ << "if(from_vertexset[s]) {" << std::endl; }
           indent();
         }
 
@@ -608,9 +609,7 @@ namespace graphit {
         std::string node_id_type = "int";
         if (apply->is_weighted) node_id_type = "WNode";
 
-        indent();
         printIndent();
-
         *oss_ << "int degree = in_indices[d + 1] - in_indices[d];" << std::endl;
         printIndent();
         *oss_ << node_id_type << " * neighbors = &in_neighbors[in_indices[d]];" << std::endl;
@@ -622,14 +621,17 @@ namespace graphit {
           printIndent();
 
           *oss_ << "if";
+
           std::string src_type = "neighbors[s]";
 
           if(from_vertexset_specified) {
             if(mir_context_->isFunction(apply->from_func)) {
-              *oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";
+              if(apply->is_weighted) {*oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "].vertex";}
+              else {*oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";}
             }
             else {
-              *oss_ << "(from_vertexset[" << src_type << "]";
+              if(apply->is_weighted) { *oss_ << "(from_vertexset[" << src_type << "].vertex";}
+              else {*oss_ << "(from_vertexset[" << src_type << "]";}
             }
           }
           else {
@@ -728,10 +730,12 @@ namespace graphit {
           std::string src_type = "neighbors[s]";
           if(from_vertexset_specified) {
             if(mir_context_->isFunction(apply->from_func)) {
-              *oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";
+              if(apply->is_weighted) {*oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "].vertex";}
+              else {*oss_ << " (from_func(" << src_type << ") && from_vertexset[" << src_type << "]";}
             }
             else {
-              *oss_ << "(from_vertexset[" << src_type << "]";
+              if(apply->is_weighted) { *oss_ << "(from_vertexset[" << src_type << "].vertex";}
+              else {*oss_ << "(from_vertexset[" << src_type << "]";}
             }
           }
           else {

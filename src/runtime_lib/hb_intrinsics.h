@@ -1,10 +1,10 @@
 #pragma once
+#define IGNORE_JULIENNE_TYPES
 #include <infra_hb/host/graphhb.hpp>
 #include <infra_hb/host/wgraphhb.hpp>
 #include <infra_hb/host/device.hpp>
 #include <infra_hb/host/error.hpp>
 #include <infra_hb/host/global_scalar.hpp>
-#include <infra_hb/host/parallel_vector.hpp>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -111,21 +111,6 @@ int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
     return size;
 }
 
-//TODO(Emily): ideally this computation would happen on the device
-//             so that we can avoid this unnecessary copy
-static
-int builtin_getVertexSetSizeHB(ParallelVector<int32_t> &frontier, int len){
-    int size = 0;
-    int32_t temp[len];
-    frontier.copyToHost(temp, len);
-    for(auto i : temp) {
-      if(i == 1) {
-        size++;
-      }
-    }
-    return size;
-}
-
 static
 void builtin_addVertexHB(Vector<int32_t> &frontier, int pos)
 {
@@ -145,7 +130,7 @@ int builtin_getVerticesHB(WGraphHB &g)
 }
 
 static
-void builtin_swapVectors(Vector<int32_t> a, Vector<int32_t> b)
+void builtin_swapVectors(Vector<int32_t> &a, Vector<int32_t> &b)
 {
   int n = a.getLength();
   if(n != b.getLength())
@@ -169,4 +154,9 @@ template<typename T>
 void updateBucketWithGraphItVertexSubset(Vector<T> vset, BucketPriorityQueue<T> pq)
 {
   pq.updateWithDenseVertexSet(vset);
+
+static
+void deleteObject(Vector<int32_t> &a) {
+  a.exit();
+}
 }

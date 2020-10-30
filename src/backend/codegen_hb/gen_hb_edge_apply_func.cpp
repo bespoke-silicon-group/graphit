@@ -18,7 +18,7 @@ namespace graphit {
 
         // these schedules are still supported by runtime libraries
         if (func_name == "edgeset_apply_push_parallel_sliding_queue_from_vertexset_with_frontier"
-            || func_name == "edgeset_apply_push_parallel_sliding_queue_weighted_deduplicatied_from_vertexset_with_frontier"){
+            || func_name == "edgeset_apply_push_parallel_sliding_queue_weighted_deduplicated_from_vertexset_with_frontier"){
             return;
         }
 
@@ -216,7 +216,7 @@ namespace graphit {
                 if(apply->is_weighted) {
                   *oss_ << " (to_func( neighbors[d].vertex)";
                 } else {
-                  *oss_ << "(to_func(neighbors[d]))";
+                  *oss_ << "(to_func(neighbors[d])";
                 }
 
             } else {
@@ -650,9 +650,9 @@ namespace graphit {
         }
 
         if (apply->is_weighted) {
-            *oss_ << apply_func_name << " ( d , neighbors[s].vertex, neighbors[s].weight )";
+            *oss_ << apply_func_name << " ( neighbors[s].vertex, d, neighbors[s].weight )";
         } else {
-            *oss_ << apply_func_name << " ( d, neighbors[s] )";
+            *oss_ << apply_func_name << " (neighbors[s] , d)";
 
         }
 
@@ -1347,7 +1347,7 @@ namespace graphit {
 
         // check for deduplication
         if (apply->enable_deduplication && apply_func->result.isInitialized()) {
-            output_name += "_deduplicatied";
+            output_name += "_deduplicated";
         }
 
         if (apply->from_func != "") {

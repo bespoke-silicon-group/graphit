@@ -145,9 +145,18 @@ void builtin_swapVectors(Vector<int32_t> &a, Vector<int32_t> &b)
   delete[] hostb;
 }
 
+template<typename T>
+Vector<T> getBucketWithGraphItVertexSubset(BucketPriorityQueue<T> pq){
+    return pq.popDenseReadyVertexSet();
+}
+
+template<typename T>
+void updateBucketWithGraphItVertexSubset(Vector<T> vset, BucketPriorityQueue<T> pq)
+{
+  pq.updateWithDenseVertexSet(vset);
+
 static
 void deleteObject(Vector<int32_t> &a) {
   a.exit();
 }
-
 }

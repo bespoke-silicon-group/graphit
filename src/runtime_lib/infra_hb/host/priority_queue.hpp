@@ -1,6 +1,6 @@
 #pragma once
 #include <infra_hb/host/device.hpp>
-#include <infra_hb/host/vector.hpp>
+#include <infra_hb/host/global_scalar.hpp>
 #include <set>
 #include <map>
 #include <sstream>
@@ -20,7 +20,7 @@ namespace hammerblade {
         int              _id;
         std::set<int>    _identifiers;
 
-        Bucket();
+        Bucket(){};
         bool empty() const { return _identifiers.empty(); }
 
         using Ptr = std::shared_ptr<Bucket>;
@@ -34,7 +34,7 @@ namespace hammerblade {
     class BucketPriorityQueue {
     private:
         int           _num_identifiers;
-        Vector<T>    *_priority;
+        GlobalScalar<hb_mc_eva_t> *_priority;
         BucketOrder   _bkt_order;
         PriorityOrder _pri_order;
         int           _total_buckets;
@@ -42,10 +42,11 @@ namespace hammerblade {
         std::map<int, int> _id_to_bucket;
 
         int           _current_bucket_idx;
-        std::vector<Bucket> _buckets;
+        std::vector<Bucket> _buckets
+        T null_bkt = std::numeric_limits<T>::max();
 
     public:
-        BucketPriorityQueue(int num_identifiers, Vector<T> *priority,
+        BucketPriorityQueue(int num_identifiers, GlobalScalar<hb_mc_eva_t> *priority,
                             BucketOrder bkt_order, PriorityOrder pri_order,
                             int total_buckets, T delta) :
             _num_identifiers(num_identifiers),
@@ -60,6 +61,7 @@ namespace hammerblade {
             for (int bkt = 0; bkt < _buckets.size(); ++bkt) {
                 _buckets[bkt]._id = bkt;
             }
+            initBuckets();
         }
 
         bool currentBucketIsEmpty() const {
@@ -120,18 +122,35 @@ namespace hammerblade {
             return d_dense_o;
         }
 
+        void initBuckets() {
+            std::vector<T> h_priority(_num_identifiers);
+            read_global_buffer<T>(&h_priority[0], *_priority, _num_identifiers);
+            for(int id = 0; id < h_priority.size(); id++) {
+                if(h_priority[id] == null_bkt)
+                    continue;
+                T delta_priority = h_priority[id]/_delta;
+                int bkt_idx = deltaPriorityToBucket(delta_priority);
+
+                // insert into mapped bucket
+                Bucket &b = _buckets[bkt_idx];
+                b._identifiers.insert(id);
+                // mark this id as present
+                _id_to_bucket[id] = bkt_idx;
+            }
+        }
+
         void updateWithDenseVertexSet(Vector<int> &d_dense_vertex_set) {
             // read the vertexset and priority the device
             std::vector<int> h_dense_vertex_set(_num_identifiers);
             d_dense_vertex_set.copyToHost(&h_dense_vertex_set[0], h_dense_vertex_set.size());
 
             std::vector<T> h_priority(_num_identifiers);
-            _priority->copyToHost(&h_priority[0], _num_identifiers);
+            read_global_buffer<T>(&h_priority[0], *_priority, _num_identifiers);
 
             // iteratate over each identifier and update its bucket
             for (int id = 0; id < h_dense_vertex_set.size(); ++id) {
                 // dense set - skip if not in set
-                if (!h_dense_vertex_set[id])
+                if (!h_dense_vertex_set[id] || h_priority[id] == null_bkt)
                     continue;
 
                 // calculate the delta-priority

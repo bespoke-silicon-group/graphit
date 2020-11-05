@@ -185,6 +185,32 @@ template <typename T> static Vector<T> builtin_popHB(std::vector<std::vector<T>>
   return temp;
 }
 
+int calculate_direction(int sz, std::vector<int> frontier, GraphHB & e, int V, int E)
+{
+  int pull = 0;
+  int n = sz;
+  int outEdges = 0;
+  for(int i = 0; i < V; i++) {
+    if(frontier[i] == 1) {
+      outEdges += e.out_degree(i); 
+    }
+  }
+  if(n + outEdges > E / 20) pull = 1;
+  return pull;
+}
+int calculate_direction(int sz, std::vector<int> frontier, WGraphHB & e, int V, int E)
+{
+  int pull = 0;
+  int n = sz;
+  int outEdges = 0;
+  for(int i = 0; i < V; i++) {
+    if(frontier[i] == 1) {
+      outEdges += e.out_degree(i); 
+    }
+  }
+  if(n + outEdges > E / 20) pull = 1;
+  return pull;
+}
 
 }
 

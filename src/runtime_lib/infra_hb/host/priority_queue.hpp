@@ -34,7 +34,7 @@ namespace hammerblade {
     class BucketPriorityQueue {
     private:
         int           _num_identifiers;
-        GlobalScalar<hb_mc_eva_t> *_priority;
+        GlobalScalar<hb_mc_eva_t>    *_priority;
         BucketOrder   _bkt_order;
         PriorityOrder _pri_order;
         int           _total_buckets;
@@ -42,7 +42,7 @@ namespace hammerblade {
         std::map<int, int> _id_to_bucket;
 
         int           _current_bucket_idx;
-        std::vector<Bucket> _buckets
+        std::vector<Bucket> _buckets;
         T null_bkt = std::numeric_limits<T>::max();
 
     public:
@@ -54,9 +54,9 @@ namespace hammerblade {
             _bkt_order(bkt_order),
             _pri_order(pri_order),
             _total_buckets(total_buckets),
-            _delta(delta),
             _current_bucket_idx(0),
-            _buckets(total_buckets) {
+            _buckets(total_buckets),
+            _delta(delta) {
 
             for (int bkt = 0; bkt < _buckets.size(); ++bkt) {
                 _buckets[bkt]._id = bkt;
@@ -65,7 +65,7 @@ namespace hammerblade {
         }
 
         bool currentBucketIsEmpty() const {
-            return finished() || _buckets[_current_bucket_idx].empty();
+            return (finished() || _buckets[_current_bucket_idx].empty());
         }
 
         void nextBucket() {
@@ -92,17 +92,18 @@ namespace hammerblade {
 
             return ret;
         }
+        int checkBucketSize(int bkt_id) {
+          return _buckets[bkt_id]._identifiers.size();
+        }
 
         Vector<int> popDenseReadyVertexSet() {
             // scan through buckets to find a none empty one
             while (!finished() && currentBucketIsEmpty()) {
                 nextBucket();
             }
-
             // return empty vector if done
             if (finished())
                 return Vector<int>(0);
-
             // create a dense set on the device
             std::vector<int> h_dense_o(_num_identifiers, 0);
             for (int id : _buckets[_current_bucket_idx]._identifiers) {
@@ -118,19 +119,37 @@ namespace hammerblade {
             Vector<int> d_dense_o(_num_identifiers);
             d_dense_o.copyToDevice(&h_dense_o[0], h_dense_o.size());
 
+            Device::Ptr device = Device::GetInstance();
+            device->freeze_cores();
+            device->write_dma();
+            device->unfreeze_cores();
             // return the new dense set on the device
             return d_dense_o;
         }
 
         void initBuckets() {
+            Device::Ptr device = Device::GetInstance();
             std::vector<T> h_priority(_num_identifiers);
-            read_global_buffer<T>(&h_priority[0], *_priority, _num_identifiers);
-            for(int id = 0; id < h_priority.size(); id++) {
+            read_global_buffer_dma<T>(&h_priority[0], *_priority, _num_identifiers);
+            device->freeze_cores();
+            device->read_dma();
+            device->unfreeze_cores();
+            for(int id = 0; id < _num_identifiers; id++) {
                 if(h_priority[id] == null_bkt)
                     continue;
                 T delta_priority = h_priority[id]/_delta;
                 int bkt_idx = deltaPriorityToBucket(delta_priority);
-
+                // check to see if it is already in some other bucket
+                auto it = _id_to_bucket.find(id);
+                if (it != _id_to_bucket.end() &&
+                    it->second != bkt_idx) {
+                    // remove from other bucket
+                    _buckets[it->second]._identifiers.erase(it->first);
+                } else if (it != _id_to_bucket.end() &&
+                           it->second  == bkt_idx) {
+                    // we can just return - carry on
+                    continue;
+                }
                 // insert into mapped bucket
                 Bucket &b = _buckets[bkt_idx];
                 b._identifiers.insert(id);
@@ -140,19 +159,24 @@ namespace hammerblade {
         }
 
         void updateWithDenseVertexSet(Vector<int> &d_dense_vertex_set) {
+            Device::Ptr device = Device::GetInstance();
+
             // read the vertexset and priority the device
             std::vector<int> h_dense_vertex_set(_num_identifiers);
             d_dense_vertex_set.copyToHost(&h_dense_vertex_set[0], h_dense_vertex_set.size());
-
+            
             std::vector<T> h_priority(_num_identifiers);
-            read_global_buffer<T>(&h_priority[0], *_priority, _num_identifiers);
+            read_global_buffer_dma<T>((T*) &h_priority[0], *_priority, _num_identifiers);
 
+            //tmp dma assist:
+            device->freeze_cores();
+            device->read_dma();
+            device->unfreeze_cores();
             // iteratate over each identifier and update its bucket
             for (int id = 0; id < h_dense_vertex_set.size(); ++id) {
                 // dense set - skip if not in set
                 if (!h_dense_vertex_set[id] || h_priority[id] == null_bkt)
                     continue;
-
                 // calculate the delta-priority
                 T delta_priority = h_priority[id]/_delta;
 
@@ -170,10 +194,10 @@ namespace hammerblade {
                     // we can just return - carry on
                     continue;
                 }
-
                 // insert into mapped bucket
-                Bucket &b = _buckets[bkt_idx];
-                b._identifiers.insert(id);
+                //Bucket &b = _buckets[bkt_idx];
+                //b._identifiers.insert(id);
+                _buckets[bkt_idx]._identifiers.insert(id);
                 // mark this id as present
                 _id_to_bucket[id] = bkt_idx;
             }

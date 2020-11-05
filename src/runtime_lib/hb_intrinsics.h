@@ -5,6 +5,7 @@
 #include <infra_hb/host/device.hpp>
 #include <infra_hb/host/error.hpp>
 #include <infra_hb/host/global_scalar.hpp>
+#include <infra_hb/host/priority_queue.hpp>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -100,9 +101,11 @@ void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 //             so that we can avoid this unnecessary copy
 static
 int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
+    Device::Ptr device = Device::GetInstance();
     int size = 0;
     int32_t temp[len];
     frontier.copyToHost(temp, len);
+    device->read_dma();
     for(auto i : temp) {
       if(i == 1) {
         size++;
@@ -146,17 +149,42 @@ void builtin_swapVectors(Vector<int32_t> &a, Vector<int32_t> &b)
 }
 
 template<typename T>
-Vector<T> getBucketWithGraphItVertexSubset(BucketPriorityQueue<T> pq){
+Vector<T> getBucketWithGraphItVertexSubset(BucketPriorityQueue<T> &pq){
     return pq.popDenseReadyVertexSet();
 }
 
 template<typename T>
-void updateBucketWithGraphItVertexSubset(Vector<T> vset, BucketPriorityQueue<T> pq)
+void updateBucketWithGraphItVertexSubset(Vector<T> &vset, BucketPriorityQueue<T> &pq)
 {
   pq.updateWithDenseVertexSet(vset);
+}
 
 static
 void deleteObject(Vector<int32_t> &a) {
   a.exit();
 }
+
+static GraphHB builtin_transpose(GraphHB &graphhb) {
+  Graph graph = graphhb.getHostGraph();
+  return GraphHB(CSRGraph<NodeID>(graph.num_nodes(), graph.in_index_shared_, graph.in_neighbors_shared_, graph.out_index_shared_, graph.out_neighbors_shared_, true));
 }
+
+template <typename T> static void builtin_appendHB(std::vector<std::vector<T>>* vec, Vector<T> &element){
+  int n = element.getLength();
+  T host_el[n];
+  element.copyToHost(host_el, element.getLength());
+  vector<T> vect(host_el, host_el + n);
+  vec->push_back(vect);
+}
+
+template <typename T> static Vector<T> builtin_popHB(std::vector<std::vector<T>> *vec) {
+  std::vector<T> host_el = vec->back();
+  vec->pop_back();
+  Vector<T> temp = Vector<T>(host_el.size());
+  temp.copyToDevice(host_el.data(), host_el.size());
+  return temp;
+}
+
+
+}
+

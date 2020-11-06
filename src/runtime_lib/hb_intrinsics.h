@@ -15,12 +15,12 @@
 namespace hammerblade {
 
 static
-GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file)
+GraphHB builtin_loadEdgesFromFileToHB(const char *graph_file, bool large = false, bool pull = false)
 {
         if (!graph_file)
                 throw std::runtime_error("bad graph file: did you pass a graph argument?");
 
-        return GraphHB(builtin_loadEdgesFromFile(graph_file));
+        return GraphHB(builtin_loadEdgesFromFile(graph_file), large, pull);
 }
 
 static

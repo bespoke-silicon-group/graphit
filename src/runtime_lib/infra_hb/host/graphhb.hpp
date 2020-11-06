@@ -15,9 +15,9 @@ public:
 
 	GraphHB() {}
 
-        GraphHB(Graph &&g) :
+        GraphHB(Graph &&g, bool large = false, bool pull = false) :
                 _host_g(std::move(g))
-                { init(); }
+                { init(large, pull); }
 
 	~GraphHB() {}
 
@@ -95,10 +95,11 @@ private:
 
 	static const hb_mc_eva_t DEVICE_NULLPTR = 0;
 
-	void init() { initGraphOnDevice(); }
+	void init(bool large, bool pull) { initGraphOnDevice(large, pull); }
 
-	void initGraphOnDevice() {
-	  if (true) {
+	void initGraphOnDevice(bool large, bool pull) {
+	  if (!large || pull) {
+            std::cout << "loading in graph to device\n";
 	    //throw hammerblade::runtime_error("transpose not supported");
 	    // convert
 	    std::vector<int32_t> index(num_nodes() + 1);
@@ -120,6 +121,8 @@ private:
 	    _in_neighbors.copyToDevice(_host_g.in_neighbors_shared_.get(), num_edges());
 			_in_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
 	  }
+          else if (!large || !pull) {
+            std::cout << "loading out graph to device\n";
 
 	  // out neighbors
 	  std::vector<int32_t> index(num_nodes() + 1);
@@ -141,7 +144,8 @@ private:
 	  _out_index.copyToDevice(index.data(), index.size());
 	  _out_neighbors.copyToDevice(_host_g.out_neighbors_shared_.get(), num_edges());
 		_out_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
-	}
+	  }
+        }
 
 	void exit() { freeGraphOnDevice(); }
 

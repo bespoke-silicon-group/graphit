@@ -98,6 +98,7 @@ private:
 	void init(bool large, bool pull) { initGraphOnDevice(large, pull); }
 
 	void initGraphOnDevice(bool large, bool pull) {
+          if(!large) std::cout << "not a large graph\n";
 	  if (!large || pull) {
             std::cout << "loading in graph to device\n";
 	    //throw hammerblade::runtime_error("transpose not supported");
@@ -121,7 +122,7 @@ private:
 	    _in_neighbors.copyToDevice(_host_g.in_neighbors_shared_.get(), num_edges());
 			_in_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
 	  }
-          else if (!large || !pull) {
+          if (!large || !pull) {
             std::cout << "loading out graph to device\n";
 
 	  // out neighbors

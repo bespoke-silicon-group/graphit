@@ -148,9 +148,16 @@ private:
         }
 
 	void exit() { freeGraphOnDevice(); }
-
-        void freeGraphOnDevice() {}
-
+public:
+        void freeGraphOnDevice() {
+          _out_index.exit();
+          _in_index.exit();
+          _out_neighbors.exit();
+          _in_neighbors.exit();
+          _out_vertexlist.exit();
+          _in_vertexlist.exit();
+        }
+private:
 	Graph _host_g;
         Vec   _out_index;
         Vec   _out_neighbors;

@@ -136,17 +136,24 @@ template <typename T>
 static
 void builtin_swapVectors(Vector<T> &a, Vector<T> &b)
 {
+  Device::Ptr device = Device::GetInstance();
   int n = a.getLength();
   if(n != b.getLength())
     throw std::runtime_error("vectors are not equal in length.");
-  T * hosta = new T[n];
-  T * hostb = new T[n];
-  a.copyToHost(hosta, n);
-  b.copyToHost(hostb, n);
-  a.copyToDevice(hostb, n);
-  b.copyToDevice(hosta, n);
-  delete[] hosta;
-  delete[] hostb;
+  std::vector<T> hosta(n);
+  std::vector<T> hostb(n);
+  a.copyToHost(hosta.data(), n);
+  b.copyToHost(hostb.data(), n);
+  std::cout << "copy to host\n";
+  device->freeze_cores();
+  device->read_dma();
+  device->unfreeze_cores();
+  a.copyToDevice(hostb.data(), n);
+  b.copyToDevice(hosta.data(), n);
+  std::cout << "copy from host\n";
+  device->freeze_cores();
+  device->write_dma();
+  device->unfreeze_cores();
 }
 
 template<typename T>
@@ -166,9 +173,11 @@ void deleteObject(Vector<int32_t> &a) {
 }
 
 static void builtin_transpose(GraphHB &graphhb) {
-  builtin_swapVectors<int>(graphhb._in_neighbors, graphhb._out_neighbors);
-  builtin_swapVectors<int>(graphhb._in_index, graphhb._out_index);
-  builtin_swapVectors<vertexdata>(graphhb._in_vertexlist, graphhb._out_vertexlist);
+  std::cout << "attempt to transpose\n";
+  //builtin_swapVectors<int>(graphhb._in_neighbors, graphhb._out_neighbors);
+  //builtin_swapVectors<int>(graphhb._in_index, graphhb._out_index);
+  //builtin_swapVectors<vertexdata>(graphhb._in_vertexlist, graphhb._out_vertexlist);
+  graphhb.transpose();
 }
 
 template <typename T> static void builtin_appendHB(std::vector<std::vector<T>>* vec, Vector<T> &element){

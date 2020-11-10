@@ -132,14 +132,15 @@ int builtin_getVerticesHB(WGraphHB &g)
   return g.num_nodes();
 }
 
+template <typename T>
 static
-void builtin_swapVectors(Vector<int32_t> &a, Vector<int32_t> &b)
+void builtin_swapVectors(Vector<T> &a, Vector<T> &b)
 {
   int n = a.getLength();
   if(n != b.getLength())
     throw std::runtime_error("vectors are not equal in length.");
-  int * hosta = new int[n];
-  int * hostb = new int[n];
+  T * hosta = new T[n];
+  T * hostb = new T[n];
   a.copyToHost(hosta, n);
   b.copyToHost(hostb, n);
   a.copyToDevice(hostb, n);
@@ -164,9 +165,10 @@ void deleteObject(Vector<int32_t> &a) {
   a.exit();
 }
 
-static GraphHB builtin_transpose(GraphHB &graphhb) {
-  Graph graph = graphhb.getHostGraph();
-  return GraphHB(CSRGraph<NodeID>(graph.num_nodes(), graph.in_index_shared_, graph.in_neighbors_shared_, graph.out_index_shared_, graph.out_neighbors_shared_, true));
+static void builtin_transpose(GraphHB &graphhb) {
+  builtin_swapVectors<int>(graphhb._in_neighbors, graphhb._out_neighbors);
+  builtin_swapVectors<int>(graphhb._in_index, graphhb._out_index);
+  builtin_swapVectors<vertexdata>(graphhb._in_vertexlist, graphhb._out_vertexlist);
 }
 
 template <typename T> static void builtin_appendHB(std::vector<std::vector<T>>* vec, Vector<T> &element){

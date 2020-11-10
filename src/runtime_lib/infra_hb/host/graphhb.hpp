@@ -5,13 +5,12 @@
 
 
 namespace hammerblade {
-class GraphHB {
-public:
-
 	struct vertexdata {
 		int32_t offset;
 		int32_t degree;
 	};
+class GraphHB {
+public:
 
 	GraphHB() {}
 
@@ -158,7 +157,6 @@ public:
           _out_vertexlist.exit();
           _in_vertexlist.exit();
         }
-private:
 	Graph _host_g;
         Vec   _out_index;
         Vec   _out_neighbors;
@@ -167,6 +165,7 @@ private:
 				Vector<vertexdata> _out_vertexlist;
 				Vector<vertexdata> _in_vertexlist;
 
+private:
         void moveFrom(GraphHB & other) {
                 _host_g = std::move(other._host_g);
                 _out_index = std::move(other._out_index);

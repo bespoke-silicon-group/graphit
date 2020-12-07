@@ -17,6 +17,7 @@
 #include <graphit/midend/field_vector_property.h>
 #include <unordered_map>
 #include <graphit/frontend/gpu_schedule.h>
+#include <graphit/frontend/hb_schedule.h>
 
 
 namespace graphit {
@@ -89,14 +90,14 @@ namespace graphit {
                     return false;
                 return true;
             }
-            // This function should be called only after confirming that the 
+            // This function should be called only after confirming that the
             // metadata with the given name exists
             template <typename T>
             T getMetadata(std::string mdname) {
                 assert(hasMetadata<T>(mdname));
                 typename MIRMetadata::Ptr mdnode = metadata_map[mdname];
                 return mdnode->to<T>()->val;
-            } 
+            }
             std::unordered_map<std::string, std::shared_ptr<MIRMetadata>> cloneMetadata(void) {
                 std::unordered_map<std::string, std::shared_ptr<MIRMetadata>> new_map;
                 for (auto iter = metadata_map.begin(); iter != metadata_map.end(); iter++) {
@@ -105,7 +106,7 @@ namespace graphit {
                 }
                	return new_map;
             }
-            
+
         };
 
         struct Expr : public MIRNode {
@@ -661,7 +662,7 @@ namespace graphit {
 
             //TODO: replace this with a statement
             StmtBlock::Ptr body;
-	
+
 
             typedef std::shared_ptr<FuncDecl> Ptr;
 
@@ -685,7 +686,7 @@ namespace graphit {
 		a = a | b;
 		return a;
 	}
-	
+
 
         struct TensorReadExpr : public Expr {
             Expr::Ptr index;
@@ -870,15 +871,15 @@ namespace graphit {
 
             virtual MIRNode::Ptr cloneNode();
         };
-        
 
-        
+
+
         struct EdgeSetLoadExpr : public Expr {
             Expr::Ptr file_name;
             bool is_weighted_ = false;
             PriorityUpdateType priority_update_type = NoPriorityUpdate;
             typedef std::shared_ptr<EdgeSetLoadExpr> Ptr;
-     
+
 
             virtual void accept(MIRVisitor *visitor) {
                 visitor->visit(self<EdgeSetLoadExpr>());
@@ -898,8 +899,9 @@ namespace graphit {
 
 	    std::string device_function;
 	    std::string kernel_function;
-	
+
 	    fir::gpu_schedule::SimpleGPUSchedule applied_schedule;
+        fir::hb_schedule::SimpleHBSchedule manycore_schedule;
 	    bool requires_output = false;
 
         protected:
@@ -995,12 +997,13 @@ namespace graphit {
                 is_weighted = edgeset_apply->is_weighted;
                 is_parallel = edgeset_apply->is_parallel;
                 enable_deduplication = edgeset_apply->enable_deduplication;
-		
+
 		applied_schedule = edgeset_apply->applied_schedule;
 		frontier_reusable = edgeset_apply->frontier_reusable;
 		requires_output = edgeset_apply->requires_output;
 		fused_dedup = edgeset_apply->fused_dedup;
 		fused_dedup_perfect = edgeset_apply->fused_dedup_perfect;
+                manycore_schedule = edgeset_apply->manycore_schedule;
             }
 
             virtual void accept(MIRVisitor *visitor) {
@@ -1032,6 +1035,7 @@ namespace graphit {
 		requires_output = edgeset_apply->requires_output;
 		fused_dedup = edgeset_apply->fused_dedup;
 		fused_dedup_perfect = edgeset_apply->fused_dedup_perfect;
+                manycore_schedule = edgeset_apply->manycore_schedule;
             }
 
             virtual void accept(MIRVisitor *visitor) {
@@ -1542,19 +1546,19 @@ namespace graphit {
 	struct UpdatePriorityEdgeCountEdgeSetApplyExpr: public UpdatePriorityEdgeSetApplyExpr {
 		std::string lambda_name;
 		std::string moved_object_name;
-		
+
 		std::string priority_queue_name;
-	
+
 		typedef std::shared_ptr<UpdatePriorityEdgeCountEdgeSetApplyExpr> Ptr;
 		UpdatePriorityEdgeCountEdgeSetApplyExpr() {}
-		
+
 		virtual void accept(MIRVisitor *visitor) {
 			visitor->visit(self<UpdatePriorityEdgeCountEdgeSetApplyExpr>());
 		}
                 void copyFrom(UpdatePriorityEdgeSetApplyExpr::Ptr op) {
 			UpdatePriorityEdgeSetApplyExpr::copy(op);
 		}
-		protected:	
+		protected:
 		virtual void copy(MIRNode::Ptr);
 		virtual MIRNode::Ptr cloneNode();
 	};
@@ -1599,7 +1603,7 @@ namespace graphit {
 		}
 		protected:
 		virtual void copy(MIRNode::Ptr);
-		virtual MIRNode::Ptr cloneNode();		
+		virtual MIRNode::Ptr cloneNode();
 	};
 	struct HybridGPUStmt: Stmt {
 		StmtBlock::Ptr stmt1;
@@ -1608,7 +1612,7 @@ namespace graphit {
 		int32_t argv_index;
 		std::string threshold_var_name;
 		fir::gpu_schedule::HybridGPUSchedule::hybrid_criteria criteria;
-			
+
 		std::string input_frontier_name;
 
 		typedef std::shared_ptr<HybridGPUStmt> Ptr;

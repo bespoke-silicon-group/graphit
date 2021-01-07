@@ -806,7 +806,7 @@ namespace graphit {
             assert(associated_element_type);
             auto associated_element_type_size = mir_context_->getElementCount(associated_element_type);
             assert(associated_element_type_size);
-            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{";
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\", hb_mc_dimension(X,Y), {";
             //apply_expr->target->accept(this);
             //*oss << ".getAddr(), ";
             associated_element_type_size->accept(this);
@@ -822,7 +822,7 @@ namespace graphit {
             }
         } else {
             //TODO(Emily): need to find other solution to get length of array.
-            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\",{";
+            *oss << "device->enqueueJob(\"" << apply_expr->input_function_name << "_kernel\", hb_mc_dimension(X,Y), {";
             *oss << mir_var->var.getName() << ".getAddr()";
             *oss <<  "});" << std::endl;
             printIndent();
@@ -872,8 +872,9 @@ namespace graphit {
             *oss << "));\n";
             oss = &oss_device;
             *oss << "extern \"C\" int __attribute__ ((noinline)) " << vertexset_where_expr->input_func << "_where_call(int V, int block_size_x) { " << std::endl;
-            *oss << "\t" << "int start_x = block_size_x * (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);" << std::endl;
-            *oss << "\t" << "for (int iter_x = __bsg_id; iter_x < block_size_x; iter_x += bsg_tiles_X * bsg_tiles_Y) {" << std::endl;
+            *oss << "\t" << "int start, end;" << std::endl;
+            *oss << "\t" << "local_range(V, &start, &end);" << std::endl;
+            *oss << "\t" << "for (int iter_x = start; iter_x < end; iter_x++) {" << std::endl;
             *oss << "\t\t" << "if (iter_x < V) {" << std::endl;
             *oss << "\t\t\t" << next_bool_map_name << "[iter_x] = 0;" << std::endl;
             *oss << "\t\t\t" << "if ( " << vertexset_where_expr->input_func << "()( iter_x ) )" << std::endl;
@@ -885,7 +886,7 @@ namespace graphit {
             *oss << "}" << std::endl;
             oss = &oss_host;
             printIndent();
-            *oss << "device->enqueueJob(\"" << vertexset_where_expr->input_func << "_where_call\", {";
+            *oss << "device->enqueueJob(\"" << vertexset_where_expr->input_func << "_where_call\", hb_mc_dimension(X,Y),{";
             associated_element_type_size->accept(this);
             //TODO(Emily): get rid of this explicit call to edges.
             *oss << ", edges.num_nodes()});" << std::endl;
@@ -1115,11 +1116,11 @@ namespace graphit {
     void CodeGenHB::genIncludeStmts() {
         oss = &oss_device;
 
-        *oss << "#include \"bsg_manycore.h\"" << std::endl;
-        *oss << "#include \"bsg_set_tile_x_y.h\"" << std::endl;
+        *oss << "#include <bsg_manycore.h>" << std::endl;
+        *oss << "#include <bsg_set_tile_x_y.h>" << std::endl;
         *oss << "#define BSG_TILE_GROUP_X_DIM bsg_tiles_X" << std::endl;
         *oss << "#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y" << std::endl;
-        *oss << "#include \"bsg_tile_group_barrier.hpp\"" << std::endl;
+        *oss << "#include <bsg_tile_group_barrier.hpp>" << std::endl;
         *oss << "bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;" << std::endl;
         //NOTE(Emily): include device runtime libraries here:
         *oss << "#include <local_range.h>" << std::endl;
@@ -1127,6 +1128,8 @@ namespace graphit {
         *oss << "#include <atomics.h>" << std::endl;
         oss = &oss_host;
 
+        *oss << "#define X 16" << std::endl;
+        *oss << "#define Y 8" << std::endl;
         *oss << "#include \"hb_intrinsics.h\"" << std::endl;
         *oss << "#include <string.h> " << std::endl;
 
@@ -1479,7 +1482,7 @@ namespace graphit {
         oss = &oss_host;
         //printIndent();
         *oss << "device->enqueueJob(\"";
-        *oss << edgeset_apply_func_name << "_call\", {";
+        *oss << edgeset_apply_func_name << "_call\", hb_mc_dimension(X,Y), {";
 
         apply->target->accept(this);
         if(apply->manycore_schedule.hb_load_balance_type == fir::hb_schedule::SimpleHBSchedule::HBLoadBalanceType::BLOCKED) {

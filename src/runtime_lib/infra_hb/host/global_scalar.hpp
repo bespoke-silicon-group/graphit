@@ -165,7 +165,7 @@ void swap_global_arrays(GlobalScalar<hb_mc_eva_t> src, GlobalScalar<hb_mc_eva_t>
   auto dst_val = dst.get();
   auto src_val = src.get();
   dst.set(src_val);
-  src.set(src_val);
+  src.set(dst_val);
 }
 
 }

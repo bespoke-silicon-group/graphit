@@ -48,7 +48,7 @@ public:
                 return _out_neighbors.getBase();
         }
 
-				decltype(Vector<vertexdata>.getBase()) getOutVertexlistAddr() const {
+				decltype(Vector<vertexdata>().getBase()) getOutVertexlistAddr() const {
 								return _out_vertexlist.getBase();
 				}
 
@@ -59,7 +59,7 @@ public:
                 return _in_neighbors.getBase();
         }
 
-				decltype(Vector<vertexdata>.getBase()) getInVertexlistAddr() const {
+				decltype(Vector<vertexdata>().getBase()) getInVertexlistAddr() const {
 								return _in_vertexlist.getBase();
 				}
 

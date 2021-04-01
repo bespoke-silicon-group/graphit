@@ -20,7 +20,7 @@ namespace hammerblade {
 class Device {
 public:
 	/* Singleton object with automatic reference counting */
-#if !defined(COSIM)
+#if !defined(VCS)
 	typedef std::shared_ptr<Device>      Ptr;
 	typedef std::shared_ptr<const Device> ConstPtr;
 #else
@@ -52,7 +52,7 @@ public:
 	static Device::Ptr GetInstance() {
 		static Device::Ptr instance = nullptr;
 		if (!instance)
-#if !defined(COSIM)
+#if !defined(VCS)
 			instance = Device::Ptr(new Device);
 #else
 			instance = new Device;
@@ -65,7 +65,12 @@ public:
 		_ucode = ucode;
 		updateMicroCode();
 	}
+  void finish() {
+		/* cleanup and free CUDA-lite handles */
+		hb_mc_device_program_finish(_device);
+		hb_mc_device_finish(_device);
 
+  }
 
 	/* void enqueue a CUDA task */
 	/* should only be called after the micro code has been set */

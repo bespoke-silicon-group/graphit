@@ -17,7 +17,7 @@ public:
         /**
          * Empty constructor.
         */
-#if !defined(COSIM)
+#if !defined(VCS)
         GlobalScalar() : GlobalScalar("") {}
 #else
         GlobalScalar() {}

@@ -20,7 +20,7 @@ public:
                                 }()) {}
         };
 
-#if !defined(COSIM)
+#if !defined(VCS)
         Vector () : Vector(0) {}
 #else
         Vector() : _mem(0), _length(0), _device(nullptr){}
@@ -57,7 +57,7 @@ public:
                 return *this;
         }
 
-	~Vector() { exit(); }
+	~Vector() { } 
 
         /* accessors for getting the base address of the vector */
         hb_mc_eva_t getAddr()   const { return getBase(); }
@@ -121,14 +121,14 @@ public:
       		}
       	}
 
-private:
         /* swap the contents of two vectors */
-        void swap(const Vector &other) {
+        void swap(Vector &other) {
                 std::swap(other._mem, _mem);
                 std::swap(other._length, _length);
                 std::swap(other._device, _device);
         }
 
+private:
         /* common code for implementing move semantics in operator= and move constructor */
         void moveFrom(Vector &other) {
                 _mem    = other._mem;

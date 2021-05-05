@@ -101,16 +101,19 @@ void builtin_loadMicroCodeFromFile(const std::string &ucode_fname)
 //             so that we can avoid this unnecessary copy
 static
 int builtin_getVertexSetSizeHB(Vector<int32_t> &frontier, int len){
+    std::cerr << "checking vertexset size now: \n";
     Device::Ptr device = Device::GetInstance();
     int size = 0;
     int32_t temp[len];
     frontier.copyToHost(temp, len);
     device->read_dma();
     for(auto i : temp) {
+      //if(i != -1) {
       if(i == 1) {
         size++;
       }
     }
+    std::cerr << "num elems in front: " << size << std::endl;
     return size;
 }
 
@@ -145,28 +148,22 @@ void builtin_swapVectors(Vector<T> &a, Vector<T> &b)
   a.copyToHost(hosta.data(), n);
   b.copyToHost(hostb.data(), n);
   std::cout << "copy to host\n";
-  device->freeze_cores();
   device->read_dma();
-  device->unfreeze_cores();
   a.copyToDevice(hostb.data(), n);
   b.copyToDevice(hosta.data(), n);
   std::cout << "copy from host\n";
-  device->freeze_cores();
   device->write_dma();
-  device->unfreeze_cores();
 }
-
 template<typename T>
 Vector<T> getBucketWithGraphItVertexSubset(BucketPriorityQueue<T> &pq){
     return pq.popDenseReadyVertexSet();
 }
 
 template<typename T>
-void updateBucketWithGraphItVertexSubset(Vector<T> &vset, BucketPriorityQueue<T> &pq)
+void updateBucketWithGraphItVertexSubset(Vector<int> &vset, BucketPriorityQueue<T> &pq)
 {
   pq.updateWithDenseVertexSet(vset);
 }
-
 static
 void deleteObject(Vector<int32_t> &a) {
   a.exit();

@@ -32,7 +32,7 @@ struct VertexSubset {
 //    }
 
     // convertes the Julienne vertexsubset into our vertexsubset
-    VertexSubset(julienne::vertexSubset vset){
+/*(    VertexSubset(julienne::vertexSubset vset){
         dense_vertex_set_ = vset.s;
         num_vertices_ = vset.numNonzeros();
         vertices_range_ = vset.numRows();
@@ -42,7 +42,7 @@ struct VertexSubset {
         sliding_queue_ = nullptr;
 
     }
-
+*/
     VertexSubset(VertexSubset* input_vert_set)
         : num_vertices_(input_vert_set->num_vertices_),
             vertices_range_(input_vert_set->vertices_range_),

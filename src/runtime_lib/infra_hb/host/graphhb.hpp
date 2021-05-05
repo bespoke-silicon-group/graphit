@@ -106,18 +106,14 @@ public:
           _out_index.copyToHost(host_outind, V + 1); 
           _in_vertexlist.copyToHost(host_inv, V); 
           _out_vertexlist.copyToHost(host_outv, V);
-	  device->freeze_cores();
     	  device->read_dma();
-          device->unfreeze_cores(); 
           _in_neighbors.copyToDevice(host_outn, E); 
           _out_neighbors.copyToDevice(host_inn, E); 
           _in_index.copyToDevice(host_outind, V + 1); 
           _out_index.copyToDevice(host_inind, V + 1); 
           _in_vertexlist.copyToDevice(host_outv, V); 
           _out_vertexlist.copyToDevice(host_inv, V); 
-	  device->freeze_cores();
     	  device->write_dma();
-          device->unfreeze_cores(); 
 
         }
 private:

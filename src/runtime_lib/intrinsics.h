@@ -53,7 +53,7 @@
 
 
 #define ulong unsigned long
-namespace julienne {
+/*namespace julienne {
 #include "infra_julienne/priority_queue.h"
 #include "infra_julienne/parallel.h"
 template <typename X, typename Y>
@@ -67,7 +67,7 @@ static julienne::graph<julienne::symmetricVertex> __julienne_null_graph(NULL, 0,
 
 #undef INT_T_MAX
 #undef UINT_T_MAX
-
+*/
 /* Julienne requirements end */
 
 
@@ -94,11 +94,11 @@ static julienne::graph<julienne::symmetricVertex> __julienne_null_graph(NULL, 0,
 #include "infra_ligra/ligra/ligra.h"
 
 #include "vertexsubset.h"
-
+/*
 namespace julienne {
 #include "infra_julienne/IO.h"
 #include "infra_julienne/edgeMapReduce.h"
-}
+}*/
 
 #include <time.h>
 #include <chrono>
@@ -177,7 +177,7 @@ static int builtin_getVertices(Graph &edges){
 static int builtin_getVertices(WGraph &edges){
     return edges.num_nodes();
 }
-
+/*
 template <typename T>
 static int builtin_getVertices(julienne::graph<T> &edges) {
     return edges.n;
@@ -335,13 +335,13 @@ static char* argv_safe(int index, char** argv, int argc ){
     }
 
 }
-
+*/
 static Graph builtin_transpose(Graph &graph){
     // Changing this to use shared pointer instead
     //return CSRGraph<NodeID>(graph.num_nodes(), graph.get_in_index_(), graph.get_in_neighbors_(), graph.get_out_index_(), graph.get_out_neighbors_(), true);
       return CSRGraph<NodeID>(graph.num_nodes(), graph.in_index_shared_, graph.in_neighbors_shared_, graph.out_index_shared_, graph.out_neighbors_shared_, true);
 }
-
+/*
 
 template<typename APPLY_FUNC> static void builtin_vertexset_apply(VertexSubset<int>* vertex_subset, APPLY_FUNC apply_func){
    if (vertex_subset->is_dense){
@@ -491,7 +491,7 @@ void updateBucketWithGraphItVertexSubset(VertexSubset<NodeID>* vset, julienne::P
 
 }
 
-
+*/
 
 
 

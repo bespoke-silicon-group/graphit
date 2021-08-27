@@ -335,6 +335,11 @@ namespace graphit {
             printIndent();
             *oss << "hammerblade::builtin_loadMicroCodeFromFile(ucode_path);" << std::endl;
 
+
+            for (auto stmt : mir_context_->edgeset_alloc_stmts) {
+                stmt->accept(this);
+            }
+            
             //NOTE(Emily): initialize all global scalars here
             for (auto constant : mir_context_->getLoweredConstants()) {
                 if ((std::dynamic_pointer_cast<mir::VectorType>(constant->type)) != nullptr) {
@@ -354,9 +359,7 @@ namespace graphit {
                 }
             }
 
-            for (auto stmt : mir_context_->edgeset_alloc_stmts) {
-                stmt->accept(this);
-            }
+            
 
             //get device instance
             printIndent();
@@ -915,7 +918,7 @@ namespace graphit {
     //or do something else here
     void CodeGenHB::visit(mir::EdgeSetLoadExpr::Ptr edgeset_load_expr) {
         if (edgeset_load_expr->is_weighted_){
-            *oss << "builtin_loadWeightedEdgesFromFile ( ";
+            *oss << "hammerblade::builtin_loadWeightedEdgesFromFileToHB ( ";
             edgeset_load_expr->file_name->accept(this);
             *oss << ") ";
         } else {

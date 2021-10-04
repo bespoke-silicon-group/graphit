@@ -123,7 +123,7 @@ public:
 
 private:
         /* swap the contents of two vectors */
-        void swap(const Vector &other) {
+        void swap(Vector &other) {
                 std::swap(other._mem, _mem);
                 std::swap(other._length, _length);
                 std::swap(other._device, _device);

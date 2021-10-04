@@ -149,12 +149,13 @@ template<typename T>
 Vector<T> getBucketWithGraphItVertexSubset(BucketPriorityQueue<T> &pq){
     return pq.popDenseReadyVertexSet();
 }
-
+#if 0
 template<typename T>
 void updateBucketWithGraphItVertexSubset(Vector<T> &vset, BucketPriorityQueue<T> &pq)
 {
   pq.updateWithDenseVertexSet(vset);
-
+}
+#endif
 static
 void deleteObject(Vector<int32_t> &a) {
   a.exit();

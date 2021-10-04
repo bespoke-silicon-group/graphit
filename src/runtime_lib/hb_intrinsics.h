@@ -5,6 +5,7 @@
 #include <infra_hb/host/device.hpp>
 #include <infra_hb/host/error.hpp>
 #include <infra_hb/host/global_scalar.hpp>
+#include <infra_hb/host/priority_queue.hpp>
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -149,13 +150,13 @@ template<typename T>
 Vector<T> getBucketWithGraphItVertexSubset(BucketPriorityQueue<T> &pq){
     return pq.popDenseReadyVertexSet();
 }
-#if 0
+
 template<typename T>
 void updateBucketWithGraphItVertexSubset(Vector<T> &vset, BucketPriorityQueue<T> &pq)
 {
   pq.updateWithDenseVertexSet(vset);
 }
-#endif
+
 static
 void deleteObject(Vector<int32_t> &a) {
   a.exit();

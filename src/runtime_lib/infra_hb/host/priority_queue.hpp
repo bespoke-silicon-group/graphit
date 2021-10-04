@@ -25,7 +25,7 @@ namespace hammerblade {
 
         using Ptr = std::shared_ptr<Bucket>;
         template <typename ...Args>
-        static Bucket Make(Args... args) {
+        static std::shared_ptr<Bucket> Make(Args... args) {
             return std::shared_ptr<Bucket>(args...);
         }
     };
@@ -42,7 +42,7 @@ namespace hammerblade {
         std::map<int, int> _id_to_bucket;
 
         int           _current_bucket_idx;
-        std::vector<Bucket> _buckets
+        std::vector<Bucket> _buckets;
         T null_bkt = std::numeric_limits<T>::max();
 
     public:

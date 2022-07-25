@@ -149,6 +149,20 @@ public:
           return div * CACHE_LINE * VCACHE_BANKS; 
         }
 
+        int convert_idx(int index, int num_row, int row) {
+          int idx = 0;
+          int div = index / CACHE_LINE;
+          int mod = index % CACHE_LINE;
+          if(num_row < NUM_OF_SLOTS) {
+            int row_offset = row % num_row;
+            idx = div * num_row * CACHE_LINE + mod + row_offset * CACHE_LINE;
+          } else {
+            int row_offset = row % NUM_OF_SLOTS;
+            idx = div * NUM_OF_SLOTS * CACHE_LINE + mod + row_offset * CACHE_LINE;
+          }
+          return idx;
+        }
+
         void calculate_blocked_index(uint32_t * bool_tag, int * block_index, int * index, int * in_neighbor, int64_t start, int64_t end, int64_t V) {
           int64_t rows_within_block = (V % NUM_PODS) == 0 ? (V / NUM_PODS) : (V / NUM_PODS + 1);
 	  for(int i = start; i < end; i++){
@@ -200,16 +214,6 @@ public:
           } 
         }
   
-        int64_t calculate_dcsr_index(int * block_dcsr_index, int * index, int pod_start, int pod_end) {
-          int idx = 0;
-          for(int i = pod_start; i < pod_end; i++) {
-            if(index[i] != index[i+1]) {
-              block_dcsr_index[idx] = i;
-              idx++;
-            }
-          }
-          return (int64_t) idx;
-        }
 
 private:
 
@@ -222,15 +226,14 @@ private:
           if (true) {
             //throw hammerblade::runtime_error("transpose not supported");
             // convert
+            int64_t c2sr_idxnum = 2 * num_nodes() + 1;
             std::vector<int32_t> index(num_nodes() + 1);
+            std::vector<int32_t> c2sr_index(c2sr_idxnum);
             int64_t rows_within_block = (num_nodes() % NUM_PODS) == 0 ? (num_nodes() / NUM_PODS) : (num_nodes() / NUM_PODS + 1);
-            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each pod under blocking partitioning" << std::endl;
+            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each block" << std::endl;
             int64_t pod_row_start = CURRENT_POD * rows_within_block;   
             int64_t pod_row_end = (pod_row_start + rows_within_block) > num_nodes() ? num_nodes() : (pod_row_start + rows_within_block);
             int64_t length = pod_row_end - pod_row_start;
-            std::vector<int32_t> block_dcsr_index(length);
-//            std::vector<int32_t> blocked_index(length * (NUM_PODS+1));
-//            std::vector<uint32_t> bool_tag(length * NUM_PODS / 32);
             std::vector<int32_t> tmp_deg = this->get_in_degrees();
 	    std::vector<vertexdata> tmp_vertexlist(num_nodes());
 	    # pragma omp parallel for
@@ -240,6 +243,7 @@ private:
 	       tmp_vertexlist[i] = tmp_elem;
             }
 	    index[num_nodes()] = num_edges();
+            std::cout << "start c2sr calculate" << std::endl;
             for(int64_t i = 0; i < num_nodes() + 1; i++) {
               c2sr_index[i] = index[i];
             }
@@ -258,44 +262,20 @@ private:
                 c2sr_index[offset + i + VCACHE_BANKS] = slotbuffer[idx];
               }
             }
-//	    this->calculate_blocked_index(bool_tag.data(), blocked_index.data(), index.data(), _host_g.in_neighbors_shared_.get(), pod_row_start, pod_row_end, num_nodes());
-//            for(int i = 0; i < length * (NUM_PODS+1); i++) {
-//              std::cout << blocked_index[i] << std::endl;
-//            }
-            int64_t b_dcsr_length = this->calculate_dcsr_index(block_dcsr_index.data(), index.data(), pod_row_start, pod_row_end);
-            float percent = b_dcsr_length / length; 
-            std::cout << "Non-zero rows " << b_dcsr_length << " total row " << length << std::endl;
-//            int64_t c2sr_num = this->calculate_c2sr_num(index.data(), num_nodes());
-//            for(int i = 0; i < b_dcsr_length; i++) {
-//              std::cout << std::dec << block_dcsr_index[i] << std::endl;
-//            }
-//            for(int i = 0; i < length * NUM_PODS / 32; i=i+NUM_PODS/32) {
-//              std::cout << "Bool tags of pod " << (i / (NUM_PODS/32)) << std::endl;
-//              for(int j = 0; j < NUM_PODS / 32; j++) {
-//                std::cout << std::hex << bool_tag[i + j];
-//              }
-//              std::cout << "\n";
-//            }
+
+            int64_t c2sr_num = this->calculate_c2sr_num(index.data(), num_nodes());
             // allocate
 	    _in_index = Vec(num_nodes() + 1);
 	    _in_neighbors = Vec(num_edges());
-//            _in_block_index = Vec(length * (NUM_PODS+1));
-            _in_block_dcsr_index = Vec(b_dcsr_length);
-//            _bool_tags = Vector<uint32_t>(length * NUM_PODS);
-//	    _in_vertexlist = Vector<vertexdata>(num_nodes());
-//            std::cout << "malloc c2sr_index" << c2sr_num << " elements" << std::endl;
-//            _in_c2sr_index = Vec(c2sr_idxnum);
-//            _in_c2sr_neighbors = Vec(c2sr_num);
-//            _in_c2sr_vals = Vector<float>(c2sr_num);
+            std::cout << "malloc c2sr_index" << c2sr_num << " elements" << std::endl;
+            _in_c2sr_index = Vec(c2sr_idxnum);
+            _in_c2sr_neighbors = Vec(c2sr_num);
+            _in_c2sr_vals = Vector<float>(c2sr_num);
 //            std::cout << std::hex << this->getInIndicesAddr() << std::endl;
 //            std::cout << std::hex << this->getInC2SRIndicesAddr() << std::endl;
 	    // copy
 	    _in_index.copyToDevice(index.data(), index.size());
-            _in_block_dcsr_index.copyToDevice(block_dcsr_index.data(), b_dcsr_length);
-//            _bool_tags.copyToDevice(bool_tag.data(), bool_tag.size());
-//            _in_block_index.copyToDevice(blocked_index.data(), blocked_index.size());
 	    _in_neighbors.copyToDevice(_host_g.in_neighbors_shared_.get(), num_edges());
-//	    _in_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
 	  }
 
 	  // out neighbor

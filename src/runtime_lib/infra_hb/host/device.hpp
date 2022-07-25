@@ -11,6 +11,9 @@
 #include <cstring>
 #include <unordered_map>
 
+#define VCACHE_BANKS 32
+#define CACHE_LINE 16
+
 /*
  * grid_init() -> after program_init_binary()
  * initialize a grid of tile groups.
@@ -158,6 +161,15 @@ public:
 		return mem;
 	}
 
+        hb_mc_eva_t malloc_align(hb_mc_eva_t sz) {
+          hb_mc_eva_t align = VCACHE_BANKS * CACHE_LINE * sizeof(int);                     
+          hb_mc_eva_t ptr = this->malloc(sz + align);
+          hb_mc_eva_t rem = ptr % align;
+          ptr += align;
+          ptr -= rem;
+          return ptr;
+        }
+
 	/*
 	 * free application memory on the device
 	 */
@@ -188,13 +200,14 @@ public:
 	void enqueue_write_task(hb_mc_eva_t dst, const void *src, hb_mc_eva_t sz) {
 		if (_ucode.empty())
 			throw noUCodeError();
-		if (!hb_mc_manycore_supports_dma_write(_device->mc)) {
+    		if (!hb_mc_manycore_supports_dma_write(_device->mc)) {
 			std::cerr << "dma not supported" << std::endl;
 			write(dst, src, sz);
 			return;
 		}
 
                 _write_jobs.push_back(WriteJob(dst, src, sz));
+//                write(dst, src, sz);
 	}
 
 	void write_dma() {
@@ -306,6 +319,7 @@ private:
 public:
         void freeze_cores() { freeze_unfreeze_cores<true>(); }
         void unfreeze_cores() { freeze_unfreeze_cores<false>(); }
+        hb_mc_device_t * getDevice() { return _device; }
 
 protected:
 	/* singleton; constructor is protected */

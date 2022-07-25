@@ -224,63 +224,92 @@ private:
             // convert
             std::vector<int32_t> index(num_nodes() + 1);
             int64_t rows_within_block = (num_nodes() % NUM_PODS) == 0 ? (num_nodes() / NUM_PODS) : (num_nodes() / NUM_PODS + 1);
-            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each pod under blocking partitioning" << std::endl;
+            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each block" << std::endl;
             int64_t pod_row_start = CURRENT_POD * rows_within_block;   
             int64_t pod_row_end = (pod_row_start + rows_within_block) > num_nodes() ? num_nodes() : (pod_row_start + rows_within_block);
             int64_t length = pod_row_end - pod_row_start;
-            std::vector<int32_t> block_dcsr_index(length);
-//            std::vector<int32_t> blocked_index(length * (NUM_PODS+1));
-//            std::vector<uint32_t> bool_tag(length * NUM_PODS / 32);
             std::vector<int32_t> tmp_deg = this->get_in_degrees();
 	    std::vector<vertexdata> tmp_vertexlist(num_nodes());
 	    # pragma omp parallel for
             for (int64_t i = 0; i < num_nodes(); i++) {
                index[i] = _host_g.in_index_shared_.get()[i] - _host_g.in_neighbors_shared_.get();
+               
 	       vertexdata tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
 	       tmp_vertexlist[i] = tmp_elem;
             }
 	    index[num_nodes()] = num_edges();
-            for(int64_t i = 0; i < num_nodes() + 1; i++) {
-              c2sr_index[i] = index[i];
-            }
-            int64_t offset = num_nodes() + 1;
-            int64_t slotbuffer[VCACHE_BANKS];
-            for(int64_t i = 0; i < VCACHE_BANKS; i++) {
-              slotbuffer[i] = 0;
-            }
+            int32_t* col_indices = _host_g.in_neighbors_shared_.get();
+            int64_t block_local = 0;
+            int64_t block_remote = 0;
+            std::vector<int32_t> blocking_colidx_buf(num_nodes());
+            std::vector<int32_t> cyclic_colidx_buf(num_nodes());
             for(int64_t i = 0; i < num_nodes(); i++) {
-              int64_t idx = i % VCACHE_BANKS;
-              slotbuffer[idx] += (c2sr_index[i+1] - c2sr_index[i]);
-              if(i < VCACHE_BANKS) {
-                c2sr_index[offset + i] = 0;
-              } 
-              if (i + VCACHE_BANKS < num_nodes()) {
-                c2sr_index[offset + i + VCACHE_BANKS] = slotbuffer[idx];
+              blocking_colidx_buf[i] = -1;
+              cyclic_colidx_buf[i] = -1;
+            }
+
+            for(int64_t i = pod_row_start; i < pod_row_end; i++) {
+              std::cout << "========= Row " << i << " ============" << std::endl;
+              for(int64_t j = index[i]; j < index[i+1]; j++) {
+                int32_t idx = col_indices[j];
+                std::cout << "column_index is: " << idx << std::endl;
+                if(blocking_colidx_buf[idx] == -1) {
+                  blocking_colidx_buf[idx] = idx;
+                }
               }
             }
-//	    this->calculate_blocked_index(bool_tag.data(), blocked_index.data(), index.data(), _host_g.in_neighbors_shared_.get(), pod_row_start, pod_row_end, num_nodes());
-//            for(int i = 0; i < length * (NUM_PODS+1); i++) {
-//              std::cout << blocked_index[i] << std::endl;
-//            }
-            int64_t b_dcsr_length = this->calculate_dcsr_index(block_dcsr_index.data(), index.data(), pod_row_start, pod_row_end);
-            float percent = b_dcsr_length / length; 
-            std::cout << "Non-zero rows " << b_dcsr_length << " total row " << length << std::endl;
-//            int64_t c2sr_num = this->calculate_c2sr_num(index.data(), num_nodes());
-//            for(int i = 0; i < b_dcsr_length; i++) {
-//              std::cout << std::dec << block_dcsr_index[i] << std::endl;
-//            }
-//            for(int i = 0; i < length * NUM_PODS / 32; i=i+NUM_PODS/32) {
-//              std::cout << "Bool tags of pod " << (i / (NUM_PODS/32)) << std::endl;
-//              for(int j = 0; j < NUM_PODS / 32; j++) {
-//                std::cout << std::hex << bool_tag[i + j];
-//              }
-//              std::cout << "\n";
-//            }
+           
+            for (int64_t i = 0; i < num_nodes(); i++) {
+              if(blocking_colidx_buf[i] == -1) {
+                continue;
+              }
+              if(blocking_colidx_buf[i] < pod_row_end && blocking_colidx_buf[i] >= pod_row_start) {
+                block_local++;
+              } else {
+                block_remote++;
+              }
+            }
+            std::cout << "block_local is " << block_local << " and block_remote is " << block_remote << std::endl;
+            double block_remote_percent = ((double)block_remote / (double)(block_local + block_remote));
+            double block_local_percent = ((double)block_local / (double)(block_local + block_remote));
+            std::cout << "percent of intra-pod data of pod" << CURRENT_POD << " under blocking strategy is " << block_local_percent
+                      << " and percent of inter-pod data is " << block_remote_percent << std::endl;
+
+            int64_t cyclic_local = 0;
+            int64_t cyclic_remote = 0;
+            for(int64_t i = CURRENT_POD; i < num_nodes(); i=i+NUM_PODS) {
+//              std::cout << "========= Row " << i << " ============" << std::endl;
+              for(int64_t j = index[i]; j < index[i+1]; j++) {
+                int32_t idx = col_indices[j];
+//                std::cout << "column_index is: " << idx << std::endl;
+                if(cyclic_colidx_buf[idx] == -1) {
+                  cyclic_colidx_buf[idx] = idx;
+                }
+              }
+            }
+            
+            for(int64_t i = 0; i < num_nodes(); i++){
+              if(cyclic_colidx_buf[i] == -1) {
+                continue;
+              }
+              int32_t remainder = (cyclic_colidx_buf[i] - CURRENT_POD) / NUM_PODS;
+              if(remainder == 0) {
+                cyclic_local++;
+              } else {
+                cyclic_remote++;
+              }
+            }
+            double cyclic_remote_percent = ((double)cyclic_remote / (double)(cyclic_local + cyclic_remote));
+            double cyclic_local_percent = ((double)cyclic_local / (double)(cyclic_local + cyclic_remote));
+            std::cout << "cyclic_local is " << cyclic_local << " and cyclic_remote is " << cyclic_remote << std::endl;
+            std::cout << "percent of intra-pod data of pod" << CURRENT_POD << " under cyclic strategy is " << cyclic_local_percent
+                      << " and percent of inter-pod data is " << cyclic_remote_percent << std::endl;           
+
             // allocate
 	    _in_index = Vec(num_nodes() + 1);
 	    _in_neighbors = Vec(num_edges());
 //            _in_block_index = Vec(length * (NUM_PODS+1));
-            _in_block_dcsr_index = Vec(b_dcsr_length);
+//            _in_block_dcsr_index = Vec(b_dcsr_length);
 //            _bool_tags = Vector<uint32_t>(length * NUM_PODS);
 //	    _in_vertexlist = Vector<vertexdata>(num_nodes());
 //            std::cout << "malloc c2sr_index" << c2sr_num << " elements" << std::endl;
@@ -291,7 +320,7 @@ private:
 //            std::cout << std::hex << this->getInC2SRIndicesAddr() << std::endl;
 	    // copy
 	    _in_index.copyToDevice(index.data(), index.size());
-            _in_block_dcsr_index.copyToDevice(block_dcsr_index.data(), b_dcsr_length);
+//            _in_block_dcsr_index.copyToDevice(block_dcsr_index.data(), b_dcsr_length);
 //            _bool_tags.copyToDevice(bool_tag.data(), bool_tag.size());
 //            _in_block_index.copyToDevice(blocked_index.data(), blocked_index.size());
 	    _in_neighbors.copyToDevice(_host_g.in_neighbors_shared_.get(), num_edges());

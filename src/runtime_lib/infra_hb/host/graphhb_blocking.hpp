@@ -228,9 +228,8 @@ private:
             int64_t pod_row_start = CURRENT_POD * rows_within_block;   
             int64_t pod_row_end = (pod_row_start + rows_within_block) > num_nodes() ? num_nodes() : (pod_row_start + rows_within_block);
             int64_t length = pod_row_end - pod_row_start;
-            std::vector<int32_t> block_dcsr_index(length);
-//            std::vector<int32_t> blocked_index(length * (NUM_PODS+1));
-//            std::vector<uint32_t> bool_tag(length * NUM_PODS / 32);
+            std::vector<int32_t> block_index(rows_within_block + 1);
+            std::vector<int32_t> block_neighbor(num_edges());
             std::vector<int32_t> tmp_deg = this->get_in_degrees();
 	    std::vector<vertexdata> tmp_vertexlist(num_nodes());
 	    # pragma omp parallel for
@@ -240,62 +239,24 @@ private:
 	       tmp_vertexlist[i] = tmp_elem;
             }
 	    index[num_nodes()] = num_edges();
-            for(int64_t i = 0; i < num_nodes() + 1; i++) {
-              c2sr_index[i] = index[i];
-            }
-            int64_t offset = num_nodes() + 1;
-            int64_t slotbuffer[VCACHE_BANKS];
-            for(int64_t i = 0; i < VCACHE_BANKS; i++) {
-              slotbuffer[i] = 0;
-            }
-            for(int64_t i = 0; i < num_nodes(); i++) {
-              int64_t idx = i % VCACHE_BANKS;
-              slotbuffer[idx] += (c2sr_index[i+1] - c2sr_index[i]);
-              if(i < VCACHE_BANKS) {
-                c2sr_index[offset + i] = 0;
-              } 
-              if (i + VCACHE_BANKS < num_nodes()) {
-                c2sr_index[offset + i + VCACHE_BANKS] = slotbuffer[idx];
+            block_index[0] = 0;
+            int64_t index_idx = 1;
+            int64_t idx = 0;
+            for (int64_t i = pod_row_start; i < pod_row_end; i++) {
+              int32_t nnz_i = index[i+1] - index[i];
+              block_index[index_idx] = block_index[index_idx-1] + nnz_i;
+              for (int32_t j = 0; j < nnz_i; j++) {
+                block_neighbor[idx] = *(_host_g.in_index_shared_.get()[i]+j);
+                idx++;
               }
+              index_idx++;
             }
-//	    this->calculate_blocked_index(bool_tag.data(), blocked_index.data(), index.data(), _host_g.in_neighbors_shared_.get(), pod_row_start, pod_row_end, num_nodes());
-//            for(int i = 0; i < length * (NUM_PODS+1); i++) {
-//              std::cout << blocked_index[i] << std::endl;
-//            }
-            int64_t b_dcsr_length = this->calculate_dcsr_index(block_dcsr_index.data(), index.data(), pod_row_start, pod_row_end);
-            float percent = b_dcsr_length / length; 
-            std::cout << "Non-zero rows " << b_dcsr_length << " total row " << length << std::endl;
-//            int64_t c2sr_num = this->calculate_c2sr_num(index.data(), num_nodes());
-//            for(int i = 0; i < b_dcsr_length; i++) {
-//              std::cout << std::dec << block_dcsr_index[i] << std::endl;
-//            }
-//            for(int i = 0; i < length * NUM_PODS / 32; i=i+NUM_PODS/32) {
-//              std::cout << "Bool tags of pod " << (i / (NUM_PODS/32)) << std::endl;
-//              for(int j = 0; j < NUM_PODS / 32; j++) {
-//                std::cout << std::hex << bool_tag[i + j];
-//              }
-//              std::cout << "\n";
-//            }
             // allocate
 	    _in_index = Vec(num_nodes() + 1);
 	    _in_neighbors = Vec(num_edges());
-//            _in_block_index = Vec(length * (NUM_PODS+1));
-            _in_block_dcsr_index = Vec(b_dcsr_length);
-//            _bool_tags = Vector<uint32_t>(length * NUM_PODS);
-//	    _in_vertexlist = Vector<vertexdata>(num_nodes());
-//            std::cout << "malloc c2sr_index" << c2sr_num << " elements" << std::endl;
-//            _in_c2sr_index = Vec(c2sr_idxnum);
-//            _in_c2sr_neighbors = Vec(c2sr_num);
-//            _in_c2sr_vals = Vector<float>(c2sr_num);
-//            std::cout << std::hex << this->getInIndicesAddr() << std::endl;
-//            std::cout << std::hex << this->getInC2SRIndicesAddr() << std::endl;
-	    // copy
-	    _in_index.copyToDevice(index.data(), index.size());
-            _in_block_dcsr_index.copyToDevice(block_dcsr_index.data(), b_dcsr_length);
-//            _bool_tags.copyToDevice(bool_tag.data(), bool_tag.size());
-//            _in_block_index.copyToDevice(blocked_index.data(), blocked_index.size());
-	    _in_neighbors.copyToDevice(_host_g.in_neighbors_shared_.get(), num_edges());
-//	    _in_vertexlist.copyToDevice(tmp_vertexlist.data(), tmp_vertexlist.size());
+
+            _in_index.copyToDevice(block_index.data(), block_index.size());
+            _in_neighbors.copyToDevice(block_neighbor.data(), block_neighbor.size());
 	  }
 
 	  // out neighbor

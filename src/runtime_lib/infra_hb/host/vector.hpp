@@ -64,7 +64,7 @@ public:
 	hb_mc_eva_t getBase()   const { return _mem; }
 
         /* accessors for getting the length of the vector */
-	hb_mc_eva_t getLength() const { return _length; }
+	int getLength() const { return (int)_length; }
 
         /**/
         void assign(size_t start, size_t end, const T &val) {
@@ -151,7 +151,7 @@ private:
 			throw hammerblade::runtime_error("Only Vectors with types of size equal to a multiple of 4 bytes supported");
 
 		if (_length != 0) {
-			_mem = getDevice()->malloc(_length * sizeof(T));
+			_mem = getDevice()->malloc_align(_length * sizeof(T));
 		}
 	}
         /* cleanup the vector's memory */

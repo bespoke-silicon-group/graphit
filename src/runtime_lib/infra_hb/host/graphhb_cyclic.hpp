@@ -4,7 +4,10 @@
 #include <infra_hb/host/vector.hpp>
 
 #define CURRENT_POD SIM_CURRENT_POD
-#define NUM_PODS 64
+
+#if !defined(NUM_PODS)
+#error "NUM_PODS Not defined"
+#endif
 
 namespace hammerblade {
 class GraphHB {
@@ -224,7 +227,7 @@ private:
             // convert
             std::vector<int32_t> index(num_nodes() + 1);
             int64_t rows_within_pod = ((num_nodes()-CURRENT_POD) % NUM_PODS) == 0 ? ((num_nodes()-CURRENT_POD) / NUM_PODS) : ((num_nodes()-CURRENT_POD) / NUM_PODS + 1);
-            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_pod << " rows within each pod under cyclic partitioning" << std::endl;
+            std::cout << "Simulating current pod " << CURRENT_POD << " of " << NUM_PODS << " with total nodes " << num_nodes() << " and " << rows_within_pod << " rows within each pod under cyclic partitioning" << std::endl;
             std::vector<int32_t> cyclic_index(rows_within_pod + 1);
             std::vector<int32_t> cyclic_neighbor(num_edges());
             std::vector<int32_t> tmp_deg = this->get_in_degrees();

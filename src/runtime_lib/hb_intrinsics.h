@@ -1,6 +1,10 @@
 #pragma once
 #define IGNORE_JULIENNE_TYPES
+#ifdef HB_CYCLIC
 #include <infra_hb/host/graphhb_cyclic.hpp>
+#else
+#include <infra_hb/host/graphhb_blocking.hpp>
+#endif
 #include <infra_hb/host/wgraphhb.hpp>
 #include <infra_hb/host/device.hpp>
 #include <infra_hb/host/error.hpp>

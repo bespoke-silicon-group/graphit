@@ -344,15 +344,27 @@ protected:
 		_ucode.clear(); // probably not necessary
 	}
 public:
-	~Device() {
+        void close(){
 		int err;
 
-		/* cleanup and free CUDA-lite handles */
-		err = hb_mc_device_finish(_device);
-		if (err != HB_MC_SUCCESS)
-			throw hammerblade::manycore_runtime_error(err);
+                if (_device != nullptr) {
+                        err = hb_mc_device_finish(_device);
+                        if (err != HB_MC_SUCCESS)
+                                throw hammerblade::manycore_runtime_error(err);
+                        delete _device;
+                        _device = nullptr;
+                }
+        }
 
-		delete _device;
+	~Device() {
+                close();
+
+		/* cleanup and free CUDA-lite handles */
+		//err = hb_mc_device_finish(_device);
+		//if (err != HB_MC_SUCCESS)
+		//	throw hammerblade::manycore_runtime_error(err);
+
+		//delete _device;
 	}
 
 public:

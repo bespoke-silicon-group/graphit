@@ -225,7 +225,8 @@ private:
             //throw hammerblade::runtime_error("transpose not supported");
             // convert
             std::vector<int32_t> index(num_nodes() + 1);
-            int64_t rows_within_block = (num_nodes() % NUM_PODS) == 0 ? (num_nodes() / NUM_PODS) : (num_nodes() / NUM_PODS + 1);
+            int64_t rows_within_block = (num_nodes() % NUM_PODS) == 0 ? (num_nodes() / NUM_PODS) : ((num_nodes() / NUM_PODS) + 1);
+
             std::cout << "Simulating current pod " << CURRENT_POD << " of " << NUM_PODS << " with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each pod under blocking partitioning" << std::endl;
             int64_t pod_row_start = CURRENT_POD * rows_within_block;   
             int64_t pod_row_end = (pod_row_start + rows_within_block) > num_nodes() ? num_nodes() : (pod_row_start + rows_within_block);

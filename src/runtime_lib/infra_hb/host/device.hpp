@@ -128,6 +128,12 @@ public:
 
 	}
 
+        int64_t getCycle() {
+                uint64_t cycle;
+                hb_mc_manycore_get_cycle(_device->mc, &cycle);
+                return cycle;
+        }
+
 	/*
 	 * run enqueued jobs
 	 */

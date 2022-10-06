@@ -180,6 +180,9 @@ public:
 	 * free application memory on the device
 	 */
 	void free(hb_mc_eva_t mem) {
+                if (_device == nullptr)
+                        return;
+
 		if (_ucode.empty())
 			throw noUCodeError();
 
